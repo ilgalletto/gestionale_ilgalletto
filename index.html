@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestionale Ricettivo</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F4EF;
+    --surface: #FFFFFF;
+    --surface2: #F0EDE8;
+    --border: #E2DDD6;
+    --text: #1A1714;
+    --text-muted: #8A8178;
+    --accent: #2C5F4A;
+    --accent-light: #E8F0EC;
+    --accent2: #C9813A;
+    --accent2-light: #FDF3E7;
+    --danger: #C0392B;
+    --danger-light: #FDECEA;
+    --shadow: 0 2px 12px rgba(26,23,20,0.08);
+    --shadow-lg: 0 8px 32px rgba(26,23,20,0.12);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* AUTH */
+  #auth-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #2C5F4A 0%, #1a3a2c 100%);
+  }
+  .auth-box {
+    background: var(--surface); border-radius: 16px; padding: 48px 40px;
+    width: 100%; max-width: 400px; box-shadow: var(--shadow-lg);
+  }
+  .auth-logo { text-align: center; margin-bottom: 32px; }
+  .auth-logo h1 { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--accent); }
+  .auth-logo p { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
+  .auth-box input {
+    width: 100%; padding: 12px 16px; border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); font-family: inherit; font-size: 15px;
+    background: var(--bg); color: var(--text); margin-bottom: 12px;
+    transition: border-color .2s;
+  }
+  .auth-box input:focus { outline: none; border-color: var(--accent); }
+  .auth-error { color: var(--danger); font-size: 13px; margin-bottom: 12px; display: none; }
+
+  /* LAYOUT */
+  #app { display: none; flex-direction: column; min-height: 100vh; }
+  .topbar {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 24px; height: 60px; display: flex; align-items: center;
+    justify-content: space-between; position: sticky; top: 0; z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  .topbar-brand { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--accent); }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .user-badge {
+    background: var(--accent-light); color: var(--accent);
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 500;
+  }
+  .main-layout { display: flex; flex: 1; }
+  .sidebar {
+    width: 220px; background: var(--surface); border-right: 1px solid var(--border);
+    padding: 20px 12px; display: flex; flex-direction: column; gap: 4px;
+    position: sticky; top: 60px; height: calc(100vh - 60px);
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    border-radius: var(--radius-sm); cursor: pointer; font-size: 14px; font-weight: 500;
+    color: var(--text-muted); transition: all .15s; border: none; background: none;
+    width: 100%; text-align: left;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: var(--accent-light); color: var(--accent); }
+  .nav-icon { font-size: 16px; }
+  .content { flex: 1; padding: 28px; overflow-y: auto; }
+
+  /* CARDS */
+  .page { display: none; animation: fadeIn .2s; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .page-title { font-family: 'DM Serif Display', serif; font-size: 26px; color: var(--text); margin-bottom: 24px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--surface); border-radius: var(--radius); padding: 20px 22px;
+    border: 1px solid var(--border); box-shadow: var(--shadow);
+  }
+  .stat-label { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin-bottom: 8px; }
+  .stat-value { font-size: 32px; font-weight: 600; color: var(--text); font-family: 'DM Serif Display', serif; }
+  .stat-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  /* TABLE */
+  .table-wrap { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow); }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: var(--surface2); padding: 12px 16px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); font-weight: 600; }
+  td { padding: 14px 16px; border-top: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+  tr:hover td { background: var(--surface2); }
+
+  /* BADGE */
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; letter-spacing: .02em;
+  }
+  .badge-in { background: var(--accent-light); color: var(--accent); }
+  .badge-out { background: var(--surface2); color: var(--text-muted); }
+  .badge-stay { background: var(--accent2-light); color: var(--accent2); }
+  .badge-free { background: #EEF7F0; color: #2a7a3b; }
+  .badge-occ { background: #FEF3E0; color: #b86a00; }
+
+  /* BUTTONS */
+  .btn {
+    padding: 9px 18px; border-radius: var(--radius-sm); font-family: inherit;
+    font-size: 14px; font-weight: 500; cursor: pointer; border: none;
+    transition: all .15s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #234d3c; }
+  .btn-outline { background: transparent; color: var(--text); border: 1.5px solid var(--border); }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: var(--danger-light); color: var(--danger); }
+  .btn-danger:hover { background: var(--danger); color: #fff; }
+  .btn-sm { padding: 6px 12px; font-size: 13px; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000;
+    display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border-radius: 14px; padding: 32px;
+    width: 100%; max-width: 500px; box-shadow: var(--shadow-lg);
+    max-height: 90vh; overflow-y: auto;
+  }
+  .modal-title { font-family: 'DM Serif Display', serif; font-size: 22px; margin-bottom: 24px; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 13px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; }
+  .form-control {
+    width: 100%; padding: 10px 14px; border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); font-family: inherit; font-size: 14px;
+    background: var(--bg); color: var(--text); transition: border-color .2s;
+  }
+  .form-control:focus { outline: none; border-color: var(--accent); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
+  /* CALENDARIO */
+  .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .cal-title { font-family: 'DM Serif Display', serif; font-size: 20px; }
+  .cal-grid-wrap { overflow-x: auto; }
+  .cal-grid { display: grid; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--surface); box-shadow: var(--shadow); min-width: 700px; }
+  .cal-row { display: grid; }
+  .cal-cell {
+    padding: 8px 10px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    font-size: 12px; min-height: 42px; position: relative;
+  }
+  .cal-cell:last-child { border-right: none; }
+  .cal-head-cell { background: var(--surface2); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); text-align: center; padding: 10px 6px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .cal-room-cell { background: var(--surface2); font-weight: 500; font-size: 13px; color: var(--text); padding: 8px 12px; display: flex; align-items: center; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .cal-booking {
+    position: absolute; inset: 4px; border-radius: 4px;
+    background: var(--accent); color: #fff; font-size: 11px; font-weight: 500;
+    display: flex; align-items: center; padding: 0 6px; overflow: hidden;
+    white-space: nowrap; text-overflow: ellipsis; cursor: pointer;
+  }
+  .cal-booking.parziale { background: var(--accent2); }
+
+  /* CAMERE */
+  .camere-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+  .camera-card {
+    background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius);
+    padding: 20px; box-shadow: var(--shadow); transition: transform .15s, box-shadow .15s;
+    cursor: default;
+  }
+  .camera-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .camera-numero { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--accent); }
+  .camera-nome { font-size: 14px; font-weight: 500; margin: 4px 0 8px; }
+  .camera-tipo { font-size: 12px; color: var(--text-muted); }
+  .camera-actions { display: flex; gap: 8px; margin-top: 14px; }
+
+  /* TOOLBAR */
+  .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+  .toolbar-left { display: flex; align-items: center; gap: 10px; }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; background: var(--text); color: #fff;
+    padding: 12px 20px; border-radius: 8px; font-size: 14px; z-index: 9999;
+    transform: translateY(80px); opacity: 0; transition: all .3s;
+    box-shadow: var(--shadow-lg);
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { background: var(--accent); }
+  #toast.error { background: var(--danger); }
+
+  /* LOADING */
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2.5px solid #fff3; border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .sidebar { width: 56px; padding: 16px 8px; }
+    .nav-item span { display: none; }
+    .content { padding: 16px; }
+    .form-row { grid-template-columns: 1fr; }
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state p { font-size: 15px; }
+
+  /* PENDING banner */
+  #pending-banner {
+    background: #FEF3CD; border-bottom: 1px solid #F5D87A;
+    padding: 12px 24px; text-align: center; font-size: 14px; color: #7a5c00; display: none;
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <h1>🏨 Gestionale</h1>
+      <p>Struttura Ricettiva</p>
+    </div>
+    <div class="auth-error" id="auth-error"></div>
+    <input type="email" id="auth-email" placeholder="Email" autocomplete="email">
+    <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password">
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="doLogin()">
+      <span id="login-btn-text">Accedi</span>
+    </button>
+  </div>
+</div>
+
+<!-- PENDING -->
+<div id="pending-banner">⏳ Il tuo account è in attesa di approvazione dall'amministratore.</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-brand">🏨 Gestionale</div>
+    <div class="topbar-right">
+      <span class="user-badge" id="user-role-badge">Admin</span>
+      <span style="font-size:13px;color:var(--text-muted);" id="user-email-label"></span>
+      <button class="btn btn-outline btn-sm" onclick="doLogout()">Esci</button>
+    </div>
+  </div>
+  <div class="main-layout">
+    <div class="sidebar">
+      <button class="nav-item active" onclick="navTo('dashboard',this)"><span class="nav-icon">📊</span><span>Dashboard</span></button>
+      <button class="nav-item" onclick="navTo('calendario',this)"><span class="nav-icon">📅</span><span>Calendario</span></button>
+      <button class="nav-item" onclick="navTo('prenotazioni',this)"><span class="nav-icon">📋</span><span>Prenotazioni</span></button>
+      <button class="nav-item admin-only" onclick="navTo('camere',this)"><span class="nav-icon">🛏️</span><span>Camere</span></button>
+      <button class="nav-item admin-only" onclick="navTo('impostazioni',this)"><span class="nav-icon">⚙️</span><span>Impostazioni</span></button>
+    </div>
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-title">Dashboard</div>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-label">Prenotazioni oggi</div>
+            <div class="stat-value" id="stat-oggi">—</div>
+            <div class="stat-sub">check-in / check-out</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Camere occupate</div>
+            <div class="stat-value" id="stat-occ">—</div>
+            <div class="stat-sub" id="stat-occ-sub">su — disponibili</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Prenotazioni totali</div>
+            <div class="stat-value" id="stat-tot">—</div>
+            <div class="stat-sub">nel sistema</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Incasso (mese)</div>
+            <div class="stat-value" id="stat-mese">—</div>
+            <div class="stat-sub">prenotazioni del mese</div>
+          </div>
+        </div>
+        <div class="page-title" style="font-size:18px;margin-bottom:16px;">Prossimi arrivi</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Ospite</th><th>Camera</th><th>Check-in</th><th>Check-out</th><th>Stato</th></tr></thead>
+            <tbody id="tb-arrivi"><tr><td colspan="5" class="empty-state" style="text-align:center;">Caricamento...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CALENDARIO -->
+      <div class="page" id="page-calendario">
+        <div class="cal-header">
+          <div class="cal-title" id="cal-titolo">—</div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline btn-sm" onclick="calMese(-1)">◀</button>
+            <button class="btn btn-outline btn-sm" onclick="calMese(1)">▶</button>
+          </div>
+        </div>
+        <div class="cal-grid-wrap">
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+      </div>
+
+      <!-- PRENOTAZIONI -->
+      <div class="page" id="page-prenotazioni">
+        <div class="toolbar">
+          <div class="page-title" style="margin:0;">Prenotazioni</div>
+          <button class="btn btn-primary" onclick="openModalPrenotazione()">+ Nuova prenotazione</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Ospite</th><th>Camera</th><th>Check-in</th><th>Check-out</th><th>Notti</th><th>Prezzo</th><th>Stato</th><th></th></tr></thead>
+            <tbody id="tb-prenotazioni"><tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">Caricamento...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CAMERE -->
+      <div class="page" id="page-camere">
+        <div class="toolbar">
+          <div class="page-title" style="margin:0;">Camere</div>
+          <button class="btn btn-primary admin-only" onclick="openModalCamera()">+ Aggiungi camera</button>
+        </div>
+        <div class="camere-grid" id="camere-grid"></div>
+      </div>
+
+      <!-- IMPOSTAZIONI -->
+      <div class="page admin-only" id="page-impostazioni">
+        <div class="page-title">Impostazioni</div>
+        <div style="margin-bottom:24px;">
+          <h3 style="font-size:16px;font-weight:600;margin-bottom:16px;">Utenti del sistema</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Email</th><th>Nome</th><th>Ruolo</th><th>Stato</th><th></th></tr></thead>
+              <tbody id="tb-utenti"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PRENOTAZIONE -->
+<div class="modal-overlay" id="modal-prenotazione">
+  <div class="modal">
+    <div class="modal-title" id="modal-pren-title">Nuova prenotazione</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Nome *</label><input class="form-control" id="p-nome" placeholder="Nome"></div>
+      <div class="form-group"><label class="form-label">Cognome *</label><input class="form-control" id="p-cognome" placeholder="Cognome"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Telefono</label><input class="form-control" id="p-telefono" placeholder="+39 000 0000000" type="tel"></div>
+    <div class="form-group"><label class="form-label">Camera *</label>
+      <select class="form-control" id="p-camera"></select>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Check-in *</label><input class="form-control" id="p-checkin" type="date"></div>
+      <div class="form-group"><label class="form-label">Check-out *</label><input class="form-control" id="p-checkout" type="date"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Notti</label><input class="form-control" id="p-notti" type="number" min="1" readonly></div>
+      <div class="form-group"><label class="form-label">Prezzo totale (€)</label><input class="form-control" id="p-prezzo" type="number" min="0" step="0.01" placeholder="0.00"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-prenotazione')">Annulla</button>
+      <button class="btn btn-primary" onclick="salvaPrenotazione()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CAMERA -->
+<div class="modal-overlay" id="modal-camera">
+  <div class="modal">
+    <div class="modal-title" id="modal-cam-title">Nuova camera</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Numero / Codice *</label><input class="form-control" id="c-numero" placeholder="es. 101"></div>
+      <div class="form-group"><label class="form-label">Nome</label><input class="form-control" id="c-nome" placeholder="es. Suite Mare"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Tipo</label>
+      <select class="form-control" id="c-tipo">
+        <option>Singola</option><option>Doppia</option><option>Matrimoniale</option>
+        <option>Tripla</option><option>Suite</option><option>Appartamento</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Note</label><textarea class="form-control" id="c-note" rows="2" placeholder="Balcone, vista mare..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-camera')">Annulla</button>
+      <button class="btn btn-primary" onclick="salvaCamera()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+// ===================== CONFIGURAZIONE FIREBASE =====================
+// ⚠️ SOSTITUIRE con i dati del proprio progetto Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyAi8gcS_HL9i1HYNiQJF2SazsiDnsD9jCI",
+  authDomain: "b-b-il-galletto.firebaseapp.com",
+  projectId: "b-b-il-galletto",
+  storageBucket: "b-b-il-galletto.firebasestorage.app",
+  messagingSenderId: "912561249765",
+  appId: "1:912561249765:web:cc1219861660ff8371630c"
+};
+// ==================================================================
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// ===================== STATO GLOBALE =====================
+let currentUser = null;
+let currentUserData = null;
+let allPrenotazioni = [];
+let allCamere = [];
+let allUtenti = [];
+let editingPrenId = null;
+let editingCamId = null;
+let calAnno = new Date().getFullYear();
+let calMeseIdx = new Date().getMonth();
+let unsubPren = null, unsubCamere = null, unsubUtenti = null;
+
+// ===================== AUTH =====================
+auth.onAuthStateChanged(async (user) => {
+  if (!user) { showAuth(); return; }
+  currentUser = user;
+  const snap = await db.collection('utenti').doc(user.uid).get();
+  if (!snap.exists) { auth.signOut(); showAuth(); return; }
+  currentUserData = snap.data();
+  if (currentUserData.stato !== 'approvato') {
+    showAuth(); document.getElementById('pending-banner').style.display = 'block';
+    return;
+  }
+  showApp();
+});
+
+function showAuth() {
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('pending-banner').style.display = 'none';
+  document.getElementById('user-email-label').textContent = currentUser.email;
+  const ruolo = currentUserData.ruolo || 'viewer';
+  document.getElementById('user-role-badge').textContent = ruolo === 'admin' ? 'Admin' : 'Proprietario';
+  if (ruolo !== 'admin') {
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+  }
+  startListeners();
+  aggiornaCalendario();
+}
+
+async function doLogin() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pw = document.getElementById('auth-password').value;
+  const errEl = document.getElementById('auth-error');
+  const btnText = document.getElementById('login-btn-text');
+  errEl.style.display = 'none';
+  btnText.innerHTML = '<span class="spinner"></span>';
+  try {
+    await auth.signInWithEmailAndPassword(email, pw);
+  } catch(e) {
+    errEl.textContent = 'Email o password non corretti.';
+    errEl.style.display = 'block';
+    btnText.textContent = 'Accedi';
+  }
+}
+function doLogout() { auth.signOut(); }
+
+// ===================== LISTENERS FIRESTORE =====================
+function startListeners() {
+  if (unsubPren) unsubPren();
+  if (unsubCamere) unsubCamere();
+  if (unsubUtenti) unsubUtenti();
+
+  unsubPren = db.collection('prenotazioni').orderBy('checkin','asc').onSnapshot(snap => {
+    allPrenotazioni = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderPrenotazioni();
+    renderDashboard();
+    aggiornaCalendario();
+  });
+  unsubCamere = db.collection('camere').orderBy('numero','asc').onSnapshot(snap => {
+    allCamere = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderCamere();
+    renderDashboard();
+    aggiornaCalendario();
+    populateCameraSelect();
+  });
+  if (currentUserData.ruolo === 'admin') {
+    unsubUtenti = db.collection('utenti').onSnapshot(snap => {
+      allUtenti = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderUtenti();
+    });
+  }
+}
+
+// ===================== NAV =====================
+function navTo(page, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (page === 'calendario') aggiornaCalendario();
+}
+
+// ===================== DASHBOARD =====================
+function renderDashboard() {
+  const oggi = toDateStr(new Date());
+  const checkinOggi = allPrenotazioni.filter(p => p.checkin === oggi).length;
+  const checkoutOggi = allPrenotazioni.filter(p => p.checkout === oggi).length;
+  document.getElementById('stat-oggi').textContent = `${checkinOggi} / ${checkoutOggi}`;
+
+  const camereOcc = camerOccupateOggi().size;
+  document.getElementById('stat-occ').textContent = camereOcc;
+  document.getElementById('stat-occ-sub').textContent = `su ${allCamere.length} disponibili`;
+  document.getElementById('stat-tot').textContent = allPrenotazioni.length;
+
+  const mese = new Date().getMonth();
+  const anno = new Date().getFullYear();
+  const incasso = allPrenotazioni
+    .filter(p => { const d = new Date(p.checkin); return d.getMonth()===mese && d.getFullYear()===anno; })
+    .reduce((s,p) => s + (parseFloat(p.prezzo)||0), 0);
+  document.getElementById('stat-mese').textContent = '€' + incasso.toFixed(0);
+
+  // Prossimi arrivi
+  const tb = document.getElementById('tb-arrivi');
+  const prossimi = allPrenotazioni
+    .filter(p => p.checkin >= oggi)
+    .slice(0, 8);
+  if (!prossimi.length) {
+    tb.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">🌙</div><p>Nessun arrivo imminente</p></div></td></tr>';
+    return;
+  }
+  tb.innerHTML = prossimi.map(p => {
+    const stato = statoPrenotazione(p);
+    return `<tr>
+      <td><strong>${p.nome} ${p.cognome}</strong><br><small style="color:var(--text-muted)">${p.telefono||''}</small></td>
+      <td>${nomeCameraById(p.cameraId)}</td>
+      <td>${formatDate(p.checkin)}</td>
+      <td>${formatDate(p.checkout)}</td>
+      <td><span class="badge ${stato.cls}">${stato.label}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function camerOccupateOggi() {
+  const oggi = toDateStr(new Date());
+  const occ = new Set();
+  allPrenotazioni.forEach(p => {
+    if (p.checkin <= oggi && p.checkout > oggi) occ.add(p.cameraId);
+  });
+  return occ;
+}
+
+function statoPrenotazione(p) {
+  const oggi = toDateStr(new Date());
+  if (p.checkin === oggi) return { label: 'Arrivo oggi', cls: 'badge-in' };
+  if (p.checkout === oggi) return { label: 'Partenza oggi', cls: 'badge-out' };
+  if (p.checkin < oggi && p.checkout > oggi) return { label: 'In soggiorno', cls: 'badge-stay' };
+  if (p.checkin > oggi) return { label: 'Futura', cls: 'badge-free' };
+  return { label: 'Conclusa', cls: 'badge-out' };
+}
+
+// ===================== PRENOTAZIONI =====================
+function renderPrenotazioni() {
+  const tb = document.getElementById('tb-prenotazioni');
+  if (!allPrenotazioni.length) {
+    tb.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📋</div><p>Nessuna prenotazione</p></div></td></tr>';
+    return;
+  }
+  const sorted = [...allPrenotazioni].sort((a,b) => b.checkin.localeCompare(a.checkin));
+  tb.innerHTML = sorted.map(p => {
+    const notti = calcolaNotti(p.checkin, p.checkout);
+    const stato = statoPrenotazione(p);
+    const canEdit = currentUserData.ruolo === 'admin';
+    return `<tr>
+      <td><strong>${p.nome} ${p.cognome}</strong>${p.telefono ? `<br><small style="color:var(--text-muted)">${p.telefono}</small>` : ''}</td>
+      <td>${nomeCameraById(p.cameraId)}</td>
+      <td>${formatDate(p.checkin)}</td>
+      <td>${formatDate(p.checkout)}</td>
+      <td>${notti}</td>
+      <td>€${parseFloat(p.prezzo||0).toFixed(2)}</td>
+      <td><span class="badge ${stato.cls}">${stato.label}</span></td>
+      <td>
+        ${canEdit ? `<button class="btn btn-sm btn-outline" onclick="editPrenotazione('${p.id}')">✏️</button>
+        <button class="btn btn-sm btn-danger" onclick="eliminaPrenotazione('${p.id}')">🗑️</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openModalPrenotazione(id) {
+  editingPrenId = id || null;
+  document.getElementById('modal-pren-title').textContent = id ? 'Modifica prenotazione' : 'Nuova prenotazione';
+  populateCameraSelect();
+  if (id) {
+    const p = allPrenotazioni.find(x => x.id === id);
+    document.getElementById('p-nome').value = p.nome || '';
+    document.getElementById('p-cognome').value = p.cognome || '';
+    document.getElementById('p-telefono').value = p.telefono || '';
+    document.getElementById('p-camera').value = p.cameraId || '';
+    document.getElementById('p-checkin').value = p.checkin || '';
+    document.getElementById('p-checkout').value = p.checkout || '';
+    document.getElementById('p-prezzo').value = p.prezzo || '';
+    aggNotti();
+  } else {
+    ['p-nome','p-cognome','p-telefono','p-prezzo'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('p-checkin').value = '';
+    document.getElementById('p-checkout').value = '';
+    document.getElementById('p-notti').value = '';
+  }
+  document.getElementById('modal-prenotazione').classList.add('open');
+  // Calcola notti in tempo reale
+  document.getElementById('p-checkin').oninput = aggNotti;
+  document.getElementById('p-checkout').oninput = aggNotti;
+}
+function aggNotti() {
+  const ci = document.getElementById('p-checkin').value;
+  const co = document.getElementById('p-checkout').value;
+  if (ci && co) {
+    const n = calcolaNotti(ci, co);
+    document.getElementById('p-notti').value = n > 0 ? n : '';
+  }
+}
+function editPrenotazione(id) { openModalPrenotazione(id); }
+
+async function salvaPrenotazione() {
+  const nome = document.getElementById('p-nome').value.trim();
+  const cognome = document.getElementById('p-cognome').value.trim();
+  const cameraId = document.getElementById('p-camera').value;
+  const checkin = document.getElementById('p-checkin').value;
+  const checkout = document.getElementById('p-checkout').value;
+  const prezzo = document.getElementById('p-prezzo').value;
+  if (!nome || !cognome || !cameraId || !checkin || !checkout) { showToast('Compila i campi obbligatori', 'error'); return; }
+  if (checkin >= checkout) { showToast('Il check-out deve essere dopo il check-in', 'error'); return; }
+  const data = {
+    nome, cognome,
+    telefono: document.getElementById('p-telefono').value.trim(),
+    cameraId, checkin, checkout,
+    prezzo: parseFloat(prezzo)||0,
+    aggiornata: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  try {
+    if (editingPrenId) {
+      await db.collection('prenotazioni').doc(editingPrenId).update(data);
+    } else {
+      data.creata = firebase.firestore.FieldValue.serverTimestamp();
+      data.creataDA = currentUser.uid;
+      await db.collection('prenotazioni').add(data);
+    }
+    closeModal('modal-prenotazione');
+    showToast('Prenotazione salvata ✓', 'success');
+  } catch(e) { showToast('Errore: ' + e.message, 'error'); }
+}
+
+async function eliminaPrenotazione(id) {
+  if (!confirm('Eliminare questa prenotazione?')) return;
+  try {
+    await db.collection('prenotazioni').doc(id).delete();
+    showToast('Prenotazione eliminata', 'success');
+  } catch(e) { showToast('Errore: ' + e.message, 'error'); }
+}
+
+function populateCameraSelect() {
+  const sel = document.getElementById('p-camera');
+  sel.innerHTML = '<option value="">Seleziona camera...</option>' +
+    allCamere.map(c => `<option value="${c.id}">${c.numero}${c.nome ? ' - ' + c.nome : ''} (${c.tipo||''})</option>`).join('');
+}
+
+// ===================== CAMERE =====================
+function renderCamere() {
+  const grid = document.getElementById('camere-grid');
+  const occOggi = camerOccupateOggi();
+  if (!allCamere.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="empty-icon">🛏️</div><p>Nessuna camera configurata</p></div>';
+    return;
+  }
+  const canEdit = currentUserData.ruolo === 'admin';
+  grid.innerHTML = allCamere.map(c => {
+    const occ = occOggi.has(c.id);
+    return `<div class="camera-card">
+      <div class="camera-numero">${c.numero}</div>
+      <div class="camera-nome">${c.nome || '—'}</div>
+      <div class="camera-tipo">${c.tipo || ''}</div>
+      <div style="margin-top:8px;"><span class="badge ${occ ? 'badge-occ' : 'badge-free'}">${occ ? 'Occupata' : 'Libera'}</span></div>
+      ${c.note ? `<div style="font-size:12px;color:var(--text-muted);margin-top:8px;">${c.note}</div>` : ''}
+      ${canEdit ? `<div class="camera-actions">
+        <button class="btn btn-sm btn-outline" onclick="editCamera('${c.id}')">✏️ Modifica</button>
+        <button class="btn btn-sm btn-danger" onclick="eliminaCamera('${c.id}')">🗑️</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function openModalCamera(id) {
+  editingCamId = id || null;
+  document.getElementById('modal-cam-title').textContent = id ? 'Modifica camera' : 'Nuova camera';
+  if (id) {
+    const c = allCamere.find(x => x.id === id);
+    document.getElementById('c-numero').value = c.numero || '';
+    document.getElementById('c-nome').value = c.nome || '';
+    document.getElementById('c-tipo').value = c.tipo || 'Doppia';
+    document.getElementById('c-note').value = c.note || '';
+  } else {
+    ['c-numero','c-nome','c-note'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('c-tipo').value = 'Doppia';
+  }
+  document.getElementById('modal-camera').classList.add('open');
+}
+function editCamera(id) { openModalCamera(id); }
+
+async function salvaCamera() {
+  const numero = document.getElementById('c-numero').value.trim();
+  if (!numero) { showToast('Inserisci il numero camera', 'error'); return; }
+  const data = {
+    numero,
+    nome: document.getElementById('c-nome').value.trim(),
+    tipo: document.getElementById('c-tipo').value,
+    note: document.getElementById('c-note').value.trim()
+  };
+  try {
+    if (editingCamId) {
+      await db.collection('camere').doc(editingCamId).update(data);
+    } else {
+      await db.collection('camere').add(data);
+    }
+    closeModal('modal-camera');
+    showToast('Camera salvata ✓', 'success');
+  } catch(e) { showToast('Errore: ' + e.message, 'error'); }
+}
+
+async function eliminaCamera(id) {
+  if (!confirm('Eliminare questa camera?')) return;
+  try {
+    await db.collection('camere').doc(id).delete();
+    showToast('Camera eliminata', 'success');
+  } catch(e) { showToast('Errore: ' + e.message, 'error'); }
+}
+
+// ===================== CALENDARIO =====================
+const MESI = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+function calMese(delta) { calMeseIdx += delta; if (calMeseIdx > 11) { calMeseIdx=0; calAnno++; } if (calMeseIdx < 0) { calMeseIdx=11; calAnno--; } aggiornaCalendario(); }
+
+function aggiornaCalendario() {
+  document.getElementById('cal-titolo').textContent = `${MESI[calMeseIdx]} ${calAnno}`;
+  const grid = document.getElementById('cal-grid');
+  if (!allCamere.length) { grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);">Nessuna camera configurata</div>'; return; }
+  const giorniMese = new Date(calAnno, calMeseIdx + 1, 0).getDate();
+  const cols = 1 + giorniMese;
+  grid.style.gridTemplateColumns = `140px repeat(${giorniMese}, minmax(32px,1fr))`;
+
+  let html = `<div class="cal-head-cell">Camera</div>`;
+  for (let g = 1; g <= giorniMese; g++) {
+    const d = new Date(calAnno, calMeseIdx, g);
+    const dow = ['D','L','M','M','G','V','S'][d.getDay()];
+    const isWe = d.getDay() === 0 || d.getDay() === 6;
+    html += `<div class="cal-head-cell" style="${isWe ? 'background:#f5f0ea;' : ''}">${g}<br><span style="font-size:9px;">${dow}</span></div>`;
+  }
+
+  allCamere.forEach(camera => {
+    html += `<div class="cal-room-cell">${camera.numero}${camera.nome ? '<br><span style="font-size:11px;color:var(--text-muted)">'+camera.nome+'</span>' : ''}</div>`;
+    for (let g = 1; g <= giorniMese; g++) {
+      const dateStr = toDateStrYMD(calAnno, calMeseIdx, g);
+      const pren = allPrenotazioni.find(p => p.cameraId === camera.id && p.checkin <= dateStr && p.checkout > dateStr);
+      const isFirstDay = pren && pren.checkin === dateStr;
+      if (pren && isFirstDay) {
+        const durataGiorni = calcolaNotti(pren.checkin, pren.checkout);
+        html += `<div class="cal-cell" style="overflow:visible;z-index:2;">
+          <div class="cal-booking" title="${pren.nome} ${pren.cognome}" style="width:calc(${durataGiorni * 100}% + ${(durataGiorni-1) * 1}px);z-index:3;">
+            ${pren.nome} ${pren.cognome}
+          </div></div>`;
+      } else if (pren) {
+        html += `<div class="cal-cell" style="background:rgba(44,95,74,0.08);"></div>`;
+      } else {
+        html += `<div class="cal-cell"></div>`;
+      }
+    }
+  });
+  grid.innerHTML = html;
+}
+
+// ===================== UTENTI =====================
+function renderUtenti() {
+  const tb = document.getElementById('tb-utenti');
+  if (!allUtenti.length) { tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted);">Nessun utente</td></tr>'; return; }
+  tb.innerHTML = allUtenti.map(u => `<tr>
+    <td>${u.email || '—'}</td>
+    <td>${u.nome || '—'}</td>
+    <td>${u.ruolo || '—'}</td>
+    <td><span class="badge ${u.stato==='approvato' ? 'badge-in' : 'badge-out'}">${u.stato || 'pending'}</span></td>
+    <td>
+      ${u.stato !== 'approvato' ? `<button class="btn btn-sm btn-primary" onclick="approvaUtente('${u.id}')">Approva</button>` : ''}
+      ${u.id !== currentUser.uid ? `<button class="btn btn-sm btn-danger" onclick="rimuoviUtente('${u.id}')">Rimuovi</button>` : ''}
+    </td>
+  </tr>`).join('');
+}
+
+async function approvaUtente(uid) {
+  await db.collection('utenti').doc(uid).update({ stato: 'approvato' });
+  showToast('Utente approvato ✓', 'success');
+}
+async function rimuoviUtente(uid) {
+  if (!confirm('Rimuovere questo utente dal sistema?')) return;
+  await db.collection('utenti').doc(uid).delete();
+  showToast('Utente rimosso', 'success');
+}
+
+// ===================== UTILITY =====================
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function toDateStr(d) { return d.toISOString().split('T')[0]; }
+function toDateStrYMD(y,m,d) { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+function calcolaNotti(ci, co) { return Math.round((new Date(co)-new Date(ci))/(1000*60*60*24)); }
+function formatDate(s) { if (!s) return '—'; const [y,m,d] = s.split('-'); return `${d}/${m}/${y}`; }
+function nomeCameraById(id) { const c = allCamere.find(x => x.id === id); return c ? `${c.numero}${c.nome ? ' - ' + c.nome : ''}` : '—'; }
+
+let toastTimer;
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = '', 3000);
+}
+
+// Click fuori modal chiude
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
