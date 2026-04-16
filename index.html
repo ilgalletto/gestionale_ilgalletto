@@ -258,6 +258,7 @@
       <button class="nav-item active" onclick="navTo('dashboard',this)"><span class="nav-icon">📊</span><span>Dashboard</span></button>
       <button class="nav-item" onclick="navTo('calendario',this)"><span class="nav-icon">📅</span><span>Calendario</span></button>
       <button class="nav-item" onclick="navTo('prenotazioni',this)"><span class="nav-icon">📋</span><span>Prenotazioni</span></button>
+      <button class="nav-item" onclick="navTo('clienti',this)"><span class="nav-icon">👥</span><span>Clienti</span></button>
       <button class="nav-item admin-only" onclick="navTo('camere',this)"><span class="nav-icon">🛏️</span><span>Camere</span></button>
       <button class="nav-item admin-only" onclick="navTo('impostazioni',this)"><span class="nav-icon">⚙️</span><span>Impostazioni</span></button>
     </div>
@@ -334,6 +335,34 @@
         <div class="camere-grid" id="camere-grid"></div>
       </div>
 
+      <!-- CLIENTI -->
+      <div class="page" id="page-clienti">
+        <div class="toolbar">
+          <div class="page-title" style="margin:0;">Clienti</div>
+          <button class="btn btn-primary" onclick="openModalCliente()">+ Nuovo cliente</button>
+        </div>
+        <div style="margin-bottom:14px;">
+          <input class="form-control" id="clienti-search" placeholder="🔍 Cerca per nome, cognome o telefono..." style="max-width:360px;" oninput="renderClienti()">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nome</th><th>Telefono</th><th>Soggiorni</th><th>Totale speso</th><th>Ultima visita</th><th>Note</th><th></th></tr></thead>
+            <tbody id="tb-clienti"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- STORICO CLIENTE (pannello espandibile) -->
+      <div class="modal-overlay" id="modal-storico">
+        <div class="modal" style="max-width:640px;">
+          <div class="modal-title" id="storico-titolo">Storico cliente</div>
+          <div id="storico-body"></div>
+          <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal('modal-storico')">Chiudi</button>
+          </div>
+        </div>
+      </div>
+
       <!-- IMPOSTAZIONI -->
       <div class="page admin-only" id="page-impostazioni">
         <div class="page-title">Impostazioni</div>
@@ -375,6 +404,23 @@
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('modal-prenotazione')">Annulla</button>
       <button class="btn btn-primary" onclick="salvaPrenotazione()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CLIENTE -->
+<div class="modal-overlay" id="modal-cliente">
+  <div class="modal">
+    <div class="modal-title" id="modal-cli-title">Nuovo cliente</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Nome *</label><input class="form-control" id="cl-nome" placeholder="Nome"></div>
+      <div class="form-group"><label class="form-label">Cognome *</label><input class="form-control" id="cl-cognome" placeholder="Cognome"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Telefono</label><input class="form-control" id="cl-telefono" placeholder="+39 000 0000000" type="tel"></div>
+    <div class="form-group"><label class="form-label">Note</label><textarea class="form-control" id="cl-note" rows="3" placeholder="Preferenze, allergie, note particolari..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-cliente')">Annulla</button>
+      <button class="btn btn-primary" onclick="salvaCliente()">Salva</button>
     </div>
   </div>
 </div>
@@ -431,8 +477,10 @@ let currentUserData = null;
 let allPrenotazioni = [];
 let allCamere = [];
 let allUtenti = [];
+let allClienti = [];
 let editingPrenId = null;
 let editingCamId = null;
+let editingCliId = null;
 let calAnno = new Date().getFullYear();
 let calMeseIdx = new Date().getMonth();
 let unsubPren = null, unsubCamere = null, unsubUtenti = null;
@@ -487,16 +535,19 @@ async function doLogin() {
 function doLogout() { auth.signOut(); }
 
 // ===================== LISTENERS FIRESTORE =====================
+let unsubClienti = null;
 function startListeners() {
   if (unsubPren) unsubPren();
   if (unsubCamere) unsubCamere();
   if (unsubUtenti) unsubUtenti();
+  if (unsubClienti) unsubClienti();
 
   unsubPren = db.collection('prenotazioni').orderBy('checkin','asc').onSnapshot(snap => {
     allPrenotazioni = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderPrenotazioni();
     renderDashboard();
     aggiornaCalendario();
+    renderClienti();
   });
   unsubCamere = db.collection('camere').orderBy('numero','asc').onSnapshot(snap => {
     allCamere = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -504,6 +555,10 @@ function startListeners() {
     renderDashboard();
     aggiornaCalendario();
     populateCameraSelect();
+  });
+  unsubClienti = db.collection('clienti').orderBy('cognome','asc').onSnapshot(snap => {
+    allClienti = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderClienti();
   });
   if (currentUserData.ruolo === 'admin') {
     unsubUtenti = db.collection('utenti').onSnapshot(snap => {
@@ -834,6 +889,145 @@ async function rimuoviUtente(uid) {
   if (!confirm('Rimuovere questo utente dal sistema?')) return;
   await db.collection('utenti').doc(uid).delete();
   showToast('Utente rimosso', 'success');
+}
+
+// ===================== CLIENTI =====================
+function chiaveCliente(nome, cognome) {
+  return `${nome.trim().toLowerCase()}|${cognome.trim().toLowerCase()}`;
+}
+
+// Costruisce la lista clienti unendo il DB clienti + nomi da prenotazioni
+function getClientiMerged() {
+  // Parte dai clienti espliciti
+  const map = {};
+  allClienti.forEach(c => {
+    const k = chiaveCliente(c.nome||'', c.cognome||'');
+    map[k] = { ...c, _fromDb: true };
+  });
+  // Aggiunge chi appare solo nelle prenotazioni
+  allPrenotazioni.forEach(p => {
+    const k = chiaveCliente(p.nome||'', p.cognome||'');
+    if (!map[k]) {
+      map[k] = { nome: p.nome, cognome: p.cognome, telefono: p.telefono||'', note: '', _fromDb: false };
+    }
+  });
+  return Object.values(map).sort((a,b) => (a.cognome||'').localeCompare(b.cognome||''));
+}
+
+function renderClienti() {
+  const tb = document.getElementById('tb-clienti');
+  if (!tb) return;
+  const q = (document.getElementById('clienti-search')?.value || '').toLowerCase();
+  let lista = getClientiMerged();
+  if (q) lista = lista.filter(c =>
+    (c.nome||'').toLowerCase().includes(q) ||
+    (c.cognome||'').toLowerCase().includes(q) ||
+    (c.telefono||'').toLowerCase().includes(q)
+  );
+  if (!lista.length) {
+    tb.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">👥</div><p>Nessun cliente</p></div></td></tr>';
+    return;
+  }
+  tb.innerHTML = lista.map(c => {
+    const k = chiaveCliente(c.nome||'', c.cognome||'');
+    const soggiorni = allPrenotazioni.filter(p => chiaveCliente(p.nome||'', p.cognome||'') === k);
+    const totale = soggiorni.reduce((s,p) => s + (parseFloat(p.prezzo)||0), 0);
+    const ultime = soggiorni.map(p => p.checkout).filter(Boolean).sort().reverse();
+    const ultimaVisita = ultime[0] ? formatDate(ultime[0]) : '—';
+    const noteBreve = c.note ? (c.note.length > 40 ? c.note.slice(0,40)+'…' : c.note) : '—';
+    return `<tr>
+      <td><strong>${c.cognome} ${c.nome}</strong></td>
+      <td>${c.telefono||'—'}</td>
+      <td style="text-align:center;">${soggiorni.length}</td>
+      <td>€${totale.toFixed(2)}</td>
+      <td>${ultimaVisita}</td>
+      <td style="max-width:180px;font-size:13px;color:var(--text-muted);">${noteBreve}</td>
+      <td style="display:flex;gap:6px;">
+        <button class="btn btn-sm btn-outline" onclick="apriStorico('${encodeURIComponent(k)}')">📋 Storico</button>
+        <button class="btn btn-sm btn-outline" onclick="editCliente('${encodeURIComponent(k)}')">✏️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function apriStorico(kEnc) {
+  const k = decodeURIComponent(kEnc);
+  const c = getClientiMerged().find(x => chiaveCliente(x.nome||'', x.cognome||'') === k);
+  if (!c) return;
+  const soggiorni = allPrenotazioni
+    .filter(p => chiaveCliente(p.nome||'', p.cognome||'') === k)
+    .sort((a,b) => b.checkin.localeCompare(a.checkin));
+  const totale = soggiorni.reduce((s,p) => s + (parseFloat(p.prezzo)||0), 0);
+
+  document.getElementById('storico-titolo').textContent = `${c.cognome} ${c.nome}`;
+  let html = `<div style="margin-bottom:16px;color:var(--text-muted);font-size:14px;">
+    📞 ${c.telefono||'—'}
+    ${c.note ? `<div style="margin-top:8px;padding:10px 14px;background:var(--surface2);border-radius:6px;color:var(--text);font-size:13px;">📝 ${c.note}</div>` : ''}
+  </div>`;
+
+  if (soggiorni.length) {
+    html += `<div style="font-weight:600;font-size:14px;margin-bottom:10px;">Soggiorni (${soggiorni.length}) — Totale speso: <span style="color:var(--accent);">€${totale.toFixed(2)}</span></div>`;
+    html += `<div class="table-wrap"><table>
+      <thead><tr><th>Camera</th><th>Check-in</th><th>Check-out</th><th>Notti</th><th>Prezzo</th></tr></thead>
+      <tbody>`;
+    html += soggiorni.map(p => `<tr>
+      <td>${nomeCameraById(p.cameraId)}</td>
+      <td>${formatDate(p.checkin)}</td>
+      <td>${formatDate(p.checkout)}</td>
+      <td>${calcolaNotti(p.checkin, p.checkout)}</td>
+      <td>€${parseFloat(p.prezzo||0).toFixed(2)}</td>
+    </tr>`).join('');
+    html += `</tbody></table></div>`;
+  } else {
+    html += `<p style="color:var(--text-muted);text-align:center;padding:20px;">Nessun soggiorno registrato</p>`;
+  }
+  document.getElementById('storico-body').innerHTML = html;
+  document.getElementById('modal-storico').classList.add('open');
+}
+
+function openModalCliente(kEnc) {
+  editingCliId = kEnc || null;
+  document.getElementById('modal-cli-title').textContent = kEnc ? 'Modifica cliente' : 'Nuovo cliente';
+  if (kEnc) {
+    const k = decodeURIComponent(kEnc);
+    const c = getClientiMerged().find(x => chiaveCliente(x.nome||'', x.cognome||'') === k);
+    if (c) {
+      document.getElementById('cl-nome').value = c.nome || '';
+      document.getElementById('cl-cognome').value = c.cognome || '';
+      document.getElementById('cl-telefono').value = c.telefono || '';
+      document.getElementById('cl-note').value = c.note || '';
+    }
+  } else {
+    ['cl-nome','cl-cognome','cl-telefono','cl-note'].forEach(id => document.getElementById(id).value = '');
+  }
+  document.getElementById('modal-cliente').classList.add('open');
+}
+
+function editCliente(kEnc) { openModalCliente(kEnc); }
+
+async function salvaCliente() {
+  const nome = document.getElementById('cl-nome').value.trim();
+  const cognome = document.getElementById('cl-cognome').value.trim();
+  if (!nome || !cognome) { showToast('Nome e cognome obbligatori', 'error'); return; }
+  const data = {
+    nome, cognome,
+    telefono: document.getElementById('cl-telefono').value.trim(),
+    note: document.getElementById('cl-note').value.trim(),
+    aggiornato: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  try {
+    const k = chiaveCliente(nome, cognome);
+    // Cerca se esiste già un doc cliente con questa chiave
+    const existing = allClienti.find(c => chiaveCliente(c.nome||'', c.cognome||'') === k);
+    if (existing) {
+      await db.collection('clienti').doc(existing.id).update(data);
+    } else {
+      data.creato = firebase.firestore.FieldValue.serverTimestamp();
+      await db.collection('clienti').add(data);
+    }
+    closeModal('modal-cliente');
+    showToast('Cliente salvato ✓', 'success');
+  } catch(e) { showToast('Errore: ' + e.message, 'error'); }
 }
 
 // ===================== UTILITY =====================
