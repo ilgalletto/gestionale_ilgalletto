@@ -261,10 +261,10 @@
       <button class="nav-item active" onclick="navTo('dashboard',this)"><span class="nav-icon">📊</span><span>Dashboard</span></button>
       <button class="nav-item" onclick="navTo('calendario',this)"><span class="nav-icon">📅</span><span>Calendario</span></button>
       <button class="nav-item" onclick="navTo('prenotazioni',this)"><span class="nav-icon">📋</span><span>Prenotazioni</span></button>
-      <button class="nav-item" onclick="navTo('clienti',this)"><span class="nav-icon">👥</span><span>Clienti</span></button>
-      <button class="nav-item" onclick="navTo('stampa',this)"><span class="nav-icon">🖨️</span><span>Stampa</span></button>
+      <button class="nav-item no-visual" onclick="navTo('clienti',this)"><span class="nav-icon">👥</span><span>Clienti</span></button>
+      <button class="nav-item no-visual" onclick="navTo('stampa',this)"><span class="nav-icon">🖨️</span><span>Stampa</span></button>
       <button class="nav-item" onclick="navTo('guida',this)"><span class="nav-icon">📖</span><span>Guida</span></button>
-      <button class="nav-item admin-only" onclick="navTo('camere',this)"><span class="nav-icon">🛏️</span><span>Camere</span></button>
+      <button class="nav-item proprietario-only admin-show" onclick="navTo('camere',this)"><span class="nav-icon">🛏️</span><span>Camere</span></button>
       <button class="nav-item admin-only" onclick="navTo('impostazioni',this)"><span class="nav-icon">⚙️</span><span>Impostazioni</span></button>
     </div>
     <div class="content">
@@ -402,15 +402,15 @@
               <div class="gs-card" style="margin-top:14px">
                 <div class="gs-card-title">Confronto ruoli</div>
                 <table class="gs-table">
-                  <tr><th>Funzione</th><th>Admin</th><th>Proprietario</th></tr>
-                  <tr><td>Dashboard</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-                  <tr><td>Calendario</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-                  <tr><td>Prenotazioni</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-                  <tr><td>Clienti</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-                  <tr><td>Check-in / Check-out</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-                  <tr><td>Stampa</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-                  <tr><td>Camere (gestione)</td><td class="ok">✓</td><td class="no">✗</td></tr>
-                  <tr><td>Impostazioni utenti</td><td class="ok">✓</td><td class="no">✗</td></tr>
+                  <tr><th>Funzione</th><th>Admin</th><th>Proprietario</th><th>Visual</th></tr>
+                  <tr><td>Dashboard</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+                  <tr><td>Calendario</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+                  <tr><td>Prenotazioni</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓ (sola lettura)</td></tr>
+                  <tr><td>Clienti</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">✗</td></tr>
+                  <tr><td>Check-in / Check-out</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">✗</td></tr>
+                  <tr><td>Stampa</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">✗</td></tr>
+                  <tr><td>Camere (gestione)</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">✗</td></tr>
+                  <tr><td>Impostazioni utenti</td><td class="ok">✓</td><td class="no">✗</td><td class="no">✗</td></tr>
                 </table>
               </div>
             </div>
@@ -631,7 +631,7 @@
       <div class="page" id="page-camere">
         <div class="toolbar">
           <div class="page-title" style="margin:0">Camere</div>
-          <button class="btn btn-primary admin-only no-print" onclick="openModalCamera()">+ Aggiungi camera</button>
+          <button class="btn btn-primary no-visual no-print" onclick="openModalCamera()">+ Aggiungi camera</button>
         </div>
         <div class="camere-grid" id="camere-grid"></div>
       </div>
@@ -842,23 +842,20 @@
 
 <div id="toast"></div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script>
 function guidaSezione(id, btn) {
   document.querySelectorAll('.gs').forEach(s => s.style.display = 'none');
   document.querySelectorAll('.gnav').forEach(b => b.classList.remove('active'));
   const el = document.getElementById('gs-' + id);
   if (el) el.style.display = 'block';
   if (btn) btn.classList.add('active');
-  document.getElementById('guida-content').scrollTop = 0;
+  const gc = document.getElementById('guida-content');
+  if (gc) gc.scrollTop = 0;
 }
 function scaricaGuidaPDF() {
-  const link = document.createElement('a');
-  link.href = 'https://raw.githubusercontent.com/ilgalletto/gestionale_ilgalletto/main/guida_gestionale.pdf';
-  link.download = 'guida_gestionale.pdf';
-  link.target = '_blank';
-  link.click();
+  window.open('https://raw.githubusercontent.com/ilgalletto/gestionale_ilgalletto/main/guida_gestionale.pdf','_blank');
 }
-
 </script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -898,9 +895,20 @@ function showApp(){
   document.getElementById('app').style.display='flex';
   document.getElementById('pending-banner').style.display='none';
   document.getElementById('user-email-label').textContent=currentUser.email;
-  const ruolo=currentUserData.ruolo||'viewer';
-  document.getElementById('user-role-badge').textContent=ruolo==='admin'?'Admin':'Proprietario';
-  if(ruolo!=='admin') document.querySelectorAll('.admin-only').forEach(el=>el.style.display='none');
+  const ruolo=currentUserData.ruolo||'visual';
+  const labels={'admin':'Admin','proprietario':'Proprietario','visual':'Visual'};
+  document.getElementById('user-role-badge').textContent=labels[ruolo]||ruolo;
+  if(ruolo==='visual'){
+    // Visual: solo dashboard, calendario, prenotazioni (sola lettura), guida
+    document.querySelectorAll('.no-visual').forEach(el=>el.style.display='none');
+    document.querySelectorAll('.admin-only').forEach(el=>el.style.display='none');
+    document.querySelectorAll('.proprietario-only').forEach(el=>el.style.display='none');
+  } else if(ruolo==='proprietario'){
+    // Proprietario: tutto tranne impostazioni utenti
+    document.querySelectorAll('.admin-only').forEach(el=>el.style.display='none');
+    document.querySelectorAll('.proprietario-only').forEach(el=>el.style.display='');
+  }
+  // Admin: vede tutto, nessun filtro
   startListeners();
   aggiornaCalendario();
   initPrintDate();
@@ -937,8 +945,7 @@ function startListeners(){
       allUtenti=snap.docs.map(d=>({id:d.id,...d.data()}));
       renderUtenti();
     });
-  }
-}
+  }}
 
 // ===== NAV =====
 function navTo(page,btn){
@@ -995,7 +1002,7 @@ function renderPrenotazioni(){
   const tb=document.getElementById('tb-prenotazioni');
   if(!allPrenotazioni.length){tb.innerHTML='<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📋</div><p>Nessuna prenotazione</p></div></td></tr>';return}
   const sorted=[...allPrenotazioni].sort((a,b)=>b.checkin.localeCompare(a.checkin));
-  const canEdit=currentUserData?.ruolo==='admin';
+  const canEdit=currentUserData?.ruolo==='admin'||currentUserData?.ruolo==='proprietario';
   const oggi=toDateStr(new Date());
   tb.innerHTML=sorted.map(p=>{
     const n=calcolaNotti(p.checkin,p.checkout); const s=statoPrenotazione(p);
@@ -1447,7 +1454,7 @@ function renderCamere(){
   const grid=document.getElementById('camere-grid');
   const oggi=toDateStr(new Date());
   if(!allCamere.length){grid.innerHTML='<div class="empty-state"><div class="empty-icon">🛏️</div><p>Nessuna camera configurata</p></div>';return}
-  const canEdit=currentUserData?.ruolo==='admin';
+  const canEdit=currentUserData?.ruolo==='admin'||currentUserData?.ruolo==='proprietario';
   grid.innerHTML=allCamere.map(c=>{
     // Trova prenotazione attiva oggi
     const prenAttiva=allPrenotazioni.find(p=>p.cameraId===c.id&&p.checkin<=oggi&&p.checkout>oggi);
