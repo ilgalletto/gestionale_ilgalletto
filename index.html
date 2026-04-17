@@ -955,16 +955,20 @@ function aggiornaCalendario(){
   const meseCorrente=new Date().getMonth();
   // Ordine: mese corrente in cima, poi i successivi, poi i precedenti
   const ordine=[];
-  for(let i=0;i<12;i++) ordine.push((meseCorrente+i)%12);
+  for(let i=0;i<12;i++){
+    const m=(meseCorrente+i)%12;
+    const a=calAnno+Math.floor((meseCorrente+i)/12);
+    ordine.push({m,a});
+  }
 
-  wrap.innerHTML=ordine.map(m=>{
-    const isCorrente=m===meseCorrente&&calAnno===new Date().getFullYear();
-    const giorniMese=new Date(calAnno,m+1,0).getDate();
+  wrap.innerHTML=ordine.map(({m,a})=>{
+    const isCorrente=m===meseCorrente&&a===new Date().getFullYear();
+    const giorniMese=new Date(a,m+1,0).getDate();
     wrap.style.display='';
     let grid=`<div class="cal-grid" style="grid-template-columns:130px repeat(${giorniMese},minmax(28px,1fr))">`;
     grid+=`<div class="cal-head-cell">Camera</div>`;
     for(let g=1;g<=giorniMese;g++){
-      const d=new Date(calAnno,m,g);
+      const d=new Date(a,m,g);
       const dow=['D','L','M','M','G','V','S'][d.getDay()];
       const isWe=d.getDay()===0||d.getDay()===6;
       const isOggi=toDateStr(d)===toDateStr(new Date());
@@ -973,7 +977,7 @@ function aggiornaCalendario(){
     allCamere.forEach(cam=>{
       grid+=`<div class="cal-room-cell">${cam.numero}${cam.nome?`<br><span style="font-size:10px;color:var(--text-muted)">${cam.nome}</span>`:''}</div>`;
       for(let g=1;g<=giorniMese;g++){
-        const dateStr=toDateStrYMD(calAnno,m,g);
+        const dateStr=toDateStrYMD(a,m,g);
         const pren=allPrenotazioni.find(p=>p.cameraId===cam.id&&p.checkin<=dateStr&&p.checkout>dateStr);
         const isFirst=pren&&pren.checkin===dateStr;
         if(pren&&isFirst){
@@ -993,7 +997,7 @@ function aggiornaCalendario(){
     grid+=`</div>`;
     return`<div class="cal-month-block">
       <div class="cal-month-label">
-        ${MESI[m]} ${calAnno}
+        ${MESI[m]} ${a}
         ${isCorrente?'<span class="badge badge-stay">Mese corrente</span>':''}
       </div>
       <div class="cal-grid-wrap">${grid}</div>
