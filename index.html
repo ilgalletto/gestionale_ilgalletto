@@ -269,7 +269,7 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Ospite</th><th>Camera</th><th>Check-in</th><th>Check-out</th><th>Notti</th><th>Prezzo</th><th>Canale</th><th>Stato</th><th class="no-print"></th></tr></thead>
+            <thead><tr><th>Ospite</th><th>Camera</th><th>Check-in</th><th>Check-out</th><th>Notti</th><th>Persone</th><th>Prezzo</th><th>Canale</th><th>Stato</th><th class="no-print"></th></tr></thead>
             <tbody id="tb-prenotazioni"></tbody>
           </table>
         </div>
@@ -443,6 +443,7 @@
     </div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Notti</label><input class="form-control" id="p-notti" type="number" min="1" readonly></div>
+      <div class="form-group"><label class="form-label">N° persone</label><input class="form-control" id="p-ospiti" type="number" min="1" placeholder="1"></div>
       <div class="form-group"><label class="form-label">Prezzo totale (€)</label><input class="form-control" id="p-prezzo" type="number" min="0" step="0.01" placeholder="0.00"></div>
     </div>
     <div class="modal-actions">
@@ -681,7 +682,7 @@ function renderPrenotazioni(){
       <td>${nomeCameraById(p.cameraId)}</td>
       <td>${formatDate(p.checkin)}${p.checkinConfermato?`<br><small style="color:var(--accent2)">✓ ${p.oraCheckin||''}</small>`:''}</td>
       <td>${formatDate(p.checkout)}${p.checkoutConfermato?`<br><small style="color:var(--text-muted)">✓ ${p.oraCheckout||''}</small>`:''}</td>
-      <td>${n}</td><td>€${parseFloat(p.prezzo||0).toFixed(2)}</td>
+      <td>${n}</td><td>${p.nOspiti||1} pers.</td><td>€${parseFloat(p.prezzo||0).toFixed(2)}</td>
       <td>${p.canale||'—'}</td>
       <td><span class="badge ${s.cls}">${s.label}</span></td>
       <td class="no-print" style="white-space:nowrap">${btnCI}${btnCO}</td>
@@ -706,12 +707,14 @@ function openModalPrenotazione(id){
     document.getElementById('p-checkin').value=p.checkin||'';
     document.getElementById('p-checkout').value=p.checkout||'';
     document.getElementById('p-prezzo').value=p.prezzo||'';
+    document.getElementById('p-ospiti').value=p.nOspiti||'';
     aggNotti();
   } else {
     ['p-nome','p-cognome','p-telefono','p-email','p-prezzo'].forEach(i=>document.getElementById(i).value='');
     document.getElementById('p-checkin').value='';
     document.getElementById('p-checkout').value='';
     document.getElementById('p-notti').value='';
+    document.getElementById('p-ospiti').value='';
     document.getElementById('p-canale').value='';
     document.getElementById('p-suggerimenti').style.display='none';
   }
@@ -774,6 +777,7 @@ async function salvaPrenotazione(){
     email:document.getElementById('p-email').value.trim(),
     canale:document.getElementById('p-canale').value,
     cameraId,checkin,checkout,
+    nOspiti:parseInt(document.getElementById('p-ospiti').value)||1,
     prezzo:parseFloat(prezzo)||0,
     aggiornata:firebase.firestore.FieldValue.serverTimestamp()
   };
