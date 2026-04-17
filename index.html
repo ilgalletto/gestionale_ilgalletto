@@ -185,6 +185,41 @@
     th{background:#eee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .badge{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   }
+
+  /* GUIDA */
+  .gnav{width:100%;text-align:left;border:none;background:none;padding:9px 12px;border-radius:6px;
+    cursor:pointer;font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:8px;
+    transition:all .15s;font-family:'DM Sans',sans-serif;margin-bottom:2px}
+  .gnav:hover{background:var(--surface2);color:var(--text)}
+  .gnav.active{background:var(--accent-light);color:var(--accent);font-weight:600}
+  .gs-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid var(--border)}
+  .gs-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+  .gs-title{font-family:'DM Serif Display',serif;font-size:22px;color:var(--text)}
+  .gs-sub{font-size:13px;color:var(--text-muted);margin-top:2px}
+  .gs-p{font-size:14px;line-height:1.7;color:var(--text);margin-bottom:16px}
+  .gs-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px}
+  .gs-card-title{background:var(--accent);color:#fff;padding:10px 16px;font-size:13px;font-weight:600}
+  .gs-step{display:flex;align-items:flex-start;gap:12px;padding:10px 16px;font-size:13px;color:var(--text);line-height:1.5;border-top:1px solid var(--border)}
+  .gs-step:first-of-type{border-top:none}
+  .gs-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
+  .gs-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:4px}
+  .gs-table{width:100%;border-collapse:collapse;font-size:13px}
+  .gs-table th{background:var(--surface2);padding:9px 14px;text-align:left;color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+  .gs-table td{padding:9px 14px;border-top:1px solid var(--border);color:var(--text)}
+  .gs-table tr:nth-child(even) td{background:var(--bg)}
+  .ok{color:#2a7a3b;text-align:center;font-size:16px}
+  .no{color:#C0392B;text-align:center;font-size:16px}
+  .gs-badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600}
+  .gs-info{background:var(--accent-light);border-left:4px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 16px;font-size:13px;color:var(--text);line-height:1.6}
+  .gs-warning{background:#FEF3CD;border-left:4px solid #F5D87A;border-radius:0 8px 8px 0;padding:14px 16px;font-size:13px;color:#7a5c00;line-height:1.6;margin-top:12px}
+  .gs-stat-card{background:var(--surface);border:1px solid var(--border);border-left:4px solid;border-radius:8px;padding:14px}
+  .gs-stat-label{font-weight:600;font-size:13px;color:var(--text);margin-bottom:4px}
+  .gs-stat-desc{font-size:12px;color:var(--text-muted)}
+  .gs-faq-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden}
+  .gs-faq-q{padding:12px 16px;font-weight:600;font-size:13px;color:var(--accent);background:var(--accent-light);border-bottom:1px solid var(--border)}
+  .gs-faq-a{padding:12px 16px;font-size:13px;color:var(--text);line-height:1.7}
+  .gs-field-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+
 </style>
 </head>
 <body>
@@ -317,23 +352,278 @@
         <div id="stampa-content"></div>
       </div>
 
-      <!-- GUIDA -->
+            <!-- GUIDA -->
       <div class="page" id="page-guida">
-        <div class="toolbar">
-          <div class="page-title" style="margin:0">📖 Guida al Gestionale</div>
-          <a href="https://raw.githubusercontent.com/ilgalletto/gestionale_ilgalletto/main/guida_gestionale.pdf" download="guida_gestionale.pdf" class="btn btn-outline btn-sm no-print">⬇️ Scarica PDF</a>
-        </div>
-        <div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow);height:calc(100vh - 180px)">
-          <iframe id="guida-iframe"
-            src="https://raw.githubusercontent.com/ilgalletto/gestionale_ilgalletto/main/guida_gestionale.pdf"
-            style="width:100%;height:100%;border:none"
-            title="Guida al Gestionale">
-            <div style="padding:40px;text-align:center;color:var(--text-muted)">
-              <div style="font-size:40px;margin-bottom:12px">📖</div>
-              <p>Il tuo browser non supporta la visualizzazione inline del PDF.</p>
-              <a href="https://raw.githubusercontent.com/ilgalletto/gestionale_ilgalletto/main/guida_gestionale.pdf" class="btn btn-primary" style="margin-top:12px" target="_blank">Apri la guida</a>
+        <div style="display:flex;gap:0;height:calc(100vh - 90px);margin:-28px;overflow:hidden">
+
+          <!-- SOMMARIO LATERALE -->
+          <div id="guida-sidebar" style="width:230px;min-width:230px;background:var(--surface);
+            border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column">
+            <div style="padding:20px 16px;background:linear-gradient(135deg,#0D2F5A,#1A6FA8);color:#fff">
+              <div style="font-size:24px;margin-bottom:4px">🐓</div>
+              <div style="font-family:'DM Serif Display',serif;font-size:15px;font-weight:700">B&B Il Galletto</div>
+              <div style="font-size:11px;opacity:.8;margin-top:2px">Guida al Gestionale</div>
             </div>
-          </iframe>
+            <div style="padding:10px 8px;flex:1">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);
+                padding:0 8px;margin:8px 0;font-weight:600">Sezioni</div>
+              <button class="gnav active" onclick="guidaSezione('accesso',this)">🔑 <span>Accesso</span></button>
+              <button class="gnav" onclick="guidaSezione('dashboard',this)">📊 <span>Dashboard</span></button>
+              <button class="gnav" onclick="guidaSezione('calendario',this)">📅 <span>Calendario</span></button>
+              <button class="gnav" onclick="guidaSezione('prenotazioni',this)">📋 <span>Prenotazioni</span></button>
+              <button class="gnav" onclick="guidaSezione('checkin',this)">✅ <span>Check-in / Check-out</span></button>
+              <button class="gnav" onclick="guidaSezione('clienti',this)">👥 <span>Clienti</span></button>
+              <button class="gnav" onclick="guidaSezione('camere',this)">🛏️ <span>Camere</span></button>
+              <button class="gnav" onclick="guidaSezione('stampa-g',this)">🖨️ <span>Stampa</span></button>
+              <button class="gnav" onclick="guidaSezione('impostazioni',this)">⚙️ <span>Impostazioni</span></button>
+              <button class="gnav" onclick="guidaSezione('faq',this)">❓ <span>Domande frequenti</span></button>
+            </div>
+            <div style="padding:12px;border-top:1px solid var(--border)">
+              <button onclick="scaricaGuidaPDF()" class="btn btn-outline btn-sm" style="width:100%;justify-content:center">
+                ⬇️ Scarica PDF
+              </button>
+            </div>
+          </div>
+
+          <!-- CONTENUTO -->
+          <div style="flex:1;overflow-y:auto;padding:32px 36px;background:var(--bg)" id="guida-content">
+
+            <!-- ACCESSO -->
+            <div class="gs" id="gs-accesso">
+              <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#0D2F5A,#1A6FA8)">🔑</div>
+                <div><div class="gs-title">Accesso al Sistema</div><div class="gs-sub">Login e ruoli utente</div></div></div>
+              <p class="gs-p">Il gestionale è accessibile da qualsiasi dispositivo aprendo il browser all'indirizzo del sistema. Sono previsti due livelli di accesso: <strong>Admin</strong> (completo) e <strong>Proprietario</strong> (prenotazioni e calendario).</p>
+              <div class="gs-card">
+                <div class="gs-card-title">Come accedere</div>
+                <div class="gs-step"><div class="gs-num">1</div>Inserire la propria <strong>email</strong></div>
+                <div class="gs-step"><div class="gs-num">2</div>Inserire la <strong>password</strong> fornita dall'amministratore</div>
+                <div class="gs-step"><div class="gs-num">3</div>Cliccare <strong>Accedi</strong></div>
+              </div>
+              <div class="gs-card" style="margin-top:14px">
+                <div class="gs-card-title">Confronto ruoli</div>
+                <table class="gs-table">
+                  <tr><th>Funzione</th><th>Admin</th><th>Proprietario</th></tr>
+                  <tr><td>Dashboard</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+                  <tr><td>Calendario</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+                  <tr><td>Prenotazioni</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+                  <tr><td>Clienti</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+                  <tr><td>Check-in / Check-out</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+                  <tr><td>Stampa</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+                  <tr><td>Camere (gestione)</td><td class="ok">✓</td><td class="no">✗</td></tr>
+                  <tr><td>Impostazioni utenti</td><td class="ok">✓</td><td class="no">✗</td></tr>
+                </table>
+              </div>
+            </div>
+
+            <!-- DASHBOARD -->
+            <div class="gs" id="gs-dashboard" style="display:none">
+              <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#1A6FA8,#2AA1A0)">📊</div>
+                <div><div class="gs-title">Dashboard</div><div class="gs-sub">Panoramica in tempo reale</div></div></div>
+              <p class="gs-p">La Dashboard è la schermata principale al login. Mostra le statistiche aggiornate della struttura e i prossimi arrivi.</p>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+                <div class="gs-stat-card" style="border-left-color:#1A6FA8"><div class="gs-stat-label">Prenotazioni oggi</div><div class="gs-stat-desc">Check-in e check-out previsti per oggi</div></div>
+                <div class="gs-stat-card" style="border-left-color:#2AA1A0"><div class="gs-stat-label">Camere occupate</div><div class="gs-stat-desc">Camere in uso rispetto al totale disponibile</div></div>
+                <div class="gs-stat-card" style="border-left-color:#1A6FA8"><div class="gs-stat-label">Prenotazioni totali</div><div class="gs-stat-desc">Numero complessivo nel sistema</div></div>
+                <div class="gs-stat-card" style="border-left-color:#2AA1A0"><div class="gs-stat-label">Incasso mese</div><div class="gs-stat-desc">Somma prezzi prenotazioni del mese corrente</div></div>
+              </div>
+              <div class="gs-card">
+                <div class="gs-card-title">Stati prenotazione</div>
+                <table class="gs-table">
+                  <tr><th>Badge</th><th>Significato</th></tr>
+                  <tr><td><span class="gs-badge" style="background:#DCF0FF;color:#1A6FA8">Arrivo oggi</span></td><td>Check-in previsto per oggi</td></tr>
+                  <tr><td><span class="gs-badge" style="background:#E0F5F5;color:#2AA1A0">In soggiorno ✓</span></td><td>Ospite presente – check-in confermato</td></tr>
+                  <tr><td><span class="gs-badge" style="background:#E3F0F8;color:#6A8DA8">Partenza oggi</span></td><td>Check-out previsto per oggi</td></tr>
+                  <tr><td><span class="gs-badge" style="background:#EEF7F0;color:#2a7a3b">Futura</span></td><td>Prenotazione con data futura</td></tr>
+                  <tr><td><span class="gs-badge" style="background:#E3F0F8;color:#6A8DA8">Conclusa</span></td><td>Soggiorno terminato</td></tr>
+                </table>
+              </div>
+            </div>
+
+            <!-- CALENDARIO -->
+            <div class="gs" id="gs-calendario" style="display:none">
+              <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#1A6FA8,#2AA1A0)">📅</div>
+                <div><div class="gs-title">Calendario</div><div class="gs-sub">Visualizzazione mensile prenotazioni</div></div></div>
+              <p class="gs-p">Il Calendario mostra tutte le prenotazioni su griglia mensile. Il <strong>mese corrente appare sempre in cima</strong>, seguito dai successivi 11 mesi.</p>
+              <div class="gs-card">
+                <div class="gs-card-title">Come leggere il calendario</div>
+                <div class="gs-step"><div class="gs-dot"></div>Le <strong>righe</strong> rappresentano le singole camere</div>
+                <div class="gs-step"><div class="gs-dot"></div>Le <strong>colonne</strong> rappresentano i giorni del mese</div>
+                <div class="gs-step"><div class="gs-dot"></div>Le <strong>barre blu</strong> indicano prenotazioni attive con nominativo ospite</div>
+                <div class="gs-step"><div class="gs-dot"></div>Il <strong>giorno corrente</strong> è evidenziato con sfondo blu scuro</div>
+                <div class="gs-step"><div class="gs-dot"></div>I <strong>fine settimana</strong> hanno sfondo più scuro</div>
+              </div>
+              <div class="gs-info">📅 I pulsanti <strong>◀ Anno prec.</strong> e <strong>Anno succ. ▶</strong> consentono di navigare tra gli anni per consultare prenotazioni passate o pianificarne di future.</div>
+            </div>
+
+            <!-- PRENOTAZIONI -->
+            <div class="gs" id="gs-prenotazioni" style="display:none">
+              <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#1A6FA8,#2AA1A0)">📋</div>
+                <div><div class="gs-title">Prenotazioni</div><div class="gs-sub">Gestione completa dei soggiorni</div></div></div>
+              <p class="gs-p">La sezione Prenotazioni permette di gestire l'intero ciclo di vita di ogni soggiorno: dalla creazione alla conclusione.</p>
+              <div class="gs-card" style="margin-bottom:12px">
+                <div class="gs-card-title" style="background:#2AA1A0">➕ Creare una nuova prenotazione</div>
+                <div style="padding:14px;font-size:13px;color:var(--text);line-height:1.7">
+                  Cliccare <strong>+ Nuova prenotazione</strong>. Il sistema suggerisce automaticamente i clienti già presenti in archivio durante la digitazione del nome.
+                </div>
+                <table class="gs-table" style="border-top:1px solid var(--border)">
+                  <tr><th>Campo</th><th>Note</th></tr>
+                  <tr><td><strong>Cognome / Nome</strong></td><td>Obbligatori</td></tr>
+                  <tr><td>Telefono / Email</td><td>Facoltativi</td></tr>
+                  <tr><td>Canale prenotazione</td><td>Booking, Telefono, Airbnb, ecc.</td></tr>
+                  <tr><td><strong>Camera</strong></td><td>Obbligatorio – controlla disponibilità</td></tr>
+                  <tr><td><strong>Check-in / Check-out</strong></td><td>Obbligatori</td></tr>
+                  <tr><td>N° persone</td><td>Numero ospiti in camera</td></tr>
+                  <tr><td>Prezzo totale</td><td>In euro</td></tr>
+                </table>
+              </div>
+              <div class="gs-warning">⚠️ Il sistema controlla automaticamente la disponibilità: se la camera è già occupata nelle date selezionate, appare un avviso con il nome dell'ospite in conflitto.</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px">
+                <div class="gs-card"><div class="gs-card-title">✏️ Modifica</div><div style="padding:12px;font-size:13px;color:var(--text)">Cliccare ✏️ nella riga. Tutti i campi sono modificabili.</div></div>
+                <div class="gs-card"><div class="gs-card-title" style="background:#FDECEA;color:#C0392B">🗑️ Elimina</div><div style="padding:12px;font-size:13px;color:var(--text)">Cliccare 🗑️. Richiede conferma. Operazione irreversibile.</div></div>
+              </div>
+            </div>
+
+            <!-- CHECK-IN / CHECK-OUT -->
+            <div class="gs" id="gs-checkin" style="display:none">
+              <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#2AA1A0,#1A6FA8)">✅</div>
+                <div><div class="gs-title">Check-in / Check-out</div><div class="gs-sub">Gestione arrivi e partenze</div></div></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+                <div class="gs-card">
+                  <div class="gs-card-title" style="background:#2AA1A0">✅ Check-in</div>
+                  <div style="padding:14px;font-size:13px;color:var(--text);line-height:1.7">
+                    Il pulsante appare quando la data è oggi e il check-in non è ancora confermato.<br><br>
+                    <strong>Si registra:</strong><br>
+                    • Ora arrivo (automatica)<br>
+                    • N° ospiti<br>
+                    • Documento d'identità<br>
+                    • Note di arrivo
+                  </div>
+                </div>
+                <div class="gs-card">
+                  <div class="gs-card-title" style="background:#1A6FA8">🏁 Check-out</div>
+                  <div style="padding:14px;font-size:13px;color:var(--text);line-height:1.7">
+                    Appare dopo la conferma del check-in.<br><br>
+                    <strong>Si registra:</strong><br>
+                    • Ora partenza (automatica)<br>
+                    • Importo saldato<br>
+                    • Note di partenza<br><br>
+                    Include <strong>🖨️ Stampa ricevuta</strong>
+                  </div>
+                </div>
+              </div>
+              <div class="gs-info">📋 I dati del documento vengono salvati automaticamente nella scheda cliente per consultazioni future.</div>
+              <div style="margin-top:14px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px">
+                <div style="font-weight:600;font-size:13px;color:var(--accent);margin-bottom:10px">Dove trovare i pulsanti</div>
+                <div class="gs-step"><div class="gs-dot"></div>Nella <strong>tabella Prenotazioni</strong> → colonna azioni a destra</div>
+                <div class="gs-step"><div class="gs-dot"></div>Nelle <strong>card Camere</strong> → sotto il nominativo dell'ospite</div>
+              </div>
+            </div>
+
+            <!-- CLIENTI -->
+            <div class="gs" id="gs-clienti" style="display:none">
+              <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#1A6FA8,#2AA1A0)">👥</div>
+                <div><div class="gs-title">Clienti</div><div class="gs-sub">Anagrafica e storico ospiti</div></div></div>
+              <p class="gs-p">L'archivio clienti si popola <strong>automaticamente</strong> ad ogni prenotazione. Per ogni ospite sono disponibili dati anagrafici completi, storico soggiorni e totale speso.</p>
+              <div class="gs-card" style="margin-bottom:14px">
+                <div class="gs-card-title">Dati scheda cliente</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;padding:4px 0">
+                  <div style="padding:10px 16px;border-top:1px solid var(--border);border-right:1px solid var(--border)"><div class="gs-field-label">Nominativo</div>Cognome e nome</div>
+                  <div style="padding:10px 16px;border-top:1px solid var(--border)"><div class="gs-field-label">Contatti</div>Telefono ed email</div>
+                  <div style="padding:10px 16px;border-top:1px solid var(--border);border-right:1px solid var(--border)"><div class="gs-field-label">Indirizzo</div>Via, città, provincia, CAP</div>
+                  <div style="padding:10px 16px;border-top:1px solid var(--border)"><div class="gs-field-label">Documento</div>Tipo e numero</div>
+                  <div style="padding:10px 16px;border-top:1px solid var(--border);border-right:1px solid var(--border)"><div class="gs-field-label">Canale</div>Come prenota abitualmente</div>
+                  <div style="padding:10px 16px;border-top:1px solid var(--border)"><div class="gs-field-label">Note</div>Annotazioni libere</div>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+                <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center">
+                  <div style="font-size:24px;margin-bottom:8px">📋</div>
+                  <div style="font-weight:600;font-size:13px;color:var(--text);margin-bottom:4px">Storico</div>
+                  <div style="font-size:12px;color:var(--text-muted)">Tutti i soggiorni con date e prezzi + stampa scheda</div>
+                </div>
+                <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center">
+                  <div style="font-size:24px;margin-bottom:8px">✏️</div>
+                  <div style="font-weight:600;font-size:13px;color:var(--text);margin-bottom:4px">Modifica</div>
+                  <div style="font-size:12px;color:var(--text-muted)">Aggiorna dati anagrafici e note</div>
+                </div>
+                <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center">
+                  <div style="font-size:24px;margin-bottom:8px">🗑️</div>
+                  <div style="font-weight:600;font-size:13px;color:var(--text);margin-bottom:4px">Elimina</div>
+                  <div style="font-size:12px;color:var(--text-muted)">Rimuove la scheda (prenotazioni restano)</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CAMERE -->
+            <div class="gs" id="gs-camere" style="display:none">
+              <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#1A6FA8,#2AA1A0)">🛏️</div>
+                <div><div class="gs-title">Camere</div><div class="gs-sub">Stato in tempo reale (solo Admin)</div></div></div>
+              <p class="gs-p">Ogni camera è rappresentata da una card che mostra lo stato aggiornato automaticamente in base alle prenotazioni. Nessun intervento manuale richiesto.</p>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+                <div style="background:#fff;border:1px solid var(--border);border-left:4px solid #2a7a3b;border-radius:8px;padding:14px">
+                  <span class="gs-badge" style="background:#EEF7F0;color:#2a7a3b;display:inline-block;margin-bottom:8px">Libera</span>
+                  <div style="font-size:13px;color:var(--text)">Nessuna prenotazione attiva</div>
+                </div>
+                <div style="background:#fff;border:1px solid var(--border);border-left:4px solid #1A6FA8;border-radius:8px;padding:14px">
+                  <span class="gs-badge" style="background:#DCF0FF;color:#1A6FA8;display:inline-block;margin-bottom:8px">Arrivo oggi</span>
+                  <div style="font-size:13px;color:var(--text)">Ospite atteso → pulsante Check-in diretto</div>
+                </div>
+                <div style="background:#fff;border:1px solid var(--border);border-left:4px solid #2AA1A0;border-radius:8px;padding:14px">
+                  <span class="gs-badge" style="background:#E0F5F5;color:#2AA1A0;display:inline-block;margin-bottom:8px">In soggiorno</span>
+                  <div style="font-size:13px;color:var(--text)">Ospite presente con check-in confermato</div>
+                </div>
+                <div style="background:#fff;border:1px solid var(--border);border-left:4px solid #6A8DA8;border-radius:8px;padding:14px">
+                  <span class="gs-badge" style="background:#E3F0F8;color:#6A8DA8;display:inline-block;margin-bottom:8px">Partenza oggi</span>
+                  <div style="font-size:13px;color:var(--text)">Ospite in partenza → pulsante Check-out diretto</div>
+                </div>
+              </div>
+              <div class="gs-info">🔄 Lo stato si aggiorna automaticamente in tempo reale confrontando le prenotazioni con la data odierna.</div>
+            </div>
+
+            <!-- STAMPA -->
+            <div class="gs" id="gs-stampa-g" style="display:none">
+              <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#1A6FA8,#2AA1A0)">🖨️</div>
+                <div><div class="gs-title">Stampa</div><div class="gs-sub">Riepilogo prenotazioni per periodo</div></div></div>
+              <p class="gs-p">La sezione Stampa genera un riepilogo delle prenotazioni con totale incassi per il periodo selezionato. La stampa si apre in una finestra dedicata, formattata e pronta per il browser.</p>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+                <div class="gs-card"><div class="gs-card-title">📆 Giorno specifico</div><div style="padding:12px;font-size:13px;color:var(--text)">Selezionare una data precisa dal calendario</div></div>
+                <div class="gs-card"><div class="gs-card-title">📅 Settimana corrente</div><div style="padding:12px;font-size:13px;color:var(--text)">Da lunedì a domenica della settimana in corso</div></div>
+                <div class="gs-card"><div class="gs-card-title">🗓️ Mese corrente</div><div style="padding:12px;font-size:13px;color:var(--text)">Tutte le prenotazioni del mese in corso</div></div>
+                <div class="gs-card"><div class="gs-card-title">📊 Intervallo personalizzato</div><div style="padding:12px;font-size:13px;color:var(--text)">Scegliere liberamente inizio e fine periodo</div></div>
+              </div>
+              <div class="gs-info">💡 Per salvare come PDF: nella finestra di stampa del browser selezionare <strong>"Salva come PDF"</strong> come stampante.</div>
+            </div>
+
+            <!-- IMPOSTAZIONI -->
+            <div class="gs" id="gs-impostazioni" style="display:none">
+              <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#0D2F5A,#1A6FA8)">⚙️</div>
+                <div><div class="gs-title">Impostazioni</div><div class="gs-sub">Gestione utenti – solo Admin</div></div></div>
+              <p class="gs-p">La sezione Impostazioni consente di gestire gli utenti del sistema ed è accessibile solo agli Admin.</p>
+              <div class="gs-card" style="margin-bottom:14px">
+                <div class="gs-card-title">Come aggiungere un nuovo utente</div>
+                <div class="gs-step"><div class="gs-num">1</div>Creare l'account su <strong>Firebase Authentication</strong> (console.firebase.google.com)</div>
+                <div class="gs-step"><div class="gs-num">2</div>Aggiungere il documento in <strong>Firestore → utenti → {uid}</strong> con campi: email, nome, ruolo, stato</div>
+                <div class="gs-step"><div class="gs-num">3</div>L'utente può accedere al gestionale con le proprie credenziali</div>
+              </div>
+              <div class="gs-warning" style="background:#FDECEA;border-left-color:#C0392B;color:#7a1c0e">
+                ⚠️ Non eliminare mai il proprio account Admin dalla sezione Impostazioni. In caso di necessità agire direttamente dalla console Firebase.
+              </div>
+            </div>
+
+            <!-- FAQ -->
+            <div class="gs" id="gs-faq" style="display:none">
+              <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#2AA1A0,#1A6FA8)">❓</div>
+                <div><div class="gs-title">Domande frequenti</div><div class="gs-sub">Risposte ai problemi più comuni</div></div></div>
+              <div class="gs-faq-item"><div class="gs-faq-q">❓ Ho inserito date sbagliate nella prenotazione. Come correggo?</div><div class="gs-faq-a">Cliccare ✏️ nella riga della prenotazione e modificare le date. Il sistema controlla automaticamente le sovrapposizioni.</div></div>
+              <div class="gs-faq-item"><div class="gs-faq-q">❓ Il pulsante Check-in non appare.</div><div class="gs-faq-a">Appare solo se la data di check-in è uguale o precedente a oggi e il check-in non è ancora confermato. Verificare la data nella prenotazione e aggiornare la pagina.</div></div>
+              <div class="gs-faq-item"><div class="gs-faq-q">❓ Ho effettuato il check-in per errore.</div><div class="gs-faq-a">Contattare l'amministratore che modificherà il campo <em>checkinConfermato</em> direttamente su Firestore impostandolo a false.</div></div>
+              <div class="gs-faq-item"><div class="gs-faq-q">❓ Il calendario non mostra alcune prenotazioni.</div><div class="gs-faq-a">Verificare che le date ricadano nel periodo visualizzato. Usare i pulsanti Anno prec./Anno succ. per navigare all'anno corretto.</div></div>
+              <div class="gs-faq-item"><div class="gs-faq-q">❓ Come aggiungere il secondo utente (Proprietario)?</div><div class="gs-faq-a">Creare l'account in Firebase Authentication, poi aggiungere il documento in Firestore con ruolo "proprietario" e stato "approvato".</div></div>
+              <div class="gs-faq-item"><div class="gs-faq-q">❓ Posso usare il gestionale da smartphone?</div><div class="gs-faq-a">Sì, l'interfaccia è completamente responsive e si adatta a qualsiasi dimensione di schermo.</div></div>
+              <div class="gs-faq-item"><div class="gs-faq-q">❓ Come salvare un riepilogo come PDF?</div><div class="gs-faq-a">Dalla sezione Stampa, cliccare 🖨️ Stampa. Nella finestra del browser selezionare "Salva come PDF" come stampante.</div></div>
+            </div>
+
+          </div><!-- fine guida-content -->
         </div>
       </div>
 
@@ -552,7 +842,24 @@
 
 <div id="toast"></div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
+function guidaSezione(id, btn) {
+  document.querySelectorAll('.gs').forEach(s => s.style.display = 'none');
+  document.querySelectorAll('.gnav').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById('gs-' + id);
+  if (el) el.style.display = 'block';
+  if (btn) btn.classList.add('active');
+  document.getElementById('guida-content').scrollTop = 0;
+}
+function scaricaGuidaPDF() {
+  const link = document.createElement('a');
+  link.href = 'https://raw.githubusercontent.com/ilgalletto/gestionale_ilgalletto/main/guida_gestionale.pdf';
+  link.download = 'guida_gestionale.pdf';
+  link.target = '_blank';
+  link.click();
+}
+
+</script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
