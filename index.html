@@ -175,11 +175,15 @@
 
   /* STAMPA @media */
   @media print{
-    .topbar,.sidebar,.no-print{display:none!important}
-    .main-layout{display:block}
-    .content{padding:0}
-    .page{display:block!important}
-    body{background:#fff}
+    .topbar,.sidebar,.no-print,.modal-overlay,#pending-banner,#toast{display:none!important}
+    .main-layout{display:block!important}
+    .content{padding:0!important}
+    .page{display:none!important}
+    #page-stampa{display:block!important}
+    body{background:#fff!important}
+    .table-wrap{box-shadow:none!important}
+    th{background:#eee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .badge{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   }
 </style>
 </head>
@@ -306,7 +310,7 @@
               <span>→</span>
               <input class="form-control" id="print-a" type="date" style="width:auto" oninput="renderStampa()">
             </span>
-            <button class="btn btn-primary" onclick="window.print()">🖨️ Stampa</button>
+            <button class="btn btn-primary" onclick="stampaPeriodo()">🖨️ Stampa</button>
           </div>
         </div>
         <div id="stampa-content"></div>
@@ -1020,6 +1024,68 @@ function aggiornaPrintFiltri(){
   cw.style.display=tipo==='custom'?'flex':'none';
   renderStampa();
 }
+function stampaPeriodo(){
+  const tipo=document.getElementById('print-tipo')?.value||'giorno';
+  let da,a;
+  const oggi=toDateStr(new Date());
+  if(tipo==='giorno'){da=a=document.getElementById('print-data')?.value||oggi}
+  else if(tipo==='settimana'){const d=new Date();d.setDate(d.getDate()-d.getDay()+1);da=toDateStr(d);const d2=new Date(d);d2.setDate(d2.getDate()+6);a=toDateStr(d2)}
+  else if(tipo==='mese'){const d=new Date();da=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`;const d2=new Date(d.getFullYear(),d.getMonth()+1,0);a=toDateStr(d2)}
+  else{da=document.getElementById('print-da')?.value||oggi;a=document.getElementById('print-a')?.value||oggi}
+  const filtrate=allPrenotazioni.filter(p=>p.checkin<=a&&p.checkout>da).sort((x,y)=>x.checkin.localeCompare(y.checkin));
+  const tot=filtrate.reduce((s,p)=>s+(parseFloat(p.prezzo)||0),0);
+  const periodoLabel=da===a?formatDate(da):`${formatDate(da)} → ${formatDate(a)}`;
+  const tipoLabel={'giorno':'Giorno','settimana':'Settimana','mese':'Mese','custom':'Periodo'}[tipo]||'';
+  let righe=filtrate.map(p=>{
+    const s=statoPrenotazione(p);
+    return`<tr>
+      <td><strong>${p.cognome||''} ${p.nome||''}</strong>${p.telefono?`<br><small>${p.telefono}</small>`:''}</td>
+      <td>${nomeCameraById(p.cameraId)}</td>
+      <td>${formatDate(p.checkin)}</td><td>${formatDate(p.checkout)}</td>
+      <td style="text-align:center">${calcolaNotti(p.checkin,p.checkout)}</td>
+      <td>€${parseFloat(p.prezzo||0).toFixed(2)}</td>
+      <td>${p.canale||'—'}</td>
+      <td>${s.label}</td>
+    </tr>`;
+  }).join('');
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Prenotazioni – ${periodoLabel}</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    body{font-family:'DM Sans',sans-serif;padding:30px;color:#0D2436;font-size:13px}
+    .header{display:flex;align-items:center;gap:16px;margin-bottom:20px;border-bottom:2px solid #1A6FA8;padding-bottom:14px}
+    .header h1{font-family:'DM Serif Display',serif;color:#1A6FA8;font-size:22px;margin:0}
+    .header p{color:#6A8DA8;margin:0;font-size:13px}
+    .summary{background:#EEF6FB;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px}
+    table{width:100%;border-collapse:collapse}
+    th{background:#1A6FA8;color:#fff;padding:9px 12px;text-align:left;font-size:12px;font-weight:600}
+    td{padding:8px 12px;border-bottom:1px solid #C8DFF0;vertical-align:top}
+    tr:nth-child(even) td{background:#f5fafd}
+    .footer{margin-top:20px;font-size:11px;color:#6A8DA8;text-align:right}
+    @media print{body{padding:15px}}
+  </style></head><body>
+  <div class="header">
+    <div>
+      <h1>🐓 B&B Il Galletto</h1>
+      <p>Porto San Giorgio – Riepilogo prenotazioni</p>
+    </div>
+  </div>
+  <div class="summary">
+    <strong>${tipoLabel}:</strong> ${periodoLabel} &nbsp;·&nbsp;
+    <strong>${filtrate.length}</strong> prenotazioni &nbsp;·&nbsp;
+    Totale incasso: <strong style="color:#1A6FA8">€${tot.toFixed(2)}</strong>
+  </div>
+  ${filtrate.length?`<table>
+    <thead><tr><th>Ospite</th><th>Camera</th><th>Check-in</th><th>Check-out</th><th>Notti</th><th>Prezzo</th><th>Canale</th><th>Stato</th></tr></thead>
+    <tbody>${righe}</tbody>
+  </table>`:'<p style="text-align:center;padding:30px;color:#6A8DA8">Nessuna prenotazione nel periodo selezionato</p>'}
+  <div class="footer">Stampato il ${formatDate(toDateStr(new Date()))} – Gestionale B&B Il Galletto</div>
+  </body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(),400);
+}
+
 function renderStampa(){
   const tipo=document.getElementById('print-tipo')?.value||'giorno';
   let da,a;
