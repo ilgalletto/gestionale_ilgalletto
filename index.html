@@ -948,7 +948,7 @@ async function eliminaCliente(kEnc){
   if(!c)return;
   const nSogg=allPrenotazioni.filter(p=>chiaveCliente(p.nome||'',p.cognome||'')===k).length;
   const msg=nSogg>0
-    ? `Eliminare ${c.cognome||''} ${c.nome||}? Il cliente ha ${nSogg} prenotazione/i registrata/e che rimarranno nel sistema.`
+    ? `Eliminare ${c.cognome||''} ${c.nome||''}? Il cliente ha ${nSogg} prenotazione/i registrata/e che rimarranno nel sistema.`
     : `Eliminare ${c.cognome||''} ${c.nome||''}?`;
   if(!confirm(msg))return;
   if(!c._fromDb){showToast('Cliente presente solo nelle prenotazioni: nessun record da eliminare','error');return}
