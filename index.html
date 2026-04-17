@@ -848,6 +848,7 @@ function renderClienti(){
       <td class="no-print" style="display:flex;gap:6px;padding:10px 16px">
         <button class="btn btn-sm btn-outline" onclick="apriStorico('${encodeURIComponent(k)}')">📋</button>
         <button class="btn btn-sm btn-outline" onclick="editCliente('${encodeURIComponent(k)}')">✏️</button>
+        <button class="btn btn-sm btn-danger" onclick="eliminaCliente('${encodeURIComponent(k)}')">🗑️</button>
       </td>
     </tr>`;
   }).join('');
@@ -940,6 +941,22 @@ function openModalCliente(kEnc){
   document.getElementById('modal-cliente').classList.add('open');
 }
 function editCliente(kEnc){openModalCliente(kEnc)}
+
+async function eliminaCliente(kEnc){
+  const k=decodeURIComponent(kEnc);
+  const c=getClientiMerged().find(x=>chiaveCliente(x.nome||'',x.cognome||'')===k);
+  if(!c)return;
+  const nSogg=allPrenotazioni.filter(p=>chiaveCliente(p.nome||'',p.cognome||'')===k).length;
+  const msg=nSogg>0
+    ? `Eliminare ${c.cognome||''} ${c.nome||}? Il cliente ha ${nSogg} prenotazione/i registrata/e che rimarranno nel sistema.`
+    : `Eliminare ${c.cognome||''} ${c.nome||''}?`;
+  if(!confirm(msg))return;
+  if(!c._fromDb){showToast('Cliente presente solo nelle prenotazioni: nessun record da eliminare','error');return}
+  try{
+    await db.collection('clienti').doc(c.id).delete();
+    showToast('Cliente eliminato','success');
+  }catch(e){showToast('Errore: '+e.message,'error')}
+}
 
 async function salvaCliente(){
   const nome=document.getElementById('cl-nome').value.trim();
