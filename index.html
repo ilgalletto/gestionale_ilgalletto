@@ -452,6 +452,60 @@
   </div>
 </div>
 
+<!-- MODAL CHECK-IN -->
+<div class="modal-overlay" id="modal-checkin">
+  <div class="modal">
+    <div class="modal-title">✅ Check-in ospite</div>
+    <div id="ci-riepilogo" style="background:var(--surface2);border-radius:8px;padding:14px;margin-bottom:20px;font-size:14px"></div>
+    <div class="section-divider">Dati arrivo</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Ora arrivo</label><input class="form-control" id="ci-ora" type="time"></div>
+      <div class="form-group"><label class="form-label">N° ospiti</label><input class="form-control" id="ci-ospiti" type="number" min="1" placeholder="1"></div>
+    </div>
+    <div class="section-divider">Documento identità</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Tipo documento</label>
+        <select class="form-control" id="ci-doc-tipo">
+          <option value="">— Seleziona —</option>
+          <option>Carta d'identità</option><option>Passaporto</option>
+          <option>Patente</option><option>Permesso di soggiorno</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Numero documento</label>
+        <input class="form-control" id="ci-doc-num" placeholder="AB1234567">
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Note check-in</label>
+      <textarea class="form-control" id="ci-note" rows="2" placeholder="Camera preparata, richieste particolari..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-checkin')">Annulla</button>
+      <button class="btn btn-primary" style="background:#2AA1A0" onclick="confermaCheckin()">✅ Conferma arrivo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CHECK-OUT -->
+<div class="modal-overlay" id="modal-checkout">
+  <div class="modal">
+    <div class="modal-title">🏁 Check-out ospite</div>
+    <div id="co-riepilogo" style="background:var(--surface2);border-radius:8px;padding:14px;margin-bottom:20px;font-size:14px"></div>
+    <div class="section-divider">Dati partenza</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Ora partenza</label><input class="form-control" id="co-ora" type="time"></div>
+      <div class="form-group"><label class="form-label">Importo saldato (€)</label><input class="form-control" id="co-saldo" type="number" min="0" step="0.01"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Note check-out</label>
+      <textarea class="form-control" id="co-note" rows="2" placeholder="Stato camera, feedback ospite..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-checkout')">Annulla</button>
+      <button class="btn btn-primary" onclick="stampaRicevuta()">🖨️ Stampa ricevuta</button>
+      <button class="btn btn-primary" style="background:#1A6FA8" onclick="confermaCheckout()">🏁 Conferma partenza</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL CAMERA -->
 <div class="modal-overlay" id="modal-camera">
   <div class="modal">
@@ -598,6 +652,8 @@ function camerOccupateOggi(){
 }
 function statoPrenotazione(p){
   const oggi=toDateStr(new Date());
+  if(p.checkoutConfermato)return{label:'Check-out ✓',cls:'badge-out'};
+  if(p.checkinConfermato)return{label:'In soggiorno ✓',cls:'badge-stay'};
   if(p.checkin===oggi)return{label:'Arrivo oggi',cls:'badge-in'};
   if(p.checkout===oggi)return{label:'Partenza oggi',cls:'badge-out'};
   if(p.checkin<oggi&&p.checkout>oggi)return{label:'In soggiorno',cls:'badge-stay'};
@@ -608,18 +664,27 @@ function statoPrenotazione(p){
 // ===== PRENOTAZIONI =====
 function renderPrenotazioni(){
   const tb=document.getElementById('tb-prenotazioni');
-  if(!allPrenotazioni.length){tb.innerHTML='<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📋</div><p>Nessuna prenotazione</p></div></td></tr>';return}
+  if(!allPrenotazioni.length){tb.innerHTML='<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📋</div><p>Nessuna prenotazione</p></div></td></tr>';return}
   const sorted=[...allPrenotazioni].sort((a,b)=>b.checkin.localeCompare(a.checkin));
   const canEdit=currentUserData?.ruolo==='admin';
+  const oggi=toDateStr(new Date());
   tb.innerHTML=sorted.map(p=>{
     const n=calcolaNotti(p.checkin,p.checkout); const s=statoPrenotazione(p);
+    // Bottoni check-in / check-out contestuali
+    let btnCI='', btnCO='';
+    const puoCheckin=!p.checkinConfermato&&!p.checkoutConfermato&&p.checkin<=oggi&&p.checkout>oggi;
+    const puoCheckout=p.checkinConfermato&&!p.checkoutConfermato;
+    if(puoCheckin) btnCI=`<button class="btn btn-sm" style="background:#2AA1A0;color:#fff" onclick="openModalCheckin('${p.id}')">✅ Check-in</button>`;
+    if(puoCheckout) btnCO=`<button class="btn btn-sm" style="background:#1A6FA8;color:#fff" onclick="openModalCheckout('${p.id}')">🏁 Check-out</button>`;
     return`<tr>
       <td><strong>${p.cognome||''} ${p.nome||''}</strong>${p.telefono?`<br><small style="color:var(--text-muted)">${p.telefono}</small>`:''}</td>
       <td>${nomeCameraById(p.cameraId)}</td>
-      <td>${formatDate(p.checkin)}</td><td>${formatDate(p.checkout)}</td>
+      <td>${formatDate(p.checkin)}${p.checkinConfermato?`<br><small style="color:var(--accent2)">✓ ${p.oraCheckin||''}</small>`:''}</td>
+      <td>${formatDate(p.checkout)}${p.checkoutConfermato?`<br><small style="color:var(--text-muted)">✓ ${p.oraCheckout||''}</small>`:''}</td>
       <td>${n}</td><td>€${parseFloat(p.prezzo||0).toFixed(2)}</td>
       <td>${p.canale||'—'}</td>
       <td><span class="badge ${s.cls}">${s.label}</span></td>
+      <td class="no-print" style="white-space:nowrap">${btnCI}${btnCO}</td>
       <td class="no-print">${canEdit?`<button class="btn btn-sm btn-outline" onclick="editPrenotazione('${p.id}')">✏️</button>
         <button class="btn btn-sm btn-danger" onclick="eliminaPrenotazione('${p.id}')">🗑️</button>`:''}</td>
     </tr>`;
@@ -903,21 +968,170 @@ async function salvaCliente(){
   }catch(e){showToast('Errore: '+e.message,'error')}
 }
 
+// ===== CHECK-IN / CHECK-OUT =====
+let checkinPrenId=null, checkoutPrenId=null;
+
+function openModalCheckin(id){
+  checkinPrenId=id;
+  const p=allPrenotazioni.find(x=>x.id===id);
+  if(!p)return;
+  const c=getClientiMerged().find(x=>chiaveCliente(x.nome||'',x.cognome||'')===chiaveCliente(p.nome||'',p.cognome||''));
+  document.getElementById('ci-riepilogo').innerHTML=`
+    <strong style="font-size:16px">${p.cognome||''} ${p.nome||''}</strong><br>
+    📞 ${p.telefono||'—'} &nbsp;·&nbsp; 🛏️ ${nomeCameraById(p.cameraId)}<br>
+    Check-in: <strong>${formatDate(p.checkin)}</strong> → Check-out: <strong>${formatDate(p.checkout)}</strong> (${calcolaNotti(p.checkin,p.checkout)} notti)`;
+  // Pre-compila ora attuale
+  const now=new Date();
+  document.getElementById('ci-ora').value=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  document.getElementById('ci-ospiti').value=p.nOspiti||'1';
+  document.getElementById('ci-doc-tipo').value=p.docTipo||(c?.docTipo||'');
+  document.getElementById('ci-doc-num').value=p.docNum||(c?.docNum||'');
+  document.getElementById('ci-note').value='';
+  document.getElementById('modal-checkin').classList.add('open');
+}
+
+async function confermaCheckin(){
+  const p=allPrenotazioni.find(x=>x.id===checkinPrenId);
+  if(!p)return;
+  const ora=document.getElementById('ci-ora').value;
+  const docTipo=document.getElementById('ci-doc-tipo').value;
+  const docNum=document.getElementById('ci-doc-num').value.trim();
+  const nOspiti=parseInt(document.getElementById('ci-ospiti').value)||1;
+  const note=document.getElementById('ci-note').value.trim();
+  try{
+    await db.collection('prenotazioni').doc(checkinPrenId).update({
+      checkinConfermato:true,
+      oraCheckin:ora,
+      docTipo,docNum,nOspiti,
+      noteCheckin:note,
+      checkinTS:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // Aggiorna anche cliente
+    const k=chiaveCliente(p.nome||'',p.cognome||'');
+    const existing=allClienti.find(c=>chiaveCliente(c.nome||'',c.cognome||'')===k);
+    if(existing&&(docTipo||docNum)){
+      const upd={};
+      if(docTipo)upd.docTipo=docTipo;
+      if(docNum)upd.docNum=docNum;
+      await db.collection('clienti').doc(existing.id).update(upd);
+    }
+    closeModal('modal-checkin');
+    showToast(`✅ Check-in confermato: ${p.cognome||''} ${p.nome||''} – ore ${ora}`,'success');
+  }catch(e){showToast('Errore: '+e.message,'error')}
+}
+
+function openModalCheckout(id){
+  checkoutPrenId=id;
+  const p=allPrenotazioni.find(x=>x.id===id);
+  if(!p)return;
+  document.getElementById('co-riepilogo').innerHTML=`
+    <strong style="font-size:16px">${p.cognome||''} ${p.nome||''}</strong><br>
+    🛏️ ${nomeCameraById(p.cameraId)} &nbsp;·&nbsp; Check-in: ${formatDate(p.checkin)} (ore ${p.oraCheckin||'—'})<br>
+    Soggiorno: <strong>${calcolaNotti(p.checkin,p.checkout)} notti</strong> &nbsp;·&nbsp; Importo: <strong>€${parseFloat(p.prezzo||0).toFixed(2)}</strong>`;
+  const now=new Date();
+  document.getElementById('co-ora').value=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  document.getElementById('co-saldo').value=parseFloat(p.prezzo||0).toFixed(2);
+  document.getElementById('co-note').value='';
+  document.getElementById('modal-checkout').classList.add('open');
+}
+
+async function confermaCheckout(){
+  const p=allPrenotazioni.find(x=>x.id===checkoutPrenId);
+  if(!p)return;
+  const ora=document.getElementById('co-ora').value;
+  const saldo=parseFloat(document.getElementById('co-saldo').value)||0;
+  const note=document.getElementById('co-note').value.trim();
+  try{
+    await db.collection('prenotazioni').doc(checkoutPrenId).update({
+      checkoutConfermato:true,
+      oraCheckout:ora,
+      saldoPagato:saldo,
+      noteCheckout:note,
+      checkoutTS:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    closeModal('modal-checkout');
+    showToast(`🏁 Check-out confermato: ${p.cognome||''} ${p.nome||''} – ore ${ora}`,'success');
+  }catch(e){showToast('Errore: '+e.message,'error')}
+}
+
+function stampaRicevuta(){
+  const p=allPrenotazioni.find(x=>x.id===checkoutPrenId);
+  if(!p)return;
+  const ora=document.getElementById('co-ora').value;
+  const saldo=parseFloat(document.getElementById('co-saldo').value)||0;
+  const notti=calcolaNotti(p.checkin,p.checkout);
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ricevuta soggiorno</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    body{font-family:'DM Sans',sans-serif;padding:40px;color:#0D2436;max-width:600px;margin:auto}
+    .header{text-align:center;border-bottom:2px solid #1A6FA8;padding-bottom:20px;margin-bottom:28px}
+    h1{font-family:'DM Serif Display',serif;color:#1A6FA8;font-size:26px;margin:0 0 4px}
+    .sub{color:#6A8DA8;font-size:13px}
+    .row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #E3F0F8;font-size:14px}
+    .label{color:#6A8DA8}.val{font-weight:600}
+    .total{display:flex;justify-content:space-between;padding:16px 0;font-size:18px;font-weight:700;color:#1A6FA8;border-top:2px solid #1A6FA8;margin-top:8px}
+    .footer{text-align:center;margin-top:32px;color:#6A8DA8;font-size:12px}
+    @media print{body{padding:20px}}
+  </style></head><body>
+  <div class="header">
+    <h1>🐓 B&B Il Galletto</h1>
+    <div class="sub">Porto San Giorgio – Ricevuta soggiorno</div>
+  </div>
+  <div class="row"><span class="label">Ospite</span><span class="val">${p.cognome||''} ${p.nome||''}</span></div>
+  <div class="row"><span class="label">Camera</span><span class="val">${nomeCameraById(p.cameraId)}</span></div>
+  <div class="row"><span class="label">Check-in</span><span class="val">${formatDate(p.checkin)} ore ${p.oraCheckin||'—'}</span></div>
+  <div class="row"><span class="label">Check-out</span><span class="val">${formatDate(p.checkout)} ore ${ora}</span></div>
+  <div class="row"><span class="label">Notti</span><span class="val">${notti}</span></div>
+  ${p.nOspiti?`<div class="row"><span class="label">N° ospiti</span><span class="val">${p.nOspiti}</span></div>`:''}
+  ${p.canale?`<div class="row"><span class="label">Canale</span><span class="val">${p.canale}</span></div>`:''}
+  <div class="total"><span>Totale</span><span>€${saldo.toFixed(2)}</span></div>
+  <div class="footer">Grazie per aver soggiornato al B&B Il Galletto · Porto San Giorgio<br>
+  Ricevuta generata il ${formatDate(toDateStr(new Date()))}</div>
+  </body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(),400);
+}
+
 // ===== CAMERE =====
 function renderCamere(){
   const grid=document.getElementById('camere-grid');
-  const occ=camerOccupateOggi();
+  const oggi=toDateStr(new Date());
   if(!allCamere.length){grid.innerHTML='<div class="empty-state"><div class="empty-icon">🛏️</div><p>Nessuna camera configurata</p></div>';return}
   const canEdit=currentUserData?.ruolo==='admin';
   grid.innerHTML=allCamere.map(c=>{
-    const isOcc=occ.has(c.id);
+    // Trova prenotazione attiva oggi
+    const prenAttiva=allPrenotazioni.find(p=>p.cameraId===c.id&&p.checkin<=oggi&&p.checkout>oggi);
+    const arrivoOggi=allPrenotazioni.find(p=>p.cameraId===c.id&&p.checkin===oggi&&!p.checkinConfermato);
+    const partenzaOggi=allPrenotazioni.find(p=>p.cameraId===c.id&&p.checkout===oggi&&p.checkinConfermato&&!p.checkoutConfermato);
+    const isOcc=!!prenAttiva;
+    let statusHtml='';
+    if(prenAttiva&&prenAttiva.checkinConfermato){
+      statusHtml=`<span class="badge badge-stay">In soggiorno</span>
+        <div style="font-size:12px;margin-top:6px;color:var(--text)"><strong>${prenAttiva.cognome||''} ${prenAttiva.nome||''}</strong></div>
+        <div style="font-size:11px;color:var(--text-muted)">fino al ${formatDate(prenAttiva.checkout)}</div>`;
+    } else if(arrivoOggi){
+      statusHtml=`<span class="badge badge-in">Arrivo oggi</span>
+        <div style="font-size:12px;margin-top:6px;color:var(--text)"><strong>${arrivoOggi.cognome||''} ${arrivoOggi.nome||''}</strong></div>
+        <button class="btn btn-sm" style="margin-top:8px;background:#2AA1A0;color:#fff;width:100%;justify-content:center" onclick="openModalCheckin('${arrivoOggi.id}')">✅ Esegui check-in</button>`;
+    } else if(partenzaOggi){
+      statusHtml=`<span class="badge badge-out">Partenza oggi</span>
+        <div style="font-size:12px;margin-top:6px;color:var(--text)"><strong>${partenzaOggi.cognome||''} ${partenzaOggi.nome||''}</strong></div>
+        <button class="btn btn-sm" style="margin-top:8px;background:#1A6FA8;color:#fff;width:100%;justify-content:center" onclick="openModalCheckout('${partenzaOggi.id}')">🏁 Esegui check-out</button>`;
+    } else {
+      statusHtml=`<span class="badge ${isOcc?'badge-occ':'badge-free'}">${isOcc?'Occupata':'Libera'}</span>`;
+    }
     return`<div class="camera-card">
-      <div class="camera-numero">${c.numero}</div>
-      <div class="camera-nome">${c.nome||'—'}</div>
-      <div style="font-size:12px;color:var(--text-muted)">${c.tipo||''}</div>
-      <div style="margin-top:8px"><span class="badge ${isOcc?'badge-occ':'badge-free'}">${isOcc?'Occupata':'Libera'}</span></div>
-      ${c.note?`<div style="font-size:12px;color:var(--text-muted);margin-top:8px">${c.note}</div>`:''}
-      ${canEdit?`<div class="camera-actions">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="camera-numero">${c.numero}</div>
+          <div class="camera-nome">${c.nome||'—'}</div>
+          <div style="font-size:12px;color:var(--text-muted)">${c.tipo||''}</div>
+        </div>
+      </div>
+      <div style="margin-top:10px">${statusHtml}</div>
+      ${c.note?`<div style="font-size:12px;color:var(--text-muted);margin-top:8px;border-top:1px solid var(--border);padding-top:8px">${c.note}</div>`:''}
+      ${canEdit?`<div class="camera-actions" style="margin-top:12px">
         <button class="btn btn-sm btn-outline" onclick="editCamera('${c.id}')">✏️ Modifica</button>
         <button class="btn btn-sm btn-danger" onclick="eliminaCamera('${c.id}')">🗑️</button>
       </div>`:''}
