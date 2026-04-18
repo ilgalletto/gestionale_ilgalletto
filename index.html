@@ -899,8 +899,10 @@
     <!-- Sezione ospiti aggiuntivi (collassata di default) -->
     <div id="pren-ospiti-section" style="display:none;margin-top:16px">
       <div class="section-divider">👥 Ospiti aggiuntivi — dati per Alloggiati Web</div>
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">
-        Puoi inserirli ora o completarli al momento del check-in. Il prenotante è il capofamiglia.
+      <div style="font-size:13px;color:var(--text);margin-bottom:12px;padding:10px 12px;background:var(--surface2);border-radius:6px;line-height:1.6">
+        Puoi inserire subito i dati o completarli al check-in.<br>
+        <span style="color:var(--accent)">• <strong>Intestatario</strong></span> (Tipo 18 Alloggiati Web) = il prenotante, già presente sopra.<br>
+        <span style="color:var(--accent2)">• <strong>Accompagnatori</strong></span> (Tipo 20) = gli altri ospiti da aggiungere qui sotto.
       </div>
       <div id="pren-ospiti-lista"></div>
       <button class="btn btn-outline btn-sm" onclick="aggiungiOspitePren()" style="margin-top:4px">+ Aggiungi ospite</button>
@@ -921,8 +923,10 @@
     </div>
 
     <div class="section-divider">👥 Anagrafica ospiti — obbligatorio per Alloggiati Web</div>
-    <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">
-      Il primo ospite è il <strong>capofamiglia/prenotante</strong>. Inserire i dati completi per ogni persona.
+    <div style="font-size:13px;color:var(--text);margin-bottom:14px;padding:12px 14px;background:var(--surface2);border-radius:8px;line-height:1.6">
+      Inserire i dati di <strong>ogni persona</strong> che soggiorna nella camera, come indicati sul documento d'identità.<br>
+      <span style="color:var(--accent)">• <strong>Intestatario</strong></span> = il prenotante che ha fatto la prenotazione → <em>Tipo 18</em> su Alloggiati Web<br>
+      <span style="color:var(--accent2)">• <strong>Accompagnatore</strong></span> = ogni altra persona presente → <em>Tipo 20</em> su Alloggiati Web
     </div>
     <div id="ci-ospiti-lista"></div>
     <button class="btn btn-outline btn-sm" onclick="aggiungiOspiteCI()" id="btn-add-ospite-ci" style="margin-bottom:16px">+ Aggiungi ospite</button>
@@ -1477,45 +1481,67 @@ let ospitiBozzaPren=[]; // ospiti nel modal prenotazione
 // ── Helper card ospite ────────────────────────────────────────────────────────
 function htmlCardOspite(idx, dati={}, isCapo=false, contenitore='ci'){
   const d = dati;
-  const titoloCapo = isCapo ? '👑 Capofamiglia / Prenotante' : `Ospite ${idx + 1}`;
+  // Etichette chiare con ruolo esplicito per Alloggiati Web
+  const etichetta = isCapo
+    ? '👤 Intestatario prenotazione'
+    : `👥 Accompagnatore ${idx}`;
+  const ruoloAlloggiati = isCapo
+    ? '<span style="font-size:10px;font-weight:400;opacity:.85">→ Alloggiati Web: <strong>Tipo 18</strong> (capo famiglia)</span>'
+    : '<span style="font-size:10px;font-weight:400;opacity:.85">→ Alloggiati Web: <strong>Tipo 20</strong> (familiare / membro gruppo)</span>';
+  const coloreHeader = isCapo ? 'var(--accent)' : 'var(--accent2)';
   const rimovibile = !isCapo;
-  return `<div class="ospite-card ${isCapo ? 'ospite-required' : 'ospite-optional'}" id="${contenitore}-ospite-${idx}">
-    <div class="ospite-card-title">
-      <span>${titoloCapo}</span>
-      ${rimovibile ? `<button class="btn btn-sm btn-danger" style="padding:2px 8px;font-size:11px" onclick="rimuoviOspite(${idx},'${contenitore}')">✕</button>` : ''}
+
+  return `<div class="ospite-card" id="${contenitore}-ospite-${idx}"
+    style="border:1.5px solid ${isCapo ? 'var(--accent)' : 'var(--accent2)'};border-radius:10px;margin-bottom:12px;overflow:hidden">
+    <!-- Header card -->
+    <div style="background:${coloreHeader};color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:13px;font-weight:700">${etichetta}</div>
+        <div style="margin-top:2px">${ruoloAlloggiati}</div>
+      </div>
+      ${rimovibile ? `<button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;padding:3px 10px;font-size:12px;border:1px solid rgba(255,255,255,.4)"
+        onclick="rimuoviOspite(${idx},'${contenitore}')">✕ Rimuovi</button>` : ''}
     </div>
-    <div class="form-row">
-      <div class="form-group"><label class="form-label">Cognome${isCapo?' *':''}</label>
-        <input class="form-control" id="${contenitore}-o${idx}-cognome" value="${d.cognome||''}" placeholder="Cognome"></div>
-      <div class="form-group"><label class="form-label">Nome${isCapo?' *':''}</label>
-        <input class="form-control" id="${contenitore}-o${idx}-nome" value="${d.nome||''}" placeholder="Nome"></div>
-    </div>
-    <div class="form-row3">
-      <div class="form-group"><label class="form-label">Sesso</label>
-        <select class="form-control" id="${contenitore}-o${idx}-sesso">
-          <option value="">—</option>
-          <option value="M" ${d.sesso==='M'?'selected':''}>Maschile</option>
-          <option value="F" ${d.sesso==='F'?'selected':''}>Femminile</option>
-        </select></div>
-      <div class="form-group"><label class="form-label">Data di nascita</label>
-        <input class="form-control" id="${contenitore}-o${idx}-nascita" type="date" value="${d.dataNascita||''}"></div>
-      <div class="form-group"><label class="form-label">Cittadinanza</label>
-        <select class="form-control" id="${contenitore}-o${idx}-cittadinanza">
-          <option value="Italiana" ${(!d.cittadinanza||d.cittadinanza==='Italiana')?'selected':''}>Italiana</option>
-          <option value="Straniera" ${d.cittadinanza==='Straniera'?'selected':''}>Straniera</option>
-        </select></div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label class="form-label">Tipo documento${isCapo?' *':''}</label>
-        <select class="form-control" id="${contenitore}-o${idx}-docTipo">
-          <option value="">— Seleziona —</option>
-          <option ${d.docTipo==="Carta d'identità"?'selected':''}>Carta d'identità</option>
-          <option ${d.docTipo==='Passaporto'?'selected':''}>Passaporto</option>
-          <option ${d.docTipo==='Patente'?'selected':''}>Patente</option>
-          <option ${d.docTipo==='Permesso di soggiorno'?'selected':''}>Permesso di soggiorno</option>
-        </select></div>
-      <div class="form-group"><label class="form-label">Numero documento${isCapo?' *':''}</label>
-        <input class="form-control" id="${contenitore}-o${idx}-docNum" value="${d.docNum||''}" placeholder="AB1234567"></div>
+    <!-- Campi -->
+    <div style="padding:14px;background:var(--surface)">
+      ${isCapo ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;padding:8px 10px;background:var(--accent-light);border-radius:6px">
+        ℹ️ Il prenotante è sempre l'intestatario della schedina. Documento obbligatorio.
+      </div>` : `<div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;padding:8px 10px;background:var(--accent2-light);border-radius:6px">
+        ℹ️ Accompagnatore ${idx}: inserire i dati dal documento d'identità.
+      </div>`}
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Cognome${isCapo?' *':''}</label>
+          <input class="form-control" id="${contenitore}-o${idx}-cognome" value="${d.cognome||''}" placeholder="Cognome"></div>
+        <div class="form-group"><label class="form-label">Nome${isCapo?' *':''}</label>
+          <input class="form-control" id="${contenitore}-o${idx}-nome" value="${d.nome||''}" placeholder="Nome"></div>
+      </div>
+      <div class="form-row3">
+        <div class="form-group"><label class="form-label">Sesso</label>
+          <select class="form-control" id="${contenitore}-o${idx}-sesso">
+            <option value="">—</option>
+            <option value="M" ${d.sesso==='M'?'selected':''}>Maschile</option>
+            <option value="F" ${d.sesso==='F'?'selected':''}>Femminile</option>
+          </select></div>
+        <div class="form-group"><label class="form-label">Data di nascita</label>
+          <input class="form-control" id="${contenitore}-o${idx}-nascita" type="date" value="${d.dataNascita||''}"></div>
+        <div class="form-group"><label class="form-label">Cittadinanza</label>
+          <select class="form-control" id="${contenitore}-o${idx}-cittadinanza">
+            <option value="Italiana" ${(!d.cittadinanza||d.cittadinanza==='Italiana')?'selected':''}>Italiana</option>
+            <option value="Straniera" ${d.cittadinanza==='Straniera'?'selected':''}>Straniera</option>
+          </select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Tipo documento${isCapo?' *':''}</label>
+          <select class="form-control" id="${contenitore}-o${idx}-docTipo">
+            <option value="">— Seleziona —</option>
+            <option ${d.docTipo==="Carta d'identità"?'selected':''}>Carta d'identità</option>
+            <option ${d.docTipo==='Passaporto'?'selected':''}>Passaporto</option>
+            <option ${d.docTipo==='Patente'?'selected':''}>Patente</option>
+            <option ${d.docTipo==='Permesso di soggiorno'?'selected':''}>Permesso di soggiorno</option>
+          </select></div>
+        <div class="form-group"><label class="form-label">Numero documento${isCapo?' *':''}</label>
+          <input class="form-control" id="${contenitore}-o${idx}-docNum" value="${d.docNum||''}" placeholder="AB1234567"></div>
+      </div>
     </div>
   </div>`;
 }
