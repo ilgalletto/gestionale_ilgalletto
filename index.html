@@ -437,6 +437,7 @@
               <button class="gnav" onclick="guidaSezione('clienti',this)">👥 <span>Clienti</span></button>
               <button class="gnav" onclick="guidaSezione('camere',this)">🛏️ <span>Camere</span></button>
               <button class="gnav" onclick="guidaSezione('stampa-g',this)">🖨️ <span>Stampa</span></button>
+              <button class="gnav" onclick="guidaSezione('questura-g',this)">🚔 <span>Questura</span></button>
               <button class="gnav" onclick="guidaSezione('impostazioni',this)">⚙️ <span>Impostazioni</span></button>
               <button class="gnav" onclick="guidaSezione('faq',this)">❓ <span>Domande frequenti</span></button>
             </div>
@@ -548,16 +549,16 @@
             <!-- CHECK-IN / CHECK-OUT -->
             <div class="gs" id="gs-checkin" style="display:none">
               <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#2AA1A0,#1A6FA8)">✅</div>
-                <div><div class="gs-title">Check-in / Check-out</div><div class="gs-sub">Gestione arrivi e partenze</div></div></div>
+                <div><div class="gs-title">Check-in / Check-out</div><div class="gs-sub">Gestione arrivi, anagrafica ospiti e partenze</div></div></div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
                 <div class="gs-card">
                   <div class="gs-card-title" style="background:#2AA1A0">✅ Check-in</div>
                   <div style="padding:14px;font-size:13px;color:var(--text);line-height:1.7">
                     Il pulsante appare quando la data è oggi e il check-in non è ancora confermato.<br><br>
                     <strong>Si registra:</strong><br>
-                    • Ora arrivo (automatica)<br>
-                    • N° ospiti<br>
-                    • Documento d'identità<br>
+                    • Ora arrivo (pre-compilata automatica)<br>
+                    • N° ospiti totali<br>
+                    • <strong>Anagrafica completa di ogni ospite</strong><br>
                     • Note di arrivo
                   </div>
                 </div>
@@ -573,9 +574,37 @@
                   </div>
                 </div>
               </div>
+
+              <div class="gs-card" style="margin-bottom:14px">
+                <div class="gs-card-title">👥 Anagrafica ospiti al check-in</div>
+                <div style="padding:14px;font-size:13px;color:var(--text);line-height:1.7">
+                  Per ogni ospite viene compilata una <strong>scheda individuale</strong> con i dati necessari per la comunicazione alla Questura (Alloggiati Web):
+                </div>
+                <table class="gs-table" style="border-top:1px solid var(--border)">
+                  <tr><th>Campo</th><th>Note</th></tr>
+                  <tr><td><strong>Cognome / Nome</strong></td><td>Obbligatori per tutti gli ospiti</td></tr>
+                  <tr><td>Sesso</td><td>M / F</td></tr>
+                  <tr><td>Data di nascita</td><td>Formato gg/mm/aaaa</td></tr>
+                  <tr><td>Cittadinanza</td><td>Italiana / Straniera</td></tr>
+                  <tr><td><strong>Tipo documento</strong></td><td>CdI, Passaporto, Patente, Permesso di soggiorno</td></tr>
+                  <tr><td><strong>Numero documento</strong></td><td>Obbligatorio per il capofamiglia</td></tr>
+                </table>
+                <div style="padding:12px 14px;font-size:12px;color:var(--text-muted);border-top:1px solid var(--border)">
+                  Il primo ospite è sempre il <strong>capofamiglia/prenotante</strong>. Gli altri sono i familiari/accompagnatori. Le schede si aggiungono automaticamente in base al numero di ospiti dichiarato.
+                </div>
+              </div>
+
+              <div class="gs-card" style="margin-bottom:14px">
+                <div class="gs-card-title" style="background:var(--surface2);color:var(--text)">📋 Inserimento anticipato in prenotazione</div>
+                <div style="padding:14px;font-size:13px;color:var(--text);line-height:1.7">
+                  Nel modal <strong>Nuova prenotazione</strong> è disponibile il pulsante <em>"👥 Aggiungi dati ospiti aggiuntivi (opzionale)"</em>.<br>
+                  Se conosci già i dati degli ospiti puoi inserirli subito; altrimenti si completano obbligatoriamente al check-in.
+                </div>
+              </div>
+
               <div class="gs-info">📋 I dati del documento vengono salvati automaticamente nella scheda cliente per consultazioni future.</div>
               <div style="margin-top:14px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px">
-                <div style="font-weight:600;font-size:13px;color:var(--accent);margin-bottom:10px">Dove trovare i pulsanti</div>
+                <div style="font-weight:600;font-size:13px;color:var(--accent);margin-bottom:10px">Dove trovare i pulsanti Check-in / Check-out</div>
                 <div class="gs-step"><div class="gs-dot"></div>Nella <strong>tabella Prenotazioni</strong> → colonna azioni a destra</div>
                 <div class="gs-step"><div class="gs-dot"></div>Nelle <strong>card Camere</strong> → sotto il nominativo dell'ospite</div>
               </div>
@@ -656,6 +685,42 @@
               <div class="gs-info">💡 Per salvare come PDF: nella finestra di stampa del browser selezionare <strong>"Salva come PDF"</strong> come stampante.</div>
             </div>
 
+            <!-- QUESTURA -->
+            <div class="gs" id="gs-questura-g" style="display:none">
+              <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#0D2F5A,#1A6FA8)">🚔</div>
+                <div><div class="gs-title">Questura / Alloggiati Web</div><div class="gs-sub">Comunicazione obbligatoria delle presenze</div></div></div>
+              <div style="background:#FEF3CD;border-left:4px solid #F5D87A;border-radius:0 8px 8px 0;padding:14px 16px;font-size:13px;color:#7a5c00;margin-bottom:16px">
+                ⚖️ <strong>Obbligo di legge</strong> — Art. 109 TULPS: le generalità degli ospiti vanno comunicate entro <strong>24 ore dall'arrivo</strong> (6 ore per soggiorni inferiori alle 24 ore). Conservare le ricevute per 5 anni.
+              </div>
+              <div class="gs-card" style="margin-bottom:14px">
+                <div class="gs-card-title">Come funziona il modulo</div>
+                <div class="gs-step"><div class="gs-num">1</div><div><strong>Imposta</strong> una volta sola il codice struttura rilasciato dalla Questura, l'username Alloggiati Web e il numero di camere disponibili</div></div>
+                <div class="gs-step"><div class="gs-num">2</div><div>Dopo il check-in degli ospiti, vai in <strong>🚔 Questura</strong> e seleziona la data</div></div>
+                <div class="gs-step"><div class="gs-num">3</div><div>Seleziona gli ospiti con il checkbox e clicca <strong>⬇️ Genera file TXT</strong></div></div>
+                <div class="gs-step"><div class="gs-num">4</div><div>Il file si scarica automaticamente. Accedi ad <strong>Alloggiati Web</strong> → Invio File → carica il file → Elabora → Invia</div></div>
+                <div class="gs-step"><div class="gs-num">5</div><div>Il sistema salva automaticamente lo storico delle comunicazioni generate</div></div>
+              </div>
+              <div class="gs-card" style="margin-bottom:14px">
+                <div class="gs-card-title" style="background:var(--surface2);color:var(--text)">📊 Stati degli ospiti</div>
+                <table class="gs-table">
+                  <tr><th>Badge</th><th>Significato</th></tr>
+                  <tr><td><span class="gs-badge" style="background:#DCF0FF;color:#1A6FA8">Da inviare</span></td><td>Check-in confermato, comunicazione non ancora generata</td></tr>
+                  <tr><td><span class="gs-badge" style="background:#FDECEA;color:#C0392B">⚠️ Scaduto</span></td><td>Sono passate più di 24 ore senza comunicazione</td></tr>
+                  <tr><td><span class="gs-badge" style="background:#EEF7F0;color:#2a7a3b">✓ Comunicato</span></td><td>Già incluso in un file TXT generato</td></tr>
+                </table>
+              </div>
+              <div class="gs-card" style="margin-bottom:14px">
+                <div class="gs-card-title" style="background:var(--surface2);color:var(--text)">📁 Il file TXT generato</div>
+                <div style="padding:14px;font-size:13px;color:var(--text);line-height:1.7">
+                  Il file segue il <strong>tracciato record ufficiale</strong> della Polizia di Stato. Contiene una riga per ogni ospite:<br>
+                  • <strong>Tipo 18</strong> = capofamiglia/prenotante<br>
+                  • <strong>Tipo 20</strong> = familiari/accompagnatori<br><br>
+                  Per ospiti con dati mancanti appare il pulsante ✏️ che apre il check-in per completarli.
+                </div>
+              </div>
+              <div class="gs-info">💡 Per ottenere le credenziali Alloggiati Web: contatta la Questura competente per territorio con la documentazione della struttura (licenza, CIN, documento d'identità titolare).</div>
+            </div>
+
             <!-- IMPOSTAZIONI -->
             <div class="gs" id="gs-impostazioni" style="display:none">
               <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#0D2F5A,#1A6FA8)">⚙️</div>
@@ -679,8 +744,11 @@
               <div class="gs-faq-item"><div class="gs-faq-q">❓ Ho inserito date sbagliate nella prenotazione. Come correggo?</div><div class="gs-faq-a">Cliccare ✏️ nella riga della prenotazione e modificare le date. Il sistema controlla automaticamente le sovrapposizioni.</div></div>
               <div class="gs-faq-item"><div class="gs-faq-q">❓ Il pulsante Check-in non appare.</div><div class="gs-faq-a">Appare solo se la data di check-in è uguale o precedente a oggi e il check-in non è ancora confermato. Verificare la data nella prenotazione e aggiornare la pagina.</div></div>
               <div class="gs-faq-item"><div class="gs-faq-q">❓ Ho effettuato il check-in per errore.</div><div class="gs-faq-a">Contattare l'amministratore che modificherà il campo <em>checkinConfermato</em> direttamente su Firestore impostandolo a false.</div></div>
+              <div class="gs-faq-item"><div class="gs-faq-q">❓ Come inserisco i dati degli ospiti aggiuntivi (non il prenotante)?</div><div class="gs-faq-a">In fase di prenotazione clicca "👥 Aggiungi dati ospiti aggiuntivi" per inserirli subito (opzionale). Al momento del check-in, il sistema mostra automaticamente una scheda per ogni ospite in base al numero dichiarato: compilarle è obbligatorio per generare il file Alloggiati Web.</div></div>
+              <div class="gs-faq-item"><div class="gs-faq-q">❓ Come genero il file per la Questura?</div><div class="gs-faq-a">Dopo il check-in vai in 🚔 Questura → seleziona la data → metti il segno di spunta sugli ospiti → clicca "⬇️ Genera file TXT". Il file si scarica automaticamente. Poi aprilo su Alloggiati Web (alloggiatiweb.poliziadistato.it) → Invio File → carica → Elabora → Invia.</div></div>
+              <div class="gs-faq-item"><div class="gs-faq-q">❓ Il file TXT viene rifiutato da Alloggiati Web.</div><div class="gs-faq-a">Verificare che tutti i dati obbligatori siano presenti: cognome, nome e documento del capofamiglia. Se l'ospite mostra il badge "⚠️ documento mancante", clicca ✏️ per completare i dati e poi rigenera il file.</div></div>
               <div class="gs-faq-item"><div class="gs-faq-q">❓ Il calendario non mostra alcune prenotazioni.</div><div class="gs-faq-a">Verificare che le date ricadano nel periodo visualizzato. Usare i pulsanti Anno prec./Anno succ. per navigare all'anno corretto.</div></div>
-              <div class="gs-faq-item"><div class="gs-faq-q">❓ Come aggiungere il secondo utente (Proprietario)?</div><div class="gs-faq-a">Creare l'account in Firebase Authentication, poi aggiungere il documento in Firestore con ruolo "proprietario" e stato "approvato".</div></div>
+              <div class="gs-faq-item"><div class="gs-faq-q">❓ Come aggiungere un nuovo utente?</div><div class="gs-faq-a">Creare l'account in Firebase Authentication, poi aggiungere il documento in Firestore con ruolo "admin", "proprietario" o "visual" e stato "approvato".</div></div>
               <div class="gs-faq-item"><div class="gs-faq-q">❓ Posso usare il gestionale da smartphone?</div><div class="gs-faq-a">Sì, l'interfaccia è completamente responsive e si adatta a qualsiasi dimensione di schermo.</div></div>
               <div class="gs-faq-item"><div class="gs-faq-q">❓ Come salvare un riepilogo come PDF?</div><div class="gs-faq-a">Dalla sezione Stampa, cliccare 🖨️ Stampa. Nella finestra del browser selezionare "Salva come PDF" come stampante.</div></div>
             </div>
