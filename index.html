@@ -173,7 +173,11 @@
     .stat-grid{grid-template-columns:1fr 1fr}
   }
 
-  /* STAMPA @media */
+  /* OSPITI */
+  .ospite-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px;position:relative}
+  .ospite-card-title{font-size:12px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+  .ospite-required{border-left:3px solid var(--accent)}
+  .ospite-optional{border-left:3px solid var(--border)}
   @media print{
     .topbar,.sidebar,.no-print,.modal-overlay,#pending-banner,#toast{display:none!important}
     .main-layout{display:block!important}
@@ -263,6 +267,7 @@
       <button class="nav-item" onclick="navTo('prenotazioni',this)"><span class="nav-icon">📋</span><span>Prenotazioni</span></button>
       <button class="nav-item no-visual" onclick="navTo('clienti',this)"><span class="nav-icon">👥</span><span>Clienti</span></button>
       <button class="nav-item no-visual" onclick="navTo('stampa',this)"><span class="nav-icon">🖨️</span><span>Stampa</span></button>
+      <button class="nav-item no-visual" onclick="navTo('questura',this)"><span class="nav-icon">🚔</span><span>Questura</span></button>
       <button class="nav-item" onclick="navTo('guida',this)"><span class="nav-icon">📖</span><span>Guida</span></button>
       <button class="nav-item proprietario-only admin-show" onclick="navTo('camere',this)"><span class="nav-icon">🛏️</span><span>Camere</span></button>
       <button class="nav-item admin-only" onclick="navTo('impostazioni',this)"><span class="nav-icon">⚙️</span><span>Impostazioni</span></button>
@@ -352,7 +357,64 @@
         <div id="stampa-content"></div>
       </div>
 
-            <!-- GUIDA -->
+            <!-- QUESTURA -->
+      <div class="page" id="page-questura">
+        <div class="toolbar">
+          <div class="page-title" style="margin:0">🚔 Comunicazione Questura</div>
+          <a href="https://alloggiatiweb.poliziadistato.it/PortaleAlloggiati/" target="_blank" class="btn btn-primary btn-sm no-print">Apri Alloggiati Web ↗</a>
+        </div>
+        <div style="background:#FEF3CD;border-left:4px solid #F5D87A;border-radius:0 8px 8px 0;padding:14px 16px;font-size:13px;color:#7a5c00;margin-bottom:20px">
+          ⚖️ <strong>Obbligo di legge</strong> — Art. 109 TULPS: le generalità degli ospiti vanno comunicate alla Questura <strong>entro 24 ore dall'arrivo</strong> (entro 6 ore per soggiorni inferiori alle 24 ore). Conserva le ricevute per 5 anni.
+        </div>
+
+        <!-- IMPOSTAZIONI STRUTTURA -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;box-shadow:var(--shadow)">
+          <div style="font-weight:600;font-size:14px;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:8px">
+            ⚙️ Impostazioni struttura per Alloggiati Web
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+            <div class="form-group"><label class="form-label">Codice struttura (da Questura)</label><input class="form-control" id="q-codice" placeholder="es. APFM000001-0001" oninput="salvaImpostazioniQuestura()"></div>
+            <div class="form-group"><label class="form-label">Username Alloggiati Web</label><input class="form-control" id="q-username" placeholder="Username" oninput="salvaImpostazioniQuestura()"></div>
+            <div class="form-group"><label class="form-label">N° camere disponibili</label><input class="form-control" id="q-camere-disp" type="number" min="1" placeholder="es. 5" oninput="salvaImpostazioniQuestura()"></div>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px">I dati vengono salvati localmente nel browser. La password non va salvata qui per sicurezza.</div>
+        </div>
+
+        <!-- OSPITI DA COMUNICARE -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-weight:600;font-size:15px;color:var(--text)">Ospiti da comunicare</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:2px">Seleziona gli ospiti e genera il file TXT per Alloggiati Web</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input class="form-control btn-sm" id="q-data-filtro" type="date" style="width:auto" oninput="renderQuestura()">
+            <button class="btn btn-outline btn-sm" onclick="selezionaTuttiQuestura()">Seleziona tutti</button>
+            <button class="btn btn-primary" onclick="generaFileTXT()" id="btn-genera-txt" disabled>⬇️ Genera file TXT</button>
+          </div>
+        </div>
+
+        <div class="table-wrap" style="margin-bottom:20px">
+          <table>
+            <thead><tr>
+              <th style="width:36px"><input type="checkbox" id="q-check-all" onchange="toggleTuttiQuestura(this)"></th>
+              <th>Ospite</th><th>Camera</th><th>Arrivo</th><th>Partenza</th>
+              <th>Documento</th><th>Stato</th><th class="no-print"></th>
+            </tr></thead>
+            <tbody id="tb-questura"></tbody>
+          </table>
+        </div>
+
+        <!-- STORICO INVII -->
+        <div style="font-weight:600;font-size:15px;color:var(--text);margin-bottom:12px">📋 Storico comunicazioni</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Data invio</th><th>Ospiti</th><th>File generato</th><th>Note</th><th class="no-print"></th></tr></thead>
+            <tbody id="tb-storico-questura"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- GUIDA -->
       <div class="page" id="page-guida">
         <div style="display:flex;gap:0;height:calc(100vh - 90px);margin:-28px;overflow:hidden">
 
@@ -757,36 +819,46 @@
       <div class="form-group"><label class="form-label">N° persone</label><input class="form-control" id="p-ospiti" type="number" min="1" placeholder="1"></div>
       <div class="form-group"><label class="form-label">Prezzo totale (€)</label><input class="form-control" id="p-prezzo" type="number" min="0" step="0.01" placeholder="0.00"></div>
     </div>
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('modal-prenotazione')">Annulla</button>
-      <button class="btn btn-primary" onclick="salvaPrenotazione()">Salva prenotazione</button>
+    <div class="modal-actions" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <button class="btn btn-outline btn-sm" onclick="toggleOspitiPren()" id="btn-toggle-ospiti">
+        👥 Aggiungi dati ospiti aggiuntivi (opzionale)
+      </button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline" onclick="closeModal('modal-prenotazione')">Annulla</button>
+        <button class="btn btn-primary" onclick="salvaPrenotazione()">Salva prenotazione</button>
+      </div>
+    </div>
+    <!-- Sezione ospiti aggiuntivi (collassata di default) -->
+    <div id="pren-ospiti-section" style="display:none;margin-top:16px">
+      <div class="section-divider">👥 Ospiti aggiuntivi — dati per Alloggiati Web</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">
+        Puoi inserirli ora o completarli al momento del check-in. Il prenotante è il capofamiglia.
+      </div>
+      <div id="pren-ospiti-lista"></div>
+      <button class="btn btn-outline btn-sm" onclick="aggiungiOspitePren()" style="margin-top:4px">+ Aggiungi ospite</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL CHECK-IN -->
 <div class="modal-overlay" id="modal-checkin">
-  <div class="modal">
+  <div class="modal modal-wide" style="max-width:680px">
     <div class="modal-title">✅ Check-in ospite</div>
-    <div id="ci-riepilogo" style="background:var(--surface2);border-radius:8px;padding:14px;margin-bottom:20px;font-size:14px"></div>
+    <div id="ci-riepilogo" style="background:var(--surface2);border-radius:8px;padding:14px;margin-bottom:16px;font-size:14px"></div>
+
     <div class="section-divider">Dati arrivo</div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Ora arrivo</label><input class="form-control" id="ci-ora" type="time"></div>
-      <div class="form-group"><label class="form-label">N° ospiti</label><input class="form-control" id="ci-ospiti" type="number" min="1" placeholder="1"></div>
+      <div class="form-group"><label class="form-label">N° ospiti totali</label><input class="form-control" id="ci-ospiti" type="number" min="1" placeholder="1" oninput="sincronizzaNumeroOspiti()"></div>
     </div>
-    <div class="section-divider">Documento identità</div>
-    <div class="form-row">
-      <div class="form-group"><label class="form-label">Tipo documento</label>
-        <select class="form-control" id="ci-doc-tipo">
-          <option value="">— Seleziona —</option>
-          <option>Carta d'identità</option><option>Passaporto</option>
-          <option>Patente</option><option>Permesso di soggiorno</option>
-        </select>
-      </div>
-      <div class="form-group"><label class="form-label">Numero documento</label>
-        <input class="form-control" id="ci-doc-num" placeholder="AB1234567">
-      </div>
+
+    <div class="section-divider">👥 Anagrafica ospiti — obbligatorio per Alloggiati Web</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">
+      Il primo ospite è il <strong>capofamiglia/prenotante</strong>. Inserire i dati completi per ogni persona.
     </div>
+    <div id="ci-ospiti-lista"></div>
+    <button class="btn btn-outline btn-sm" onclick="aggiungiOspiteCI()" id="btn-add-ospite-ci" style="margin-bottom:16px">+ Aggiungi ospite</button>
+
     <div class="form-group"><label class="form-label">Note check-in</label>
       <textarea class="form-control" id="ci-note" rows="2" placeholder="Camera preparata, richieste particolari..."></textarea>
     </div>
@@ -955,6 +1027,7 @@ function navTo(page,btn){
   if(btn)btn.classList.add('active');
   if(page==='calendario')aggiornaCalendario();
   if(page==='stampa')renderStampa();
+  if(page==='questura'){initQuestura();}
 }
 
 // ===== DASHBOARD =====
@@ -1052,6 +1125,9 @@ function openModalPrenotazione(id){
     document.getElementById('p-ospiti').value='';
     document.getElementById('p-canale').value='';
     document.getElementById('p-suggerimenti').style.display='none';
+    ospitiBozzaPren=[];
+    document.getElementById('pren-ospiti-section').style.display='none';
+    document.getElementById('btn-toggle-ospiti').textContent='👥 Aggiungi dati ospiti aggiuntivi (opzionale)';
   }
   document.getElementById('modal-prenotazione').classList.add('open');
   document.getElementById('p-checkin').oninput=aggNotti;
@@ -1114,6 +1190,7 @@ async function salvaPrenotazione(){
     cameraId,checkin,checkout,
     nOspiti:parseInt(document.getElementById('p-ospiti').value)||1,
     prezzo:parseFloat(prezzo)||0,
+    ospiti: raccogliOspitiPren() || [],
     aggiornata:firebase.firestore.FieldValue.serverTimestamp()
   };
   try{
@@ -1326,53 +1403,202 @@ async function salvaCliente(){
 
 // ===== CHECK-IN / CHECK-OUT =====
 let checkinPrenId=null, checkoutPrenId=null;
+let ospitiBozzaCI=[];   // ospiti nel modal check-in
+let ospitiBozzaPren=[]; // ospiti nel modal prenotazione
+
+// ── Helper card ospite ────────────────────────────────────────────────────────
+function htmlCardOspite(idx, dati={}, isCapo=false, contenitore='ci'){
+  const d = dati;
+  const titoloCapo = isCapo ? '👑 Capofamiglia / Prenotante' : `Ospite ${idx + 1}`;
+  const rimovibile = !isCapo;
+  return `<div class="ospite-card ${isCapo ? 'ospite-required' : 'ospite-optional'}" id="${contenitore}-ospite-${idx}">
+    <div class="ospite-card-title">
+      <span>${titoloCapo}</span>
+      ${rimovibile ? `<button class="btn btn-sm btn-danger" style="padding:2px 8px;font-size:11px" onclick="rimuoviOspite(${idx},'${contenitore}')">✕</button>` : ''}
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Cognome${isCapo?' *':''}</label>
+        <input class="form-control" id="${contenitore}-o${idx}-cognome" value="${d.cognome||''}" placeholder="Cognome"></div>
+      <div class="form-group"><label class="form-label">Nome${isCapo?' *':''}</label>
+        <input class="form-control" id="${contenitore}-o${idx}-nome" value="${d.nome||''}" placeholder="Nome"></div>
+    </div>
+    <div class="form-row3">
+      <div class="form-group"><label class="form-label">Sesso</label>
+        <select class="form-control" id="${contenitore}-o${idx}-sesso">
+          <option value="">—</option>
+          <option value="M" ${d.sesso==='M'?'selected':''}>Maschile</option>
+          <option value="F" ${d.sesso==='F'?'selected':''}>Femminile</option>
+        </select></div>
+      <div class="form-group"><label class="form-label">Data di nascita</label>
+        <input class="form-control" id="${contenitore}-o${idx}-nascita" type="date" value="${d.dataNascita||''}"></div>
+      <div class="form-group"><label class="form-label">Cittadinanza</label>
+        <select class="form-control" id="${contenitore}-o${idx}-cittadinanza">
+          <option value="Italiana" ${(!d.cittadinanza||d.cittadinanza==='Italiana')?'selected':''}>Italiana</option>
+          <option value="Straniera" ${d.cittadinanza==='Straniera'?'selected':''}>Straniera</option>
+        </select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Tipo documento${isCapo?' *':''}</label>
+        <select class="form-control" id="${contenitore}-o${idx}-docTipo">
+          <option value="">— Seleziona —</option>
+          <option ${d.docTipo==="Carta d'identità"?'selected':''}>Carta d'identità</option>
+          <option ${d.docTipo==='Passaporto'?'selected':''}>Passaporto</option>
+          <option ${d.docTipo==='Patente'?'selected':''}>Patente</option>
+          <option ${d.docTipo==='Permesso di soggiorno'?'selected':''}>Permesso di soggiorno</option>
+        </select></div>
+      <div class="form-group"><label class="form-label">Numero documento${isCapo?' *':''}</label>
+        <input class="form-control" id="${contenitore}-o${idx}-docNum" value="${d.docNum||''}" placeholder="AB1234567"></div>
+    </div>
+  </div>`;
+}
+
+function leggiOspiteForm(idx, contenitore='ci'){
+  const get = id => document.getElementById(`${contenitore}-o${idx}-${id}`)?.value||'';
+  return {
+    cognome: get('cognome'), nome: get('nome'), sesso: get('sesso'),
+    dataNascita: get('nascita'), cittadinanza: get('cittadinanza'),
+    docTipo: get('docTipo'), docNum: get('docNum'),
+  };
+}
+
+// ── PRENOTAZIONE: sezione ospiti opzionale ───────────────────────────────────
+function toggleOspitiPren(){
+  const sec = document.getElementById('pren-ospiti-section');
+  const btn = document.getElementById('btn-toggle-ospiti');
+  if(sec.style.display==='none'){
+    sec.style.display='block';
+    btn.textContent='👥 Nascondi ospiti aggiuntivi';
+    renderOspitiPren();
+  } else {
+    sec.style.display='none';
+    btn.textContent='👥 Aggiungi dati ospiti aggiuntivi (opzionale)';
+  }
+}
+function renderOspitiPren(){
+  const lista = document.getElementById('pren-ospiti-lista');
+  if(!lista) return;
+  // Il primo è sempre il prenotante (capo)
+  const capoDati = {
+    cognome: document.getElementById('p-cognome')?.value||'',
+    nome: document.getElementById('p-nome')?.value||'',
+  };
+  let html = htmlCardOspite(0, ospitiBozzaPren[0]||capoDati, true, 'pren');
+  for(let i=1;i<ospitiBozzaPren.length;i++){
+    html += htmlCardOspite(i, ospitiBozzaPren[i], false, 'pren');
+  }
+  lista.innerHTML = html;
+}
+function aggiungiOspitePren(){
+  ospitiBozzaPren.push({});
+  renderOspitiPren();
+}
+function rimuoviOspite(idx, contenitore){
+  if(contenitore==='pren'){ ospitiBozzaPren.splice(idx,1); renderOspitiPren(); }
+  else { ospitiBozzaCI.splice(idx,1); renderOspitiCI(); }
+}
+function raccogliOspitiPren(){
+  if(document.getElementById('pren-ospiti-section').style.display==='none') return null;
+  const lista=[];
+  const n=document.querySelectorAll('[id^="pren-o"][id$="-cognome"]').length;
+  for(let i=0;i<n;i++) lista.push(leggiOspiteForm(i,'pren'));
+  return lista.filter(o=>o.cognome||o.nome);
+}
+
+// ── CHECK-IN: lista ospiti completa obbligatoria ──────────────────────────────
+function renderOspitiCI(){
+  const lista = document.getElementById('ci-ospiti-lista');
+  if(!lista) return;
+  let html='';
+  for(let i=0;i<ospitiBozzaCI.length;i++){
+    html += htmlCardOspite(i, ospitiBozzaCI[i], i===0, 'ci');
+  }
+  lista.innerHTML = html;
+  // Aggiorna bottone aggiungi
+  const nOspiti = parseInt(document.getElementById('ci-ospiti')?.value)||1;
+  document.getElementById('btn-add-ospite-ci').style.display =
+    ospitiBozzaCI.length < nOspiti ? 'inline-flex' : 'none';
+}
+function aggiungiOspiteCI(){
+  ospitiBozzaCI.push({});
+  renderOspitiCI();
+}
+function sincronizzaNumeroOspiti(){
+  const n = parseInt(document.getElementById('ci-ospiti')?.value)||1;
+  // Aggiunge o rimuove schede automaticamente
+  while(ospitiBozzaCI.length < n) ospitiBozzaCI.push({});
+  while(ospitiBozzaCI.length > n && ospitiBozzaCI.length > 1) ospitiBozzaCI.pop();
+  renderOspitiCI();
+}
 
 function openModalCheckin(id){
-  checkinPrenId=id;
-  const p=allPrenotazioni.find(x=>x.id===id);
-  if(!p)return;
-  const c=getClientiMerged().find(x=>chiaveCliente(x.nome||'',x.cognome||'')===chiaveCliente(p.nome||'',p.cognome||''));
+  checkinPrenId = id;
+  const p = allPrenotazioni.find(x=>x.id===id);
+  if(!p) return;
+  const c = getClientiMerged().find(x=>chiaveCliente(x.nome||'',x.cognome||'')===chiaveCliente(p.nome||'',p.cognome||''));
   document.getElementById('ci-riepilogo').innerHTML=`
     <strong style="font-size:16px">${p.cognome||''} ${p.nome||''}</strong><br>
     📞 ${p.telefono||'—'} &nbsp;·&nbsp; 🛏️ ${nomeCameraById(p.cameraId)}<br>
     Check-in: <strong>${formatDate(p.checkin)}</strong> → Check-out: <strong>${formatDate(p.checkout)}</strong> (${calcolaNotti(p.checkin,p.checkout)} notti)`;
-  // Pre-compila ora attuale
   const now=new Date();
   document.getElementById('ci-ora').value=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  document.getElementById('ci-ospiti').value=p.nOspiti||'1';
-  document.getElementById('ci-doc-tipo').value=p.docTipo||(c?.docTipo||'');
-  document.getElementById('ci-doc-num').value=p.docNum||(c?.docNum||'');
+  const nOspiti = p.nOspiti||1;
+  document.getElementById('ci-ospiti').value = nOspiti;
   document.getElementById('ci-note').value='';
+  // Inizializza array ospiti: usa quelli già salvati o crea dal prenotante
+  if(p.ospiti && p.ospiti.length){
+    ospitiBozzaCI = [...p.ospiti];
+    // Completa se mancano
+    while(ospitiBozzaCI.length < nOspiti) ospitiBozzaCI.push({});
+  } else {
+    ospitiBozzaCI = [{
+      cognome: p.cognome||'', nome: p.nome||'',
+      docTipo: p.docTipo||(c?.docTipo||''),
+      docNum:  p.docNum||(c?.docNum||''),
+      cittadinanza: c?.cittadinanza||'Italiana',
+    }];
+    for(let i=1;i<nOspiti;i++) ospitiBozzaCI.push({});
+  }
+  renderOspitiCI();
   document.getElementById('modal-checkin').classList.add('open');
 }
 
 async function confermaCheckin(){
-  const p=allPrenotazioni.find(x=>x.id===checkinPrenId);
-  if(!p)return;
-  const ora=document.getElementById('ci-ora').value;
-  const docTipo=document.getElementById('ci-doc-tipo').value;
-  const docNum=document.getElementById('ci-doc-num').value.trim();
-  const nOspiti=parseInt(document.getElementById('ci-ospiti').value)||1;
-  const note=document.getElementById('ci-note').value.trim();
+  const p = allPrenotazioni.find(x=>x.id===checkinPrenId);
+  if(!p) return;
+  const ora = document.getElementById('ci-ora').value;
+  const nOspiti = parseInt(document.getElementById('ci-ospiti').value)||1;
+  const note = document.getElementById('ci-note').value.trim();
+  // Raccoglie dati di tutti gli ospiti dal form
+  const ospiti=[];
+  for(let i=0;i<nOspiti;i++){
+    const o = leggiOspiteForm(i,'ci');
+    if(o.cognome||o.nome) ospiti.push(o);
+  }
+  if(!ospiti[0]?.cognome || !ospiti[0]?.docNum){
+    showToast('Compila almeno cognome e documento del capofamiglia','error'); return;
+  }
   try{
-    await db.collection('prenotazioni').doc(checkinPrenId).update({
-      checkinConfermato:true,
-      oraCheckin:ora,
-      docTipo,docNum,nOspiti,
-      noteCheckin:note,
-      checkinTS:firebase.firestore.FieldValue.serverTimestamp()
-    });
-    // Aggiorna anche cliente
+    const update={
+      checkinConfermato:true, oraCheckin:ora, nOspiti, noteCheckin:note,
+      ospiti, // Array completo
+      // Retrocompatibilità con i campi flat del prenotante
+      docTipo: ospiti[0].docTipo||'', docNum: ospiti[0].docNum||'',
+      checkinTS: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    await db.collection('prenotazioni').doc(checkinPrenId).update(update);
+    // Aggiorna scheda cliente con i dati del capofamiglia
     const k=chiaveCliente(p.nome||'',p.cognome||'');
     const existing=allClienti.find(c=>chiaveCliente(c.nome||'',c.cognome||'')===k);
-    if(existing&&(docTipo||docNum)){
+    if(existing){
       const upd={};
-      if(docTipo)upd.docTipo=docTipo;
-      if(docNum)upd.docNum=docNum;
-      await db.collection('clienti').doc(existing.id).update(upd);
+      if(ospiti[0].docTipo) upd.docTipo=ospiti[0].docTipo;
+      if(ospiti[0].docNum)  upd.docNum=ospiti[0].docNum;
+      if(ospiti[0].dataNascita) upd.dataNascita=ospiti[0].dataNascita;
+      if(ospiti[0].sesso) upd.sesso=ospiti[0].sesso;
+      if(Object.keys(upd).length) await db.collection('clienti').doc(existing.id).update(upd);
     }
     closeModal('modal-checkin');
-    showToast(`✅ Check-in confermato: ${p.cognome||''} ${p.nome||''} – ore ${ora}`,'success');
+    showToast(`✅ Check-in confermato: ${p.cognome||''} ${p.nome||''} – ${nOspiti} ospite${nOspiti>1?'i':''} – ore ${ora}`,'success');
   }catch(e){showToast('Errore: '+e.message,'error')}
 }
 
@@ -1715,6 +1941,243 @@ function renderUtenti(){
 }
 async function approvaUtente(uid){await db.collection('utenti').doc(uid).update({stato:'approvato'});showToast('Utente approvato ✓','success')}
 async function rimuoviUtente(uid){if(!confirm('Rimuovere?'))return;await db.collection('utenti').doc(uid).delete();showToast('Rimosso','success')}
+
+// ===== QUESTURA / ALLOGGIATI WEB =====
+let storicoQuestura = [];
+
+function initQuestura() {
+  // Carica impostazioni da localStorage
+  const cfg = JSON.parse(localStorage.getItem('questura_cfg') || '{}');
+  document.getElementById('q-codice').value = cfg.codice || '';
+  document.getElementById('q-username').value = cfg.username || '';
+  document.getElementById('q-camere-disp').value = cfg.camereDisp || '';
+  // Data filtro default = oggi
+  document.getElementById('q-data-filtro').value = toDateStr(new Date());
+  // Carica storico
+  storicoQuestura = JSON.parse(localStorage.getItem('questura_storico') || '[]');
+  renderQuestura();
+  renderStoricoQuestura();
+}
+
+function salvaImpostazioniQuestura() {
+  const cfg = {
+    codice: document.getElementById('q-codice').value.trim(),
+    username: document.getElementById('q-username').value.trim(),
+    camereDisp: document.getElementById('q-camere-disp').value,
+  };
+  localStorage.setItem('questura_cfg', JSON.stringify(cfg));
+}
+
+function renderQuestura() {
+  const tb = document.getElementById('tb-questura');
+  if (!tb) return;
+  const dataFiltro = document.getElementById('q-data-filtro')?.value || toDateStr(new Date());
+  const oggi = toDateStr(new Date());
+
+  // Mostra prenotazioni con check-in confermato nel giorno selezionato o recenti non ancora comunicate
+  const daComun = allPrenotazioni.filter(p =>
+    p.checkinConfermato && p.checkin === dataFiltro
+  );
+
+  if (!daComun.length) {
+    tb.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">✅</div>
+      <p>Nessun arrivo in questa data</p></div></td></tr>`;
+    document.getElementById('btn-genera-txt').disabled = true;
+    return;
+  }
+
+  tb.innerHTML = daComun.map(p => {
+    const giaCom = (storicoQuestura || []).some(s => s.ids && s.ids.includes(p.id));
+    const scaduta = scadenzaSuperata(p);
+    return `<tr style="${scaduta && !giaCom ? 'background:#FFF5F5' : ''}">
+      <td><input type="checkbox" class="q-check" value="${p.id}" onchange="aggiornaBottoneGenera()"></td>
+      <td><strong>${p.cognome||''} ${p.nome||''}</strong>
+        ${p.docTipo ? `<br><small style="color:var(--text-muted)">${p.docTipo}: ${p.docNum||'—'}</small>` : '<br><small style="color:var(--danger)">⚠️ documento mancante</small>'}
+      </td>
+      <td>${nomeCameraById(p.cameraId)}</td>
+      <td>${formatDate(p.checkin)}${p.oraCheckin ? ' ' + p.oraCheckin : ''}</td>
+      <td>${formatDate(p.checkout)}</td>
+      <td style="font-size:12px">${p.docTipo || '—'}<br>${p.docNum || '—'}</td>
+      <td>${giaCom
+        ? '<span class="badge badge-free">✓ Comunicato</span>'
+        : scaduta
+          ? '<span class="badge" style="background:#FDECEA;color:#C0392B">⚠️ Scaduto</span>'
+          : '<span class="badge badge-in">Da inviare</span>'
+      }</td>
+      <td class="no-print">
+        <button class="btn btn-sm btn-outline" onclick="apriModaleQuestura('${p.id}')">✏️ Dati</button>
+      </td>
+    </tr>`;
+  }).join('');
+  aggiornaBottoneGenera();
+}
+
+function scadenzaSuperata(p) {
+  if (!p.checkin || !p.oraCheckin) return false;
+  const arrivo = new Date(`${p.checkin}T${p.oraCheckin}`);
+  const limite = new Date(arrivo.getTime() + 24 * 60 * 60 * 1000);
+  return new Date() > limite;
+}
+
+function aggiornaBottoneGenera() {
+  const sel = document.querySelectorAll('.q-check:checked');
+  document.getElementById('btn-genera-txt').disabled = sel.length === 0;
+  document.getElementById('q-check-all').indeterminate =
+    sel.length > 0 && sel.length < document.querySelectorAll('.q-check').length;
+  document.getElementById('q-check-all').checked =
+    sel.length > 0 && sel.length === document.querySelectorAll('.q-check').length;
+}
+
+function toggleTuttiQuestura(cb) {
+  document.querySelectorAll('.q-check').forEach(c => c.checked = cb.checked);
+  aggiornaBottoneGenera();
+}
+
+function selezionaTuttiQuestura() {
+  document.querySelectorAll('.q-check').forEach(c => c.checked = true);
+  document.getElementById('q-check-all').checked = true;
+  aggiornaBottoneGenera();
+}
+
+function apriModaleQuestura(id) {
+  // Apre il modal check-in per integrare i dati mancanti
+  openModalCheckin(id);
+}
+
+// ── Generazione file TXT tracciato record Alloggiati Web ──────────────────────
+function generaFileTXT() {
+  const selIds = [...document.querySelectorAll('.q-check:checked')].map(c => c.value);
+  if (!selIds.length) { showToast('Seleziona almeno un ospite', 'error'); return; }
+
+  const cfg = JSON.parse(localStorage.getItem('questura_cfg') || '{}');
+  const codStruttura = cfg.codice || '               '; // 15 char
+  const nCamereDisp = parseInt(cfg.camereDisp) || allCamere.length;
+
+  let righe = [];
+  // Prima riga: codice struttura (15 char) + 181 spazi
+  righe.push(padR(codStruttura, 15) + ' '.repeat(181));
+
+  const prenotazSel = selIds.map(id => allPrenotazioni.find(p => p.id === id)).filter(Boolean);
+
+  prenotazSel.forEach(p => {
+    // Usa array ospiti se disponibile, altrimenti solo il prenotante
+    const listaOspiti = (p.ospiti && p.ospiti.length)
+      ? p.ospiti
+      : [{cognome:p.cognome, nome:p.nome, docTipo:p.docTipo, docNum:p.docNum, cittadinanza:'Italiana'}];
+
+    listaOspiti.forEach((osp, idx) => {
+      // Tipo: 18=capofamiglia/singolo, 20=familiare
+      const tipoAlloggiato = idx===0 ? '18' : '20';
+
+      const dataArrivo    = p.checkin  ? p.checkin.replace(/-/g,'')  : '        ';
+      const dataPartenza  = p.checkout ? p.checkout.replace(/-/g,'') : '        ';
+      const durata        = padL(String(calcolaNotti(p.checkin,p.checkout)),4);
+      const nOspitiTot    = idx===0 ? padL(String(listaOspiti.length),2) : '  ';
+      const cognome       = padR((osp.cognome||'').toUpperCase(),50);
+      const nome          = padR((osp.nome||'').toUpperCase(),30);
+      const sesso         = padR(osp.sesso||'',1);
+      const dataNascita   = osp.dataNascita ? osp.dataNascita.replace(/-/g,'') : '        ';
+      const comuneNascita = padR('',9);
+      const provNascita   = padR('',2);
+      const statoNascita  = padR('100000100',9);
+      const cittadinanza  = padR('100000100',9);
+      const tipoDoc       = codiceDocumento(osp.docTipo);
+      const numDoc        = padR((osp.docNum||'').toUpperCase(),20);
+      const luogoCilascio = padR('',9);
+      const camereOcc     = idx===0 ? padL('1',4) : '    ';
+      const camereDispStr = idx===0 ? padL(String(nCamereDisp),4) : '    ';
+      const lettiDisp     = idx===0 ? padL(String(nCamereDisp*2),4) : '    ';
+
+      let riga = tipoAlloggiato + dataArrivo + dataPartenza + durata
+        + nOspitiTot + cognome + nome + sesso + dataNascita
+        + comuneNascita + provNascita + statoNascita + cittadinanza
+        + tipoDoc + numDoc + luogoCilascio
+        + camereOcc + camereDispStr + lettiDisp
+        + ' '.repeat(14);
+
+      riga = riga.substring(0,196).padEnd(196,' ');
+      righe.push(riga);
+    });
+  });
+
+  // Unisce con CR+LF (l'ultima riga NON ha CR+LF)
+  const contenuto = righe.join('\r\n');
+  const dataFile = toDateStr(new Date()).replace(/-/g, '');
+  const nomeFile = `alloggiati_${dataFile}.txt`;
+
+  // Download
+  const blob = new Blob([contenuto], { type: 'text/plain;charset=ascii' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nomeFile; a.click();
+  URL.revokeObjectURL(url);
+
+  // Salva nello storico
+  const record = {
+    data: new Date().toISOString(),
+    nomeFile,
+    nOspiti: selIds.length,
+    ids: selIds,
+    note: '',
+  };
+  storicoQuestura.unshift(record);
+  localStorage.setItem('questura_storico', JSON.stringify(storicoQuestura.slice(0, 50)));
+  renderStoricoQuestura();
+  renderQuestura();
+  showToast(`✅ File "${nomeFile}" generato — caricalo su Alloggiati Web`, 'success');
+}
+
+function codiceDocumento(tipo) {
+  // Codici ufficiali Alloggiati Web
+  const mappa = {
+    'Carta d\'identità': 'IDENT',
+    'Passaporto': 'PASSP',
+    'Patente': 'PATEN',
+    'Permesso di soggiorno': 'PRMSO',
+  };
+  return padR(mappa[tipo] || 'IDENT', 5);
+}
+
+function padR(s, n) { return String(s || '').substring(0, n).padEnd(n, ' '); }
+function padL(s, n) { return String(s || '').substring(0, n).padStart(n, '0'); }
+
+function renderStoricoQuestura() {
+  const tb = document.getElementById('tb-storico-questura');
+  if (!tb) return;
+  if (!storicoQuestura.length) {
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted)">Nessuna comunicazione ancora generata</td></tr>';
+    return;
+  }
+  tb.innerHTML = storicoQuestura.map((r, i) => {
+    const dt = new Date(r.data);
+    const dataFmt = `${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')}/${dt.getFullYear()} ${dt.getHours().toString().padStart(2,'0')}:${dt.getMinutes().toString().padStart(2,'0')}`;
+    return `<tr>
+      <td>${dataFmt}</td>
+      <td>${r.nOspiti} ospite${r.nOspiti > 1 ? 'i' : ''}</td>
+      <td style="font-family:monospace;font-size:12px">${r.nomeFile}</td>
+      <td>
+        <input class="form-control" style="font-size:12px;padding:4px 8px;height:auto"
+          value="${r.note || ''}" placeholder="Note..."
+          onchange="aggiornaNotaQuestura(${i}, this.value)">
+      </td>
+      <td class="no-print">
+        <button class="btn btn-sm btn-danger" onclick="eliminaStoricoQuestura(${i})">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function aggiornaNotaQuestura(i, nota) {
+  storicoQuestura[i].note = nota;
+  localStorage.setItem('questura_storico', JSON.stringify(storicoQuestura));
+}
+
+function eliminaStoricoQuestura(i) {
+  if (!confirm('Eliminare questo record dallo storico?')) return;
+  storicoQuestura.splice(i, 1);
+  localStorage.setItem('questura_storico', JSON.stringify(storicoQuestura));
+  renderStoricoQuestura();
+}
 
 // ===== UTILITY =====
 function closeModal(id){document.getElementById(id).classList.remove('open')}
