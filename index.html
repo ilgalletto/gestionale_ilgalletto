@@ -267,10 +267,17 @@
       <button class="nav-item" onclick="navTo('prenotazioni',this)"><span class="nav-icon">📋</span><span>Prenotazioni</span></button>
       <button class="nav-item no-visual" onclick="navTo('clienti',this)"><span class="nav-icon">👥</span><span>Clienti</span></button>
       <button class="nav-item no-visual" onclick="navTo('stampa',this)"><span class="nav-icon">🖨️</span><span>Stampa</span></button>
-      <button class="nav-item no-visual" onclick="navTo('questura',this)"><span class="nav-icon">🚔</span><span>Questura</span></button>
-      <button class="nav-item" onclick="navTo('guida',this)"><span class="nav-icon">📖</span><span>Guida</span></button>
+      <button class="nav-item no-visual" id="nav-questura" onclick="navTo('questura',this)" style="position:relative">
+        <span class="nav-icon">🚔</span><span>Questura</span>
+        <span id="questura-badge" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);
+          font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;line-height:1.4"></span>
+      </button>
       <button class="nav-item proprietario-only admin-show" onclick="navTo('camere',this)"><span class="nav-icon">🛏️</span><span>Camere</span></button>
       <button class="nav-item admin-only" onclick="navTo('impostazioni',this)"><span class="nav-icon">⚙️</span><span>Impostazioni</span></button>
+      <!-- Guida in fondo, separata -->
+      <div style="flex:1"></div>
+      <div style="border-top:1px solid var(--border);margin:8px 0"></div>
+      <button class="nav-item" onclick="navTo('guida',this)"><span class="nav-icon">📖</span><span>Guida</span></button>
     </div>
     <div class="content">
 
@@ -1075,6 +1082,7 @@ function startListeners(){
   unsubPren=db.collection('prenotazioni').orderBy('checkin','asc').onSnapshot(snap=>{
     allPrenotazioni=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderPrenotazioni();renderDashboard();aggiornaCalendario();renderClienti();renderStampa();
+    aggiornaAlertQuestura();
   });
   unsubCamere=db.collection('camere').orderBy('numero','asc').onSnapshot(snap=>{
     allCamere=snap.docs.map(d=>({id:d.id,...d.data()}));
@@ -2036,7 +2044,46 @@ function renderUtenti(){
 async function approvaUtente(uid){await db.collection('utenti').doc(uid).update({stato:'approvato'});showToast('Utente approvato ✓','success')}
 async function rimuoviUtente(uid){if(!confirm('Rimuovere?'))return;await db.collection('utenti').doc(uid).delete();showToast('Rimosso','success')}
 
-// ===== QUESTURA / ALLOGGIATI WEB =====
+function aggiornaAlertQuestura(){
+  const badge = document.getElementById('questura-badge');
+  if(!badge) return;
+  const oggi = toDateStr(new Date());
+  const storicoQ = JSON.parse(localStorage.getItem('questura_storico')||'[]');
+  const idsComunicati = new Set(storicoQ.flatMap(s=>s.ids||[]));
+
+  let urgenti=0, inAttesa=0;
+  allPrenotazioni.forEach(p=>{
+    if(!p.checkinConfermato) return;
+    if(idsComunicati.has(p.id)) return;
+    // Calcola ore trascorse dall'arrivo
+    const arrivo = p.oraCheckin
+      ? new Date(`${p.checkin}T${p.oraCheckin}`)
+      : new Date(`${p.checkin}T14:00`);
+    const oreTrascorse = (new Date() - arrivo) / (1000*60*60);
+    if(oreTrascorse >= 24) urgenti++;
+    else inAttesa++;
+  });
+
+  const tot = urgenti + inAttesa;
+  if(tot === 0){
+    badge.style.display='none';
+    return;
+  }
+  badge.style.display='inline-block';
+  if(urgenti > 0){
+    // ROSSO — scaduto 24h
+    badge.textContent = urgenti > 1 ? `${urgenti} ⚠️` : '⚠️';
+    badge.style.background='#C0392B';
+    badge.style.color='#fff';
+    badge.title = `${urgenti} comunicazione/i scaduta/e (oltre 24h)`;
+  } else {
+    // ARANCIONE — in attesa entro 24h
+    badge.textContent = inAttesa > 1 ? `${inAttesa}` : '!';
+    badge.style.background='#E67E22';
+    badge.style.color='#fff';
+    badge.title = `${inAttesa} comunicazione/i da inviare entro 24h`;
+  }
+}
 let storicoQuestura = [];
 
 function initQuestura() {
@@ -2218,6 +2265,7 @@ function generaFileTXT() {
   localStorage.setItem('questura_storico', JSON.stringify(storicoQuestura.slice(0, 50)));
   renderStoricoQuestura();
   renderQuestura();
+  aggiornaAlertQuestura();
   showToast(`✅ File "${nomeFile}" generato — caricalo su Alloggiati Web`, 'success');
 }
 
