@@ -2454,17 +2454,20 @@ function renderAlberoConti(elId,pdc,voci,tipo,colore){
 
   el.innerHTML=gruppi.map(gruppo=>{
     const conti=pdc.filter(n=>n.livello==='conto'&&n.parentId===gruppo.id);
-    const vociGruppo=voci.filter(v=>vociInAlbero(v.sottocontoId||v.cat,gruppo.id,pdc));
-    const totGruppo=vociGruppo.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
     const accordionId=`acc_${gruppo.id}`;
+
+    // Raccogli tutti gli id di nodi figli del gruppo (conti + sottoconti)
+    const idConti=new Set(conti.map(c=>c.id));
+    const idSottocontiDelGruppo=new Set(
+      pdc.filter(n=>n.livello==='sottoconto'&&idConti.has(n.parentId)).map(n=>n.id)
+    );
 
     const contiHTML=conti.map(conto=>{
       const sottoconti=pdc.filter(n=>n.livello==='sottoconto'&&n.parentId===conto.id);
-      const vociConto=voci.filter(v=>v.sottocontoId===conto.id||sottoconti.some(s=>s.id===v.sottocontoId));
-      const totConto=vociConto.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
+      const idSottocontiConto=new Set(sottoconti.map(s=>s.id));
       const accCId=`acc_${conto.id}`;
 
-      // Sottoconti + voci assegnate direttamente al conto
+      // Voci assegnate a ciascun sottoconto (esatte, no sovrapposizioni)
       const sottoHTML=sottoconti.map(sc=>{
         const vociSC=voci.filter(v=>v.sottocontoId===sc.id);
         const totSC=vociSC.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
@@ -2486,8 +2489,10 @@ function renderAlberoConti(elId,pdc,voci,tipo,colore){
         </div>`;
       }).join('');
 
-      const vociDiretteConto=voci.filter(v=>v.sottocontoId===conto.id);
-      const vociDiretteHTML=vociDiretteConto.map(v=>htmlVoceLine(v,tipo,colore)).join('');
+      // Solo voci assegnate direttamente al conto (NON a un suo sottoconto)
+      const vociDiretteConto=voci.filter(v=>v.sottocontoId===conto.id&&!idSottocontiConto.has(v.sottocontoId));
+      const totConto=voci.filter(v=>v.sottocontoId===conto.id||idSottocontiConto.has(v.sottocontoId))
+        .reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
 
       return`<div style="margin-left:16px;margin-bottom:8px">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;
@@ -2507,13 +2512,19 @@ function renderAlberoConti(elId,pdc,voci,tipo,colore){
           </div>
         </div>
         <div id="${accCId}" style="display:block;padding-top:6px">
-          ${sottoHTML}${vociDiretteHTML}
+          ${sottoHTML}
+          ${vociDiretteConto.map(v=>htmlVoceLine(v,tipo,colore)).join('')}
         </div>
       </div>`;
     }).join('');
 
-    // Voci non assegnate ad alcun conto/sottoconto del gruppo
-    const vociLibere=voci.filter(v=>!v.sottocontoId||!pdc.find(n=>n.id===v.sottocontoId));
+    // Totale gruppo: somma di tutte le voci assegnate a conti o sottoconti di questo gruppo
+    const totGruppo=voci.filter(v=>idConti.has(v.sottocontoId)||idSottocontiDelGruppo.has(v.sottocontoId))
+      .reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
+
+    // Voci orfane (sottocontoId inesistente nel PDC) — mostrate in fondo al gruppo solo se visibili
+    const tuttiIdPDC=new Set(pdc.map(n=>n.id));
+    const vociOrfane=voci.filter(v=>v.sottocontoId&&!tuttiIdPDC.has(v.sottocontoId));
 
     return`<div style="margin-bottom:12px;border:1.5px solid ${colore}33;border-radius:10px;overflow:hidden">
       <div style="background:${colore}11;border-bottom:1.5px solid ${colore}33;padding:10px 14px;
@@ -2532,10 +2543,7 @@ function renderAlberoConti(elId,pdc,voci,tipo,colore){
         </div>
       </div>
       <div id="${accordionId}" style="padding:12px">
-        ${contiHTML}
-        ${vociLibere.length?vociLibere.map(v=>htmlVoceLine(v,tipo,colore)).join(''):''}
-        ${!contiHTML&&!vociLibere.length?`<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:8px">
-          Nessun conto — clicca "+ conto" per aggiungere</div>`:''}
+        ${contiHTML||`<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:8px">Nessun conto — clicca "+ conto" per aggiungere</div>`}
       </div>
     </div>`;
   }).join('');
