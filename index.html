@@ -397,7 +397,10 @@
           <div>
             <div style="font-weight:700;font-size:14px;color:var(--danger);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
               <span>🔴 Costi fissi</span>
-              <button class="btn btn-sm no-print" style="background:#FDECEA;color:var(--danger);border:1px solid #C0392B33" onclick="openModalVoce('fisso')">+ Aggiungi</button>
+              <div style="display:flex;gap:6px" class="no-print">
+                <button class="btn btn-sm" style="background:#FDECEA;color:var(--danger);border:1px solid #C0392B33" onclick="openModalGruppo('fisso')">+ Gruppo</button>
+                <button class="btn btn-sm" style="background:#FDECEA;color:var(--danger);border:1px solid #C0392B33" onclick="openModalVoce('fisso')">+ Voce</button>
+              </div>
             </div>
             <div id="cont-fissi-lista"></div>
           </div>
@@ -407,7 +410,10 @@
         <div style="margin-bottom:28px">
           <div style="font-weight:700;font-size:14px;color:#E67E22;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
             <span>🟠 Costi variabili</span>
-            <button class="btn btn-sm no-print" style="background:#FEF5E7;color:#E67E22;border:1px solid #E67E2233" onclick="openModalVoce('variabile')">+ Aggiungi</button>
+            <div style="display:flex;gap:6px" class="no-print">
+              <button class="btn btn-sm" style="background:#FEF5E7;color:#E67E22;border:1px solid #E67E2233" onclick="openModalGruppo('variabile')">+ Gruppo</button>
+              <button class="btn btn-sm" style="background:#FEF5E7;color:#E67E22;border:1px solid #E67E2233" onclick="openModalVoce('variabile')">+ Voce</button>
+            </div>
           </div>
           <div id="cont-variabili-lista"></div>
         </div>
@@ -425,42 +431,62 @@
         </div>
       </div>
 
+      <!-- MODAL GRUPPO/CONTO -->
+      <div class="modal-overlay" id="modal-gruppo-cont">
+        <div class="modal">
+          <div class="modal-title" id="modal-gruppo-title">Nuovo gruppo</div>
+          <input type="hidden" id="vg-tipo">
+          <input type="hidden" id="vg-id">
+          <input type="hidden" id="vg-livello">
+          <input type="hidden" id="vg-parentId">
+          <div class="form-group"><label class="form-label">Livello</label>
+            <select class="form-control" id="vg-livello-sel" onchange="aggiornaParentSelect()">
+              <option value="gruppo">Gruppo (livello 1)</option>
+              <option value="conto">Conto (livello 2 — dentro un Gruppo)</option>
+              <option value="sottoconto">Sottoconto (livello 3 — dentro un Conto)</option>
+            </select>
+          </div>
+          <div class="form-group" id="vg-parent-wrap" style="display:none">
+            <label class="form-label" id="vg-parent-label">Gruppo padre</label>
+            <select class="form-control" id="vg-parent-sel"></select>
+          </div>
+          <div class="form-group"><label class="form-label">Nome *</label>
+            <input class="form-control" id="vg-nome" placeholder="es. Utenze, Immobile, Pulizie..."></div>
+          <div class="form-group"><label class="form-label">Icona (emoji)</label>
+            <input class="form-control" id="vg-icona" placeholder="es. 💡 🏠 🧹" maxlength="4" style="width:80px"></div>
+          <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal('modal-gruppo-cont')">Annulla</button>
+            <button class="btn btn-primary" onclick="salvaGruppoCont()">Salva</button>
+          </div>
+        </div>
+      </div>
+
       <!-- MODAL VOCE CONTABILE -->
       <div class="modal-overlay" id="modal-voce-cont">
         <div class="modal">
           <div class="modal-title" id="modal-voce-title">Nuova voce</div>
           <input type="hidden" id="vc-tipo">
           <input type="hidden" id="vc-id">
+          <div class="form-group"><label class="form-label">Sottoconto / Conto di destinazione *</label>
+            <select class="form-control" id="vc-sottoconto"></select>
+          </div>
           <div class="form-group"><label class="form-label">Descrizione *</label>
-            <input class="form-control" id="vc-desc" placeholder="es. Affitto locali, Pulizie camera..."></div>
+            <input class="form-control" id="vc-desc" placeholder="es. Fattura Enel marzo, Pulizia camera 2..."></div>
           <div class="form-row">
             <div class="form-group"><label class="form-label">Importo (€) *</label>
               <input class="form-control" id="vc-importo" type="number" min="0" step="0.01" placeholder="0.00"></div>
             <div class="form-group"><label class="form-label">Data *</label>
               <input class="form-control" id="vc-data" type="date"></div>
           </div>
-          <div class="form-group"><label class="form-label">Categoria</label>
-            <input class="form-control" id="vc-categoria" placeholder="es. Utenze, Manutenzione..." list="vc-cat-list">
-            <datalist id="vc-cat-list">
-              <option>Alloggi / Affitto</option><option>Assicurazioni</option>
-              <option>Biancheria / Lavanderia</option><option>Colazioni / F&B</option>
-              <option>Commissioni OTA</option><option>Commercialista</option>
-              <option>Forniture / Consumabili</option><option>Manutenzione</option>
-              <option>Marketing / Pubblicità</option><option>Pulizie</option>
-              <option>Soggiorno (incasso)</option><option>Servizi extra (incasso)</option>
-              <option>Software / Abbonamenti</option><option>TARI / Tasse locali</option>
-              <option>Utenze (luce/gas/acqua)</option><option>WiFi / Telefono</option>
-            </datalist>
-          </div>
           <div class="form-row">
             <div class="form-group"><label class="form-label">Ricorrenza</label>
               <select class="form-control" id="vc-ricorrenza">
                 <option value="una_tantum">Una tantum</option>
-                <option value="mensile">Mensile (si ripete ogni mese)</option>
+                <option value="mensile">Mensile</option>
                 <option value="annuale">Annuale</option>
               </select>
             </div>
-            <div class="form-group"><label class="form-label">Pagamento (solo entrate)</label>
+            <div class="form-group"><label class="form-label">Pagamento (entrate)</label>
               <select class="form-control" id="vc-pagamento">
                 <option value="">—</option>
                 <option value="prenotazione">Alla prenotazione</option>
@@ -472,7 +498,7 @@
             </div>
           </div>
           <div class="form-group"><label class="form-label">Note</label>
-            <input class="form-control" id="vc-note" placeholder="Facoltativo — fornitore, riferimento fattura..."></div>
+            <input class="form-control" id="vc-note" placeholder="Fornitore, n° fattura..."></div>
           <div class="modal-actions">
             <button class="btn btn-outline" onclick="closeModal('modal-voce-cont')">Annulla</button>
             <button class="btn btn-primary" onclick="salvaVoceCont()">Salva</button>
@@ -2266,30 +2292,44 @@ function aggiornaAlertQuestura(){
 const MESI_CONT = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
   'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 
-const VOCI_DEFAULT_FISSI = [
-  {desc:'Affitto / mutuo locali',   cat:'Alloggi / Affitto',      importo:0},
-  {desc:'Assicurazione struttura',  cat:'Assicurazioni',           importo:0},
-  {desc:'TARI',                     cat:'TARI / Tasse locali',     importo:0},
-  {desc:'Luce',                     cat:'Utenze (luce/gas/acqua)', importo:0},
-  {desc:'Gas',                      cat:'Utenze (luce/gas/acqua)', importo:0},
-  {desc:'Acqua',                    cat:'Utenze (luce/gas/acqua)', importo:0},
-  {desc:'WiFi / Telefono',          cat:'WiFi / Telefono',         importo:0},
-  {desc:'Commercialista',           cat:'Commercialista',          importo:0},
-  {desc:'Software / Abbonamenti',   cat:'Software / Abbonamenti',  importo:0},
+// ── Piano dei conti default ────────────────────────────────────────────────
+// Struttura: {id, tipo, livello:'gruppo'|'conto'|'sottoconto', parentId, nome, icona}
+const PDC_DEFAULT_FISSI = [
+  {id:'gF1',livello:'gruppo',parentId:null,nome:'Immobile',icona:'🏠'},
+    {id:'cF1a',livello:'conto',parentId:'gF1',nome:'Affitto / Mutuo',icona:'🔑'},
+      {id:'sF1a1',livello:'sottoconto',parentId:'cF1a',nome:'Canone mensile',icona:''},
+    {id:'cF1b',livello:'conto',parentId:'gF1',nome:'TARI',icona:'🗑️'},
+  {id:'gF2',livello:'gruppo',parentId:null,nome:'Utenze',icona:'💡'},
+    {id:'cF2a',livello:'conto',parentId:'gF2',nome:'Luce',icona:'⚡'},
+    {id:'cF2b',livello:'conto',parentId:'gF2',nome:'Gas',icona:'🔥'},
+    {id:'cF2c',livello:'conto',parentId:'gF2',nome:'Acqua',icona:'💧'},
+    {id:'cF2d',livello:'conto',parentId:'gF2',nome:'WiFi / Telefono',icona:'📡'},
+  {id:'gF3',livello:'gruppo',parentId:null,nome:'Assicurazioni',icona:'🛡️'},
+    {id:'cF3a',livello:'conto',parentId:'gF3',nome:'Assicurazione struttura',icona:''},
+  {id:'gF4',livello:'gruppo',parentId:null,nome:'Servizi professionali',icona:'💼'},
+    {id:'cF4a',livello:'conto',parentId:'gF4',nome:'Commercialista',icona:'📊'},
+    {id:'cF4b',livello:'conto',parentId:'gF4',nome:'Software / Abbonamenti',icona:'💻'},
 ];
-const VOCI_DEFAULT_VARIABILI = [
-  {desc:'Pulizie camere',           cat:'Pulizie',                 importo:0},
-  {desc:'Biancheria / Lavanderia',  cat:'Biancheria / Lavanderia', importo:0},
-  {desc:'Colazioni / F&B',          cat:'Colazioni / F&B',         importo:0},
-  {desc:'Consumabili (saponi ecc)', cat:'Forniture / Consumabili', importo:0},
-  {desc:'Manutenzione ordinaria',   cat:'Manutenzione',            importo:0},
-  {desc:'Commissioni OTA',          cat:'Commissioni OTA',         importo:0},
-  {desc:'Marketing / Pubblicità',   cat:'Marketing / Pubblicità',  importo:0},
+const PDC_DEFAULT_VARIABILI = [
+  {id:'gV1',livello:'gruppo',parentId:null,nome:'Pulizie & Biancheria',icona:'🧹'},
+    {id:'cV1a',livello:'conto',parentId:'gV1',nome:'Pulizie camere',icona:'🛏️'},
+    {id:'cV1b',livello:'conto',parentId:'gV1',nome:'Lavanderia',icona:'👕'},
+  {id:'gV2',livello:'gruppo',parentId:null,nome:'F&B',icona:'🍳'},
+    {id:'cV2a',livello:'conto',parentId:'gV2',nome:'Colazioni',icona:'☕'},
+    {id:'cV2b',livello:'conto',parentId:'gV2',nome:'Bevande / Minibar',icona:'🧃'},
+  {id:'gV3',livello:'gruppo',parentId:null,nome:'Manutenzione',icona:'🔧'},
+    {id:'cV3a',livello:'conto',parentId:'gV3',nome:'Manutenzione ordinaria',icona:'🪛'},
+    {id:'cV3b',livello:'conto',parentId:'gV3',nome:'Materiali di consumo',icona:'🧴'},
+  {id:'gV4',livello:'gruppo',parentId:null,nome:'Commerciale',icona:'📣'},
+    {id:'cV4a',livello:'conto',parentId:'gV4',nome:'Commissioni OTA',icona:'🏨'},
+    {id:'cV4b',livello:'conto',parentId:'gV4',nome:'Marketing / Pubblicità',icona:'📢'},
 ];
 
 let contStato = {fissi:[],variabili:[],entrate:[]};
+let pdcStato  = {fissi:[],variabili:[]};
 let contLoading = false;
 
+// ── Init ───────────────────────────────────────────────────────────────────
 function initContabilita(){
   const selMese=document.getElementById('cont-mese');
   const selAnno=document.getElementById('cont-anno');
@@ -2313,22 +2353,33 @@ function getMeseAnno(){
   };
 }
 
+// ── Piano dei conti Firestore ──────────────────────────────────────────────
+async function loadPDC(tipo){
+  try{
+    const snap=await db.collection('contabilita').doc(`pdc_${tipo}`).get();
+    if(snap.exists&&snap.data().nodi?.length) return snap.data().nodi;
+  }catch(e){console.warn('loadPDC',e)}
+  return tipo==='fisso'?[...PDC_DEFAULT_FISSI]:[...PDC_DEFAULT_VARIABILI];
+}
+async function savePDC(tipo,nodi){
+  await db.collection('contabilita').doc(`pdc_${tipo}`).set({nodi,aggiornato:firebase.firestore.FieldValue.serverTimestamp()});
+}
+
+// ── Voci Firestore ─────────────────────────────────────────────────────────
 async function loadVociCont(tipo,mese,anno){
   const chiave=`cont_${tipo}_${anno}_${String(mese).padStart(2,'0')}`;
   try{
     const snap=await db.collection('contabilita').doc(chiave).get();
     if(snap.exists) return snap.data().voci||[];
   }catch(e){console.warn('loadVoci',e)}
-  if(tipo==='fisso') return VOCI_DEFAULT_FISSI.map((v,i)=>({...v,id:`f${i}`,ricorrenza:'mensile',pagamento:'',note:'',data:`${anno}-${String(mese+1).padStart(2,'0')}-01`}));
-  if(tipo==='variabile') return VOCI_DEFAULT_VARIABILI.map((v,i)=>({...v,id:`v${i}`,ricorrenza:'una_tantum',pagamento:'',note:'',data:`${anno}-${String(mese+1).padStart(2,'0')}-01`}));
   return[];
 }
-
 async function saveVociCont(tipo,mese,anno,voci){
   const chiave=`cont_${tipo}_${anno}_${String(mese).padStart(2,'0')}`;
   await db.collection('contabilita').doc(chiave).set({tipo,mese,anno,voci,aggiornato:firebase.firestore.FieldValue.serverTimestamp()});
 }
 
+// ── Entrate automatiche da prenotazioni ───────────────────────────────────
 function entratePrenotazioniMese(mese,anno){
   return allPrenotazioni.filter(p=>{
     const importo=parseFloat(p.prezzo||p.saldoPagato||0);
@@ -2341,7 +2392,6 @@ function entratePrenotazioniMese(mese,anno){
     id:'pren_'+p.id,
     desc:`Soggiorno: ${p.cognome||''} ${p.nome||''}`,
     importo:parseFloat(p.saldoPagato||p.prezzo||0),
-    cat:'Soggiorno (incasso)',
     pagamento:p.saldoPagato?'checkout':'prenotazione',
     data:p.checkoutConfermato?p.checkout:p.checkin,
     note:`Camera ${nomeCameraById(p.cameraId)} · ${calcolaNotti(p.checkin,p.checkout)} notti`,
@@ -2349,72 +2399,193 @@ function entratePrenotazioniMese(mese,anno){
   }));
 }
 
+// ── Render principale ──────────────────────────────────────────────────────
 async function renderContabilita(){
   if(contLoading)return;
   contLoading=true;
   const{mese,anno}=getMeseAnno();
   document.getElementById('cont-anno-label').textContent=anno;
-  const[fissi,variabili,entrateExtra]=await Promise.all([
+
+  const[pdcFissi,pdcVariabili,fissi,variabili,entrateExtra]=await Promise.all([
+    loadPDC('fisso'), loadPDC('variabile'),
     loadVociCont('fisso',mese,anno),
     loadVociCont('variabile',mese,anno),
     loadVociCont('entrata',mese,anno),
   ]);
+  pdcStato={fissi:pdcFissi,variabili:pdcVariabili};
   contStato={fissi,variabili,entrate:entrateExtra};
+
   const entrateAuto=entratePrenotazioniMese(mese,anno);
   const tutteEntrate=[...entrateAuto,...entrateExtra];
   const totEntrate=tutteEntrate.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
   const totFissi=fissi.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
   const totVariabili=variabili.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
-  const totCosti=totFissi+totVariabili;
-  const saldo=totEntrate-totCosti;
+  const saldo=totEntrate-totFissi-totVariabili;
 
   // Cards riepilogo
   document.getElementById('cont-riepilogo-mese').innerHTML=[
-    {label:'Entrate',val:'€'+totEntrate.toFixed(2),col:'#2a7a3b',bg:'#EEF7F0'},
-    {label:'Costi fissi',val:'€'+totFissi.toFixed(2),col:'#C0392B',bg:'#FDECEA'},
-    {label:'Costi variabili',val:'€'+totVariabili.toFixed(2),col:'#E67E22',bg:'#FEF5E7'},
-    {label:'Saldo mese',val:(saldo>=0?'+':'')+'€'+saldo.toFixed(2),col:saldo>=0?'#2a7a3b':'#C0392B',bg:saldo>=0?'#EEF7F0':'#FDECEA'},
+    {label:'Entrate',     val:'€'+totEntrate.toFixed(2),   col:'#2a7a3b', bg:'#EEF7F0'},
+    {label:'Costi fissi', val:'€'+totFissi.toFixed(2),     col:'#C0392B', bg:'#FDECEA'},
+    {label:'Costi var.',  val:'€'+totVariabili.toFixed(2), col:'#E67E22', bg:'#FEF5E7'},
+    {label:'Saldo mese',  val:(saldo>=0?'+':'')+'€'+saldo.toFixed(2),
+      col:saldo>=0?'#2a7a3b':'#C0392B', bg:saldo>=0?'#EEF7F0':'#FDECEA'},
   ].map(r=>`<div style="background:${r.bg};border-radius:10px;padding:16px 18px;border:1.5px solid ${r.col}33">
     <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:${r.col};font-weight:600;margin-bottom:6px">${r.label}</div>
     <div style="font-size:26px;font-weight:700;color:${r.col};font-family:'DM Serif Display',serif">${r.val}</div>
     <div style="font-size:11px;color:${r.col};opacity:.7;margin-top:2px">${MESI_CONT[mese]} ${anno}</div>
   </div>`).join('');
 
-  renderListaVoci('cont-entrate-lista',tutteEntrate,'entrata','#2a7a3b');
-  renderListaVoci('cont-fissi-lista',fissi,'fisso','#C0392B');
-  renderListaVoci('cont-variabili-lista',variabili,'variabile','#E67E22');
+  renderListaVoci('cont-entrate-lista',tutteEntrate,'entrata','#2a7a3b',null);
+  renderAlberoConti('cont-fissi-lista',pdcFissi,fissi,'fisso','#C0392B');
+  renderAlberoConti('cont-variabili-lista',pdcVariabili,variabili,'variabile','#E67E22');
   await renderTabellaAnnuale(anno);
   contLoading=false;
 }
 
-function renderListaVoci(elId,voci,tipo,colore){
+// ── Render accordion 3 livelli ─────────────────────────────────────────────
+function renderAlberoConti(elId,pdc,voci,tipo,colore){
+  const el=document.getElementById(elId);
+  if(!el)return;
+  const gruppi=pdc.filter(n=>n.livello==='gruppo');
+  if(!gruppi.length){
+    el.innerHTML=`<div style="color:var(--text-muted);font-size:13px;padding:12px;text-align:center;border:1px dashed var(--border);border-radius:8px">
+      Nessun gruppo. Clicca "+ Gruppo" per iniziare.</div>`;return;
+  }
+
+  el.innerHTML=gruppi.map(gruppo=>{
+    const conti=pdc.filter(n=>n.livello==='conto'&&n.parentId===gruppo.id);
+    const vociGruppo=voci.filter(v=>vociInAlbero(v.sottocontoId||v.cat,gruppo.id,pdc));
+    const totGruppo=vociGruppo.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
+    const accordionId=`acc_${gruppo.id}`;
+
+    const contiHTML=conti.map(conto=>{
+      const sottoconti=pdc.filter(n=>n.livello==='sottoconto'&&n.parentId===conto.id);
+      const vociConto=voci.filter(v=>v.sottocontoId===conto.id||sottoconti.some(s=>s.id===v.sottocontoId));
+      const totConto=vociConto.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
+      const accCId=`acc_${conto.id}`;
+
+      // Sottoconti + voci assegnate direttamente al conto
+      const sottoHTML=sottoconti.map(sc=>{
+        const vociSC=voci.filter(v=>v.sottocontoId===sc.id);
+        const totSC=vociSC.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
+        return`<div style="margin-left:24px;margin-bottom:6px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;
+            background:var(--bg);border-radius:6px;border:1px solid var(--border)">
+            <span style="font-size:12px;color:var(--text);font-weight:500">${sc.icona||'◦'} ${sc.nome}</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:12px;font-weight:600;color:${colore}">€${totSC.toFixed(2)}</span>
+              <button class="btn btn-sm btn-outline no-print" style="padding:2px 6px;font-size:10px"
+                onclick="openModalVoce('${tipo}','${sc.id}')">+ voce</button>
+              <button class="btn btn-sm btn-outline no-print" style="padding:2px 6px;font-size:10px"
+                onclick="editNodoPDC('${tipo}','${sc.id}')">✏️</button>
+              <button class="btn btn-sm btn-danger no-print" style="padding:2px 6px;font-size:10px"
+                onclick="eliminaNodoPDC('${tipo}','${sc.id}')">🗑️</button>
+            </div>
+          </div>
+          ${vociSC.map(v=>htmlVoceLine(v,tipo,colore)).join('')}
+        </div>`;
+      }).join('');
+
+      const vociDiretteConto=voci.filter(v=>v.sottocontoId===conto.id);
+      const vociDiretteHTML=vociDiretteConto.map(v=>htmlVoceLine(v,tipo,colore)).join('');
+
+      return`<div style="margin-left:16px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;
+          background:var(--surface2);border-radius:8px;border:1px solid var(--border);cursor:pointer"
+          onclick="toggleAcc('${accCId}')">
+          <span style="font-size:13px;font-weight:600;color:var(--text)">${conto.icona||'▸'} ${conto.nome}</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:13px;font-weight:700;color:${colore}">€${totConto.toFixed(2)}</span>
+            <button class="btn btn-sm btn-outline no-print" style="padding:2px 6px;font-size:10px"
+              onclick="event.stopPropagation();openModalGruppo('${tipo}','sottoconto','${conto.id}')">+ sottoconto</button>
+            <button class="btn btn-sm btn-outline no-print" style="padding:2px 6px;font-size:10px"
+              onclick="event.stopPropagation();openModalVoce('${tipo}','${conto.id}')">+ voce</button>
+            <button class="btn btn-sm btn-outline no-print" style="padding:2px 6px;font-size:10px"
+              onclick="event.stopPropagation();editNodoPDC('${tipo}','${conto.id}')">✏️</button>
+            <button class="btn btn-sm btn-danger no-print" style="padding:2px 6px;font-size:10px"
+              onclick="event.stopPropagation();eliminaNodoPDC('${tipo}','${conto.id}')">🗑️</button>
+          </div>
+        </div>
+        <div id="${accCId}" style="display:block;padding-top:6px">
+          ${sottoHTML}${vociDiretteHTML}
+        </div>
+      </div>`;
+    }).join('');
+
+    // Voci non assegnate ad alcun conto/sottoconto del gruppo
+    const vociLibere=voci.filter(v=>!v.sottocontoId||!pdc.find(n=>n.id===v.sottocontoId));
+
+    return`<div style="margin-bottom:12px;border:1.5px solid ${colore}33;border-radius:10px;overflow:hidden">
+      <div style="background:${colore}11;border-bottom:1.5px solid ${colore}33;padding:10px 14px;
+        display:flex;align-items:center;justify-content:space-between;cursor:pointer"
+        onclick="toggleAcc('${accordionId}')">
+        <span style="font-size:14px;font-weight:700;color:${colore}">${gruppo.icona||'📁'} ${gruppo.nome}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:14px;font-weight:700;color:${colore}">€${totGruppo.toFixed(2)}</span>
+          <button class="btn btn-sm no-print" style="background:${colore}22;color:${colore};padding:2px 8px;font-size:11px;border:1px solid ${colore}44"
+            onclick="event.stopPropagation();openModalGruppo('${tipo}','conto','${gruppo.id}')">+ conto</button>
+          <button class="btn btn-sm btn-outline no-print" style="padding:2px 6px;font-size:10px"
+            onclick="event.stopPropagation();editNodoPDC('${tipo}','${gruppo.id}')">✏️</button>
+          <button class="btn btn-sm btn-danger no-print" style="padding:2px 6px;font-size:10px"
+            onclick="event.stopPropagation();eliminaNodoPDC('${tipo}','${gruppo.id}')">🗑️</button>
+          <span style="font-size:16px;color:${colore}" id="ico_${accordionId}">▾</span>
+        </div>
+      </div>
+      <div id="${accordionId}" style="padding:12px">
+        ${contiHTML}
+        ${vociLibere.length?vociLibere.map(v=>htmlVoceLine(v,tipo,colore)).join(''):''}
+        ${!contiHTML&&!vociLibere.length?`<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:8px">
+          Nessun conto — clicca "+ conto" per aggiungere</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleAcc(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const ico=document.getElementById('ico_'+id);
+  if(el.style.display==='none'){el.style.display='block';if(ico)ico.textContent='▾'}
+  else{el.style.display='none';if(ico)ico.textContent='▸'}
+}
+
+function vociInAlbero(sottocontoId,gruppoId,pdc){
+  if(!sottocontoId)return false;
+  const nodo=pdc.find(n=>n.id===sottocontoId);
+  if(!nodo)return false;
+  if(nodo.parentId===gruppoId)return true;
+  const padre=pdc.find(n=>n.id===nodo.parentId);
+  return padre&&padre.parentId===gruppoId;
+}
+
+function htmlVoceLine(v,tipo,colore){
+  return`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px 6px 32px;
+    border-bottom:1px solid var(--border)">
+    <div style="flex:1;min-width:0">
+      <span style="font-size:12px;color:var(--text)">${v.desc}</span>
+      <span style="font-size:11px;color:var(--text-muted);margin-left:8px">${v.data?formatDate(v.data):''}
+        ${v.ricorrenza&&v.ricorrenza!=='una_tantum'?`<span style="color:var(--accent)"> 🔄${v.ricorrenza}</span>`:''}
+        ${v.note?` · ${v.note}`:''}
+        ${v._auto?`<span style="background:#DCF0FF;color:#1A6FA8;padding:1px 4px;border-radius:3px;font-size:10px;margin-left:4px">auto</span>`:''}
+      </span>
+    </div>
+    <span style="font-size:13px;font-weight:700;color:${colore};min-width:70px;text-align:right">€${parseFloat(v.importo||0).toFixed(2)}</span>
+    ${!v._auto?`<button class="btn btn-sm btn-outline no-print" style="padding:2px 6px;font-size:10px" onclick="editVoceCont('${tipo}','${v.id}')">✏️</button>
+    <button class="btn btn-sm btn-danger no-print" style="padding:2px 6px;font-size:10px" onclick="eliminaVoceCont('${tipo}','${v.id}')">🗑️</button>`:''}
+  </div>`;
+}
+
+// ── Render entrate (lista semplice) ────────────────────────────────────────
+function renderListaVoci(elId,voci,tipo,colore,_pdc){
   const el=document.getElementById(elId);
   if(!el)return;
   if(!voci.length){el.innerHTML=`<div style="color:var(--text-muted);font-size:13px;padding:12px;text-align:center;border:1px dashed var(--border);border-radius:8px">Nessuna voce</div>`;return}
   const tot=voci.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
-  el.innerHTML=voci.map(v=>`
-    <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid ${colore};
-      border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600;color:var(--text)">${v.desc}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;display:flex;flex-wrap:wrap;gap:4px">
-          ${v.cat?`<span style="background:var(--surface2);padding:1px 6px;border-radius:4px">${v.cat}</span>`:''}
-          ${v.data?`<span>${formatDate(v.data)}</span>`:''}
-          ${v.pagamento?`<span>· ${v.pagamento}</span>`:''}
-          ${v.ricorrenza&&v.ricorrenza!=='una_tantum'?`<span style="color:var(--accent)">🔄 ${v.ricorrenza}</span>`:''}
-          ${v.note?`<span style="font-style:italic">${v.note}</span>`:''}
-          ${v._auto?`<span style="background:#DCF0FF;color:#1A6FA8;padding:1px 5px;border-radius:4px;font-size:10px">auto</span>`:''}
-        </div>
-      </div>
-      <div style="font-size:15px;font-weight:700;color:${colore};white-space:nowrap;min-width:80px;text-align:right">€${parseFloat(v.importo||0).toFixed(2)}</div>
-      ${!v._auto?`<div class="no-print" style="display:flex;gap:4px;flex-shrink:0">
-        <button class="btn btn-sm btn-outline" style="padding:3px 8px" onclick="editVoceCont('${tipo}','${v.id}')">✏️</button>
-        <button class="btn btn-sm btn-danger" style="padding:3px 8px" onclick="eliminaVoceCont('${tipo}','${v.id}')">🗑️</button>
-      </div>`:''}
-    </div>`).join('')+
-    `<div style="font-size:12px;font-weight:700;color:${colore};text-align:right;padding:4px 2px;border-top:1px solid ${colore}33;margin-top:4px">Totale: €${tot.toFixed(2)}</div>`;
+  el.innerHTML=voci.map(v=>htmlVoceLine(v,tipo,colore)).join('')+
+    `<div style="font-size:12px;font-weight:700;color:${colore};text-align:right;padding:6px 2px;border-top:1px solid ${colore}33">Totale: €${tot.toFixed(2)}</div>`;
 }
 
+// ── Tabella annuale ────────────────────────────────────────────────────────
 async function renderTabellaAnnuale(anno){
   const tbody=document.getElementById('cont-tbody-annuale');
   const tfoot=document.getElementById('cont-tfoot-annuale');
@@ -2453,29 +2624,123 @@ async function renderTabellaAnnuale(anno){
   </tr>`;
 }
 
-function openModalVoce(tipo,id=null){
+// ── Modal Gruppo/Conto/Sottoconto ──────────────────────────────────────────
+function openModalGruppo(tipo, livelloPre=null, parentIdPre=null, id=null){
+  document.getElementById('vg-tipo').value=tipo;
+  document.getElementById('vg-id').value=id||'';
+  const pdc=tipo==='fisso'?pdcStato.fissi:pdcStato.variabili;
+
+  const selLiv=document.getElementById('vg-livello-sel');
+  if(livelloPre){ selLiv.value=livelloPre; selLiv.disabled=true; } else { selLiv.disabled=false; }
+
+  document.getElementById('vg-nome').value='';
+  document.getElementById('vg-icona').value='';
+  if(id){
+    const nodo=pdc.find(n=>n.id===id);
+    if(nodo){ document.getElementById('vg-nome').value=nodo.nome; document.getElementById('vg-icona').value=nodo.icona||''; selLiv.value=nodo.livello; }
+  }
+  aggiornaParentSelect(parentIdPre);
+  const label={'gruppo':'Gruppo','conto':'Conto','sottoconto':'Sottoconto'}[selLiv.value]||'Nodo';
+  document.getElementById('modal-gruppo-title').textContent=id?`Modifica ${label}`:`Nuovo ${label}`;
+  document.getElementById('modal-gruppo-cont').classList.add('open');
+}
+
+function aggiornaParentSelect(preselect=null){
+  const tipo=document.getElementById('vg-tipo').value;
+  const livello=document.getElementById('vg-livello-sel').value;
+  const wrap=document.getElementById('vg-parent-wrap');
+  const sel=document.getElementById('vg-parent-sel');
+  const label=document.getElementById('vg-parent-label');
+  const pdc=tipo==='fisso'?pdcStato.fissi:pdcStato.variabili;
+  if(livello==='gruppo'){ wrap.style.display='none'; return; }
+  wrap.style.display='';
+  const parentLivello=livello==='conto'?'gruppo':'conto';
+  label.textContent=livello==='conto'?'Gruppo padre':'Conto padre';
+  const padri=pdc.filter(n=>n.livello===parentLivello);
+  sel.innerHTML=padri.map(p=>`<option value="${p.id}" ${preselect===p.id?'selected':''}>${p.icona||''} ${p.nome}</option>`).join('');
+}
+
+function editNodoPDC(tipo,id){ openModalGruppo(tipo,null,null,id); }
+
+async function salvaGruppoCont(){
+  const tipo=document.getElementById('vg-tipo').value;
+  const id=document.getElementById('vg-id').value;
+  const nome=document.getElementById('vg-nome').value.trim();
+  if(!nome){showToast('Nome obbligatorio','error');return}
+  const livello=document.getElementById('vg-livello-sel').value;
+  const parentId=livello!=='gruppo'?document.getElementById('vg-parent-sel').value:null;
+  const icona=document.getElementById('vg-icona').value.trim();
+  const pdc=[...(tipo==='fisso'?pdcStato.fissi:pdcStato.variabili)];
+  const nodo={id:id||`n${Date.now()}`,livello,parentId,nome,icona};
+  const idx=pdc.findIndex(n=>n.id===nodo.id);
+  if(idx>=0)pdc[idx]=nodo;else pdc.push(nodo);
+  await savePDC(tipo,pdc);
+  closeModal('modal-gruppo-cont');
+  showToast('Salvato ✓','success');
+  await renderContabilita();
+}
+
+async function eliminaNodoPDC(tipo,id){
+  const pdc=[...(tipo==='fisso'?pdcStato.fissi:pdcStato.variabili)];
+  const figli=pdc.filter(n=>n.parentId===id);
+  if(figli.length&&!confirm(`Questo nodo ha ${figli.length} figlio/i. Eliminarli tutti?`))return;
+  const daEliminare=new Set([id,...figli.map(n=>n.id)]);
+  const nuovoPDC=pdc.filter(n=>!daEliminare.has(n.id));
+  await savePDC(tipo,nuovoPDC);
+  showToast('Eliminato','success');
+  await renderContabilita();
+}
+
+// ── Modal Voce ─────────────────────────────────────────────────────────────
+function openModalVoce(tipo, sottocontoIdPre=null, id=null){
   document.getElementById('vc-tipo').value=tipo;
   document.getElementById('vc-id').value=id||'';
-  const{mese,anno}=getMeseAnno();
   const label=tipo==='entrata'?'Entrata':tipo==='fisso'?'Costo fisso':'Costo variabile';
   document.getElementById('modal-voce-title').textContent=id?`Modifica ${label}`:`Nuova voce — ${label}`;
   const pgEl=document.getElementById('vc-pagamento').parentElement;
   pgEl.style.display=tipo==='entrata'?'':'none';
+
+  // Popola select sottoconto
+  const sel=document.getElementById('vc-sottoconto');
+  if(tipo!=='entrata'){
+    const pdc=tipo==='fisso'?pdcStato.fissi:pdcStato.variabili;
+    sel.innerHTML='<option value="">— Nessun conto specifico —</option>';
+    // Gruppi > conti > sottoconti
+    pdc.filter(n=>n.livello==='gruppo').forEach(g=>{
+      const conti=pdc.filter(n=>n.livello==='conto'&&n.parentId===g.id);
+      const og=document.createElement('optgroup');
+      og.label=`${g.icona||'📁'} ${g.nome}`;
+      conti.forEach(c=>{
+        const sc=pdc.filter(n=>n.livello==='sottoconto'&&n.parentId===c.id);
+        if(sc.length){
+          sc.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=`  ${c.nome} › ${s.nome}`;og.appendChild(o)});
+        } else {
+          const o=document.createElement('option');o.value=c.id;o.textContent=`${c.icona||''} ${c.nome}`;og.appendChild(o);
+        }
+      });
+      sel.appendChild(og);
+    });
+    if(sottocontoIdPre) sel.value=sottocontoIdPre;
+    sel.parentElement.style.display='';
+  } else {
+    sel.parentElement.style.display='none';
+  }
+
   let dati={};
   if(id){
     const lista=tipo==='fisso'?contStato.fissi:tipo==='variabile'?contStato.variabili:contStato.entrate;
     dati=lista.find(v=>v.id===id)||{};
+    if(dati.sottocontoId) sel.value=dati.sottocontoId;
   }
   document.getElementById('vc-desc').value=dati.desc||'';
   document.getElementById('vc-importo').value=dati.importo||'';
   document.getElementById('vc-data').value=dati.data||toDateStr(new Date());
-  document.getElementById('vc-categoria').value=dati.cat||'';
   document.getElementById('vc-ricorrenza').value=dati.ricorrenza||'una_tantum';
   document.getElementById('vc-pagamento').value=dati.pagamento||'';
   document.getElementById('vc-note').value=dati.note||'';
   document.getElementById('modal-voce-cont').classList.add('open');
 }
-function editVoceCont(tipo,id){openModalVoce(tipo,id)}
+function editVoceCont(tipo,id){openModalVoce(tipo,null,id)}
 
 async function salvaVoceCont(){
   const tipo=document.getElementById('vc-tipo').value;
@@ -2487,7 +2752,7 @@ async function salvaVoceCont(){
   const nuova={
     id:id||`${tipo[0]}${Date.now()}`,
     desc,importo,data,
-    cat:document.getElementById('vc-categoria').value.trim(),
+    sottocontoId:document.getElementById('vc-sottoconto').value||null,
     ricorrenza:document.getElementById('vc-ricorrenza').value,
     pagamento:document.getElementById('vc-pagamento').value,
     note:document.getElementById('vc-note').value.trim(),
