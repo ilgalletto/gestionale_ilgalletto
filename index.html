@@ -290,6 +290,11 @@
           <div class="stat-card"><div class="stat-label">Prenotazioni totali</div><div class="stat-value" id="stat-tot">—</div><div class="stat-sub">nel sistema</div></div>
           <div class="stat-card"><div class="stat-label">Incasso (mese)</div><div class="stat-value" id="stat-mese">—</div><div class="stat-sub">prenotazioni del mese</div></div>
         </div>
+        <!-- CANALI DI PRENOTAZIONE -->
+        <div style="margin-bottom:24px">
+          <div style="font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Canali di prenotazione</div>
+          <div id="canali-grid" style="display:flex;flex-wrap:wrap;gap:10px"></div>
+        </div>
         <div class="page-title" style="font-size:18px;margin-bottom:16px">Prossimi arrivi</div>
         <div class="table-wrap">
           <table><thead><tr><th>Ospite</th><th>Camera</th><th>Check-in</th><th>Check-out</th><th>Stato</th></tr></thead>
@@ -1124,6 +1129,66 @@ function renderDashboard(){
   const incasso=allPrenotazioni.filter(p=>{const d=new Date(p.checkin);return d.getMonth()===mese&&d.getFullYear()===anno})
     .reduce((s,p)=>s+(parseFloat(p.prezzo)||0),0);
   document.getElementById('stat-mese').textContent='€'+incasso.toFixed(0);
+
+  // ── Canali di prenotazione ──────────────────────────────────────────────────
+  const canaliGrid = document.getElementById('canali-grid');
+  if(canaliGrid){
+    const totPren = allPrenotazioni.length;
+    // Conta per canale
+    const conteggio = {};
+    allPrenotazioni.forEach(p=>{
+      const ch = p.canale || '—';
+      conteggio[ch] = (conteggio[ch]||0) + 1;
+    });
+    // Emoji per canale
+    const emoji = {
+      'Booking.com':'🏨','Airbnb':'🏠','Telefono':'📞','Email':'✉️',
+      'WhatsApp':'💬','Sito web':'🌐','Di passaggio':'🚶','Agenzia':'🏢',
+      'Passaparola':'🗣️','Altro':'📌','—':'❓'
+    };
+    // Colori per canale
+    const colori = {
+      'Booking.com':['#003580','#E8F0FF'],
+      'Airbnb':['#FF5A5F','#FFF0F0'],
+      'Telefono':['#2AA1A0','#E0F5F5'],
+      'Email':['#8E44AD','#F5EEF8'],
+      'WhatsApp':['#25D366','#EAFAF1'],
+      'Sito web':['#1A6FA8','#DCF0FF'],
+      'Di passaggio':['#E67E22','#FEF5E7'],
+      'Agenzia':['#7F8C8D','#F2F3F4'],
+      'Passaparola':['#E91E63','#FCE4EC'],
+      'Altro':['#6A8DA8','#EEF6FB'],
+      '—':['#95A5A6','#F2F3F4'],
+    };
+    // Ordina per quantità decrescente
+    const sorted = Object.entries(conteggio).sort((a,b)=>b[1]-a[1]);
+    if(!sorted.length){
+      canaliGrid.innerHTML='<div style="color:var(--text-muted);font-size:13px">Nessuna prenotazione registrata</div>';
+    } else {
+      canaliGrid.innerHTML = sorted.map(([ch, n])=>{
+        const pct = totPren > 0 ? ((n/totPren)*100).toFixed(0) : 0;
+        const [colTesto, colBg] = colori[ch] || ['#1A6FA8','#DCF0FF'];
+        const em = emoji[ch] || '📌';
+        return `<div style="
+          background:${colBg};border:1.5px solid ${colTesto}22;border-radius:10px;
+          padding:12px 16px;min-width:120px;flex:0 0 auto;
+          display:flex;flex-direction:column;gap:4px;
+          box-shadow:0 1px 4px rgba(0,0,0,.06)">
+          <div style="font-size:18px;line-height:1">${em}</div>
+          <div style="font-size:12px;font-weight:600;color:${colTesto};margin-top:2px">${ch}</div>
+          <div style="display:flex;align-items:baseline;gap:6px;margin-top:2px">
+            <span style="font-size:22px;font-weight:700;color:${colTesto};font-family:'DM Serif Display',serif">${n}</span>
+            <span style="font-size:12px;color:${colTesto};opacity:.75">${pct}%</span>
+          </div>
+          <!-- Barra percentuale -->
+          <div style="height:3px;background:${colTesto}22;border-radius:2px;margin-top:2px">
+            <div style="height:100%;width:${pct}%;background:${colTesto};border-radius:2px;transition:width .4s"></div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
   const tb=document.getElementById('tb-arrivi');
   const prossimi=allPrenotazioni.filter(p=>p.checkin>=oggi).slice(0,8);
   if(!prossimi.length){tb.innerHTML='<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">🌙</div><p>Nessun arrivo imminente</p></div></td></tr>';return}
