@@ -273,7 +273,7 @@
           font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;line-height:1.4"></span>
       </button>
       <button class="nav-item no-visual" onclick="navTo('contabilita',this)"><span class="nav-icon">💰</span><span>Contabilità</span></button>
-      <button class="nav-item proprietario-only admin-show" onclick="navTo('camere',this)"><span class="nav-icon">🛏️</span><span>Camere</span></button>
+      <button class="nav-item proprietario-only admin-show no-visual" onclick="navTo('camere',this)"><span class="nav-icon">🛏️</span><span>Camere</span></button>
       <button class="nav-item admin-only" onclick="navTo('impostazioni',this)"><span class="nav-icon">⚙️</span><span>Impostazioni</span></button>
       <!-- Guida in fondo, separata -->
       <div style="flex:1"></div>
@@ -604,7 +604,7 @@
             <div class="gs" id="gs-accesso">
               <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#0D2F5A,#1A6FA8)">🔑</div>
                 <div><div class="gs-title">Accesso al Sistema</div><div class="gs-sub">Login e ruoli utente</div></div></div>
-              <p class="gs-p">Il gestionale è accessibile da qualsiasi dispositivo aprendo il browser all'indirizzo del sistema. Sono previsti due livelli di accesso: <strong>Admin</strong> (completo) e <strong>Proprietario</strong> (prenotazioni e calendario).</p>
+              <p class="gs-p">Il gestionale è accessibile da qualsiasi dispositivo aprendo il browser all'indirizzo del sistema. Sono previsti quattro livelli di accesso: <strong>Admin</strong> (completo), <strong>Proprietario</strong>, <strong>Visual</strong> e <strong>Contabile</strong>.</p>
               <div class="gs-card">
                 <div class="gs-card-title">Come accedere</div>
                 <div class="gs-step"><div class="gs-num">1</div>Inserire la propria <strong>email</strong></div>
@@ -614,15 +614,17 @@
               <div class="gs-card" style="margin-top:14px">
                 <div class="gs-card-title">Confronto ruoli</div>
                 <table class="gs-table">
-                  <tr><th>Funzione</th><th>Admin</th><th>Proprietario</th><th>Visual</th></tr>
-                  <tr><td>Dashboard</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-                  <tr><td>Calendario</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-                  <tr><td>Prenotazioni</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓ (sola lettura)</td></tr>
-                  <tr><td>Clienti</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">✗</td></tr>
-                  <tr><td>Check-in / Check-out</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">✗</td></tr>
-                  <tr><td>Stampa</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">✗</td></tr>
-                  <tr><td>Camere (gestione)</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">✗</td></tr>
-                  <tr><td>Impostazioni utenti</td><td class="ok">✓</td><td class="no">✗</td><td class="no">✗</td></tr>
+                  <tr><th>Funzione</th><th>Admin</th><th>Proprietario</th><th>Visual</th><th>Contabile</th></tr>
+                  <tr><td>Dashboard</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓ lettura</td><td class="ok">✓ lettura</td></tr>
+                  <tr><td>Calendario</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓ lettura</td><td class="ok">✓ lettura</td></tr>
+                  <tr><td>Prenotazioni</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓ lettura</td><td class="ok">✓ lettura</td></tr>
+                  <tr><td>Clienti</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">✗</td><td class="no">✗</td></tr>
+                  <tr><td>Check-in / Check-out</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">✗</td><td class="no">✗</td></tr>
+                  <tr><td>Stampa</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">✗</td><td class="no">✗</td></tr>
+                  <tr><td>💰 Contabilità</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">✗</td><td class="ok">✓ completo</td></tr>
+                  <tr><td>Questura</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">✗</td><td class="no">✗</td></tr>
+                  <tr><td>Camere</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">✗</td><td class="no">✗</td></tr>
+                  <tr><td>Impostazioni utenti</td><td class="ok">✓</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td></tr>
                 </table>
               </div>
             </div>
@@ -897,7 +899,7 @@
               <div class="gs-faq-item"><div class="gs-faq-q">❓ Come genero il file per la Questura?</div><div class="gs-faq-a">Dopo il check-in vai in 🚔 Questura → seleziona la data → metti il segno di spunta sugli ospiti → clicca "⬇️ Genera file TXT". Il file si scarica automaticamente. Poi aprilo su Alloggiati Web (alloggiatiweb.poliziadistato.it) → Invio File → carica → Elabora → Invia.</div></div>
               <div class="gs-faq-item"><div class="gs-faq-q">❓ Il file TXT viene rifiutato da Alloggiati Web.</div><div class="gs-faq-a">Verificare che tutti i dati obbligatori siano presenti: cognome, nome e documento del capofamiglia. Se l'ospite mostra il badge "⚠️ documento mancante", clicca ✏️ per completare i dati e poi rigenera il file.</div></div>
               <div class="gs-faq-item"><div class="gs-faq-q">❓ Il calendario non mostra alcune prenotazioni.</div><div class="gs-faq-a">Verificare che le date ricadano nel periodo visualizzato. Usare i pulsanti Anno prec./Anno succ. per navigare all'anno corretto.</div></div>
-              <div class="gs-faq-item"><div class="gs-faq-q">❓ Come aggiungere un nuovo utente?</div><div class="gs-faq-a">Creare l'account in Firebase Authentication, poi aggiungere il documento in Firestore con ruolo "admin", "proprietario" o "visual" e stato "approvato".</div></div>
+              <div class="gs-faq-item"><div class="gs-faq-q">❓ Come aggiungere un nuovo utente?</div><div class="gs-faq-a">Creare l'account in Firebase Authentication, poi aggiungere il documento in Firestore con ruolo "admin", "proprietario", "visual" o "contabile" e stato "approvato". In alternativa, l'Admin può cambiare il ruolo direttamente dalla sezione Impostazioni → Utenti.</div></div>
               <div class="gs-faq-item"><div class="gs-faq-q">❓ Posso usare il gestionale da smartphone?</div><div class="gs-faq-a">Sì, l'interfaccia è completamente responsive e si adatta a qualsiasi dimensione di schermo.</div></div>
               <div class="gs-faq-item"><div class="gs-faq-q">❓ Come salvare un riepilogo come PDF?</div><div class="gs-faq-a">Dalla sezione Stampa, cliccare 🖨️ Stampa. Nella finestra del browser selezionare "Salva come PDF" come stampante.</div></div>
             </div>
@@ -1189,19 +1191,37 @@ function showApp(){
   document.getElementById('pending-banner').style.display='none';
   document.getElementById('user-email-label').textContent=currentUser.email;
   const ruolo=currentUserData.ruolo||'visual';
-  const labels={'admin':'Admin','proprietario':'Proprietario','visual':'Visual'};
+  const labels={'admin':'Admin','proprietario':'Proprietario','visual':'Visual','contabile':'Contabile'};
   document.getElementById('user-role-badge').textContent=labels[ruolo]||ruolo;
+
+  // Azzera tutti i filtri prima di applicare quelli del ruolo
+  document.querySelectorAll('.no-visual,.no-contabile,.admin-only,.proprietario-only').forEach(el=>el.style.display='');
+
   if(ruolo==='visual'){
-    // Visual: solo dashboard, calendario, prenotazioni (sola lettura), guida
+    // VISUAL: dashboard, calendario, prenotazioni — solo lettura. Nient'altro.
     document.querySelectorAll('.no-visual').forEach(el=>el.style.display='none');
     document.querySelectorAll('.admin-only').forEach(el=>el.style.display='none');
     document.querySelectorAll('.proprietario-only').forEach(el=>el.style.display='none');
+    document.querySelectorAll('.no-contabile').forEach(el=>el.style.display='none');
+
+  } else if(ruolo==='contabile'){
+    // CONTABILE: dashboard, calendario, prenotazioni (lettura) + contabilità (completa) + guida
+    document.querySelectorAll('.no-visual').forEach(el=>el.style.display='none');
+    document.querySelectorAll('.admin-only').forEach(el=>el.style.display='none');
+    document.querySelectorAll('.proprietario-only').forEach(el=>el.style.display='none');
+    // Nasconde le voci sidebar non pertinenti al contabile
+    ['clienti','stampa','questura','camere','impostazioni'].forEach(p=>{
+      const btn=document.querySelector(`.nav-item[onclick*="'${p}'"]`);
+      if(btn) btn.style.display='none';
+    });
+
   } else if(ruolo==='proprietario'){
-    // Proprietario: tutto tranne impostazioni utenti
     document.querySelectorAll('.admin-only').forEach(el=>el.style.display='none');
     document.querySelectorAll('.proprietario-only').forEach(el=>el.style.display='');
+
   }
-  // Admin: vede tutto, nessun filtro
+  // Admin: vede tutto
+
   startListeners();
   aggiornaCalendario();
   initPrintDate();
@@ -1221,6 +1241,15 @@ function doLogout(){auth.signOut()}
 function startListeners(){
   if(unsubPren)unsubPren(); if(unsubCamere)unsubCamere();
   if(unsubUtenti)unsubUtenti(); if(unsubClienti)unsubClienti();
+  const ruolo=currentUserData.ruolo||'visual';
+  // Il contabile ha accesso solo alla contabilità: avvia solo il listener prenotazioni
+  // (serve per le entrate automatiche) e salta tutto il resto
+  if(ruolo==='contabile'){
+    unsubPren=db.collection('prenotazioni').orderBy('checkin','asc').onSnapshot(snap=>{
+      allPrenotazioni=snap.docs.map(d=>({id:d.id,...d.data()}));
+    });
+    return;
+  }
   unsubPren=db.collection('prenotazioni').orderBy('checkin','asc').onSnapshot(snap=>{
     allPrenotazioni=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderPrenotazioni();renderDashboard();aggiornaCalendario();renderClienti();renderStampa();
@@ -1235,12 +1264,13 @@ function startListeners(){
     allClienti=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderClienti();
   });
-  if(currentUserData.ruolo==='admin'){
+  if(ruolo==='admin'){
     unsubUtenti=db.collection('utenti').onSnapshot(snap=>{
       allUtenti=snap.docs.map(d=>({id:d.id,...d.data()}));
       renderUtenti();
     });
-  }}
+  }
+}
 
 // ===== NAV =====
 function navTo(page,btn){
@@ -2238,12 +2268,26 @@ function renderUtenti(){
   const tb=document.getElementById('tb-utenti');
   if(!allUtenti.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted)">Nessun utente</td></tr>';return}
   tb.innerHTML=allUtenti.map(u=>`<tr>
-    <td>${u.email||'—'}</td><td>${u.nome||'—'}</td><td>${u.ruolo||'—'}</td>
+    <td>${u.email||'—'}</td>
+    <td>${u.nome||'—'}</td>
+    <td>
+      <select class="form-control" style="padding:4px 8px;height:auto;font-size:12px"
+        onchange="cambiaRuolo('${u.id}',this.value)" ${u.id===currentUser.uid?'disabled':''}>
+        <option value="admin"     ${u.ruolo==='admin'?'selected':''}>Admin</option>
+        <option value="proprietario" ${u.ruolo==='proprietario'?'selected':''}>Proprietario</option>
+        <option value="visual"    ${u.ruolo==='visual'?'selected':''}>Visual</option>
+        <option value="contabile" ${u.ruolo==='contabile'?'selected':''}>Contabile</option>
+      </select>
+    </td>
     <td><span class="badge ${u.stato==='approvato'?'badge-in':'badge-out'}">${u.stato||'pending'}</span></td>
     <td>
       ${u.stato!=='approvato'?`<button class="btn btn-sm btn-primary" onclick="approvaUtente('${u.id}')">Approva</button>`:''}
       ${u.id!==currentUser.uid?`<button class="btn btn-sm btn-danger" onclick="rimuoviUtente('${u.id}')">Rimuovi</button>`:''}
     </td></tr>`).join('');
+}
+async function cambiaRuolo(uid,nuovoRuolo){
+  await db.collection('utenti').doc(uid).update({ruolo:nuovoRuolo});
+  showToast('Ruolo aggiornato ✓','success');
 }
 async function approvaUtente(uid){await db.collection('utenti').doc(uid).update({stato:'approvato'});showToast('Utente approvato ✓','success')}
 async function rimuoviUtente(uid){if(!confirm('Rimuovere?'))return;await db.collection('utenti').doc(uid).delete();showToast('Rimosso','success')}
