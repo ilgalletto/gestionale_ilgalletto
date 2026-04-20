@@ -1194,33 +1194,41 @@ function showApp(){
   const labels={'admin':'Admin','proprietario':'Proprietario','visual':'Visual','contabile':'Contabile'};
   document.getElementById('user-role-badge').textContent=labels[ruolo]||ruolo;
 
-  // Azzera tutti i filtri prima di applicare quelli del ruolo
-  document.querySelectorAll('.no-visual,.no-contabile,.admin-only,.proprietario-only').forEach(el=>el.style.display='');
+  // Mappa pagina → id bottone sidebar
+  const navBtns = {
+    dashboard:    document.querySelector(".nav-item[onclick*=\"dashboard\"]"),
+    calendario:   document.querySelector(".nav-item[onclick*=\"calendario\"]"),
+    prenotazioni: document.querySelector(".nav-item[onclick*=\"prenotazioni\"]"),
+    clienti:      document.querySelector(".nav-item[onclick*=\"clienti\"]"),
+    stampa:       document.querySelector(".nav-item[onclick*=\"stampa\"]"),
+    questura:     document.getElementById('nav-questura'),
+    contabilita:  document.querySelector(".nav-item[onclick*=\"contabilita\"]"),
+    camere:       document.querySelector(".nav-item[onclick*=\"camere\"]"),
+    impostazioni: document.querySelector(".nav-item[onclick*=\"impostazioni\"]"),
+  };
 
-  if(ruolo==='visual'){
-    // VISUAL: dashboard, calendario, prenotazioni — solo lettura. Nient'altro.
-    document.querySelectorAll('.no-visual').forEach(el=>el.style.display='none');
-    document.querySelectorAll('.admin-only').forEach(el=>el.style.display='none');
-    document.querySelectorAll('.proprietario-only').forEach(el=>el.style.display='none');
-    document.querySelectorAll('.no-contabile').forEach(el=>el.style.display='none');
+  // Permessi per ruolo: quali voci sidebar sono visibili
+  const permessi = {
+    admin:        ['dashboard','calendario','prenotazioni','clienti','stampa','questura','contabilita','camere','impostazioni'],
+    proprietario: ['dashboard','calendario','prenotazioni','clienti','stampa','questura','contabilita','camere'],
+    contabile:    ['dashboard','calendario','prenotazioni','contabilita'],
+    visual:       ['dashboard','calendario','prenotazioni'],
+  };
 
-  } else if(ruolo==='contabile'){
-    // CONTABILE: dashboard, calendario, prenotazioni (lettura) + contabilità (completa) + guida
-    document.querySelectorAll('.no-visual').forEach(el=>el.style.display='none');
-    document.querySelectorAll('.admin-only').forEach(el=>el.style.display='none');
-    document.querySelectorAll('.proprietario-only').forEach(el=>el.style.display='none');
-    // Nasconde le voci sidebar non pertinenti al contabile
-    ['clienti','stampa','questura','camere','impostazioni'].forEach(p=>{
-      const btn=document.querySelector(`.nav-item[onclick*="'${p}'"]`);
-      if(btn) btn.style.display='none';
-    });
+  const visibili = new Set(permessi[ruolo] || permessi.visual);
+  Object.entries(navBtns).forEach(([pagina, btn])=>{
+    if(btn) btn.style.display = visibili.has(pagina) ? '' : 'none';
+  });
 
-  } else if(ruolo==='proprietario'){
-    document.querySelectorAll('.admin-only').forEach(el=>el.style.display='none');
-    document.querySelectorAll('.proprietario-only').forEach(el=>el.style.display='');
+  // Nasconde elementi admin-only e proprietario-only secondo il ruolo
+  document.querySelectorAll('.admin-only').forEach(el=>
+    el.style.display = ruolo==='admin' ? '' : 'none');
+  document.querySelectorAll('.proprietario-only').forEach(el=>
+    el.style.display = (ruolo==='admin'||ruolo==='proprietario') ? '' : 'none');
 
-  }
-  // Admin: vede tutto
+  // Nasconde bottone "Nuova prenotazione" per visual e contabile
+  document.querySelectorAll('.no-visual').forEach(el=>
+    el.style.display = (ruolo==='admin'||ruolo==='proprietario') ? '' : 'none');
 
   startListeners();
   aggiornaCalendario();
