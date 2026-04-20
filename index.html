@@ -1252,9 +1252,14 @@ function startListeners(){
   const ruolo=currentUserData.ruolo||'visual';
   // Il contabile ha accesso solo alla contabilità: avvia solo il listener prenotazioni
   // (serve per le entrate automatiche) e salta tutto il resto
-  if(ruolo==='contabile'){
+  if(ruolo==='contabile'||ruolo==='visual'){
     unsubPren=db.collection('prenotazioni').orderBy('checkin','asc').onSnapshot(snap=>{
       allPrenotazioni=snap.docs.map(d=>({id:d.id,...d.data()}));
+      renderPrenotazioni();renderDashboard();aggiornaCalendario();
+    });
+    unsubCamere=db.collection('camere').orderBy('numero','asc').onSnapshot(snap=>{
+      allCamere=snap.docs.map(d=>({id:d.id,...d.data()}));
+      renderDashboard();populateCameraSelect();
     });
     return;
   }
