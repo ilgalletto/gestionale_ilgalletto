@@ -573,9 +573,11 @@
             <div style="padding:20px 16px;background:linear-gradient(135deg,#0D2F5A,#1A6FA8);color:#fff">
               <div style="font-size:24px;margin-bottom:4px">🐓</div>
               <div style="font-family:'DM Serif Display',serif;font-size:15px;font-weight:700">B&B Il Galletto</div>
-              <div style="font-size:11px;opacity:.8;margin-top:2px">Guida al Gestionale</div>
+              <div style="font-size:11px;opacity:.8;margin-top:2px" id="guida-sidebar-sub">Guida al Gestionale</div>
             </div>
-            <div style="padding:10px 8px;flex:1">
+
+            <!-- Sezioni guida gestionale (nascoste al contabile) -->
+            <div style="padding:10px 8px;flex:1" id="guida-nav-gestionale">
               <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);
                 padding:0 8px;margin:8px 0;font-weight:600">Sezioni</div>
               <button class="gnav active" onclick="guidaSezione('accesso',this)">🔑 <span>Accesso</span></button>
@@ -590,6 +592,21 @@
               <button class="gnav" onclick="guidaSezione('impostazioni',this)">⚙️ <span>Impostazioni</span></button>
               <button class="gnav" onclick="guidaSezione('faq',this)">❓ <span>Domande frequenti</span></button>
             </div>
+
+            <!-- Sezioni guida contabilità (visibili solo al contabile) -->
+            <div style="padding:10px 8px;flex:1;display:none" id="guida-nav-contabilita">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);
+                padding:0 8px;margin:8px 0;font-weight:600">Sezioni</div>
+              <button class="gnav active" onclick="guidaSezione('cont-panoramica',this)">📊 <span>Panoramica</span></button>
+              <button class="gnav" onclick="guidaSezione('cont-entrate',this)">💚 <span>Entrate</span></button>
+              <button class="gnav" onclick="guidaSezione('cont-fissi',this)">🔴 <span>Costi fissi</span></button>
+              <button class="gnav" onclick="guidaSezione('cont-variabili',this)">🟠 <span>Costi variabili</span></button>
+              <button class="gnav" onclick="guidaSezione('cont-pdc',this)">🗂️ <span>Piano dei conti</span></button>
+              <button class="gnav" onclick="guidaSezione('cont-annuale',this)">📅 <span>Riepilogo annuale</span></button>
+              <button class="gnav" onclick="guidaSezione('cont-stampa',this)">🖨️ <span>Stampa</span></button>
+              <button class="gnav" onclick="guidaSezione('cont-faq',this)">❓ <span>Domande frequenti</span></button>
+            </div>
+
             <div style="padding:12px;border-top:1px solid var(--border)">
               <button onclick="scaricaGuidaPDF()" class="btn btn-outline btn-sm" style="width:100%;justify-content:center">
                 ⬇️ Scarica PDF
@@ -905,6 +922,145 @@
             </div>
 
           </div><!-- fine guida-content -->
+          <!-- CONTENUTO GUIDA CONTABILITÀ (visibile solo al contabile) -->
+          <div style="flex:1;overflow-y:auto;padding:32px 36px;background:var(--bg);display:none" id="guida-content-contabilita">
+
+            <div class="gs" id="gs-cont-panoramica">
+              <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#2a7a3b,#2AA1A0)">💰</div>
+                <div><div class="gs-title">Panoramica Contabilità</div><div class="gs-sub">Entrate, costi e saldo mensile</div></div></div>
+              <p class="gs-p">Il modulo Contabilità permette di tenere traccia completa delle entrate e dei costi del B&B, organizzati per mese con riepilogo annuale. Il saldo viene calcolato automaticamente: <strong>Entrate − Costi fissi − Costi variabili</strong>.</p>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+                <div style="background:#EEF7F0;border:1.5px solid #2a7a3b33;border-radius:10px;padding:14px;text-align:center">
+                  <div style="font-size:20px">💚</div><div style="font-weight:700;color:#2a7a3b;margin-top:4px">Entrate</div>
+                  <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Automatiche da prenotazioni + manuali extra</div>
+                </div>
+                <div style="background:#FDECEA;border:1.5px solid #C0392B33;border-radius:10px;padding:14px;text-align:center">
+                  <div style="font-size:20px">🔴</div><div style="font-weight:700;color:#C0392B;margin-top:4px">Costi fissi</div>
+                  <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Affitto, utenze, assicurazioni, commercialista</div>
+                </div>
+                <div style="background:#FEF5E7;border:1.5px solid #E67E2233;border-radius:10px;padding:14px;text-align:center">
+                  <div style="font-size:20px">🟠</div><div style="font-weight:700;color:#E67E22;margin-top:4px">Costi variabili</div>
+                  <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Pulizie, lavanderia, colazioni, commissioni OTA</div>
+                </div>
+              </div>
+              <div class="gs-info">Usa i selettori <strong>Mese</strong> e <strong>Anno</strong> in alto a destra per navigare tra i periodi.</div>
+            </div>
+
+            <div class="gs" id="gs-cont-entrate" style="display:none">
+              <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#2a7a3b,#2AA1A0)">💚</div>
+                <div><div class="gs-title">Entrate</div><div class="gs-sub">Automatiche e manuali</div></div></div>
+              <div class="gs-card" style="margin-bottom:14px">
+                <div class="gs-card-title" style="background:#2a7a3b">Entrate automatiche da prenotazioni</div>
+                <div style="padding:14px;font-size:13px;color:var(--text);line-height:1.7">
+                  Vengono generate automaticamente senza inserimento manuale:<br>
+                  • Se il <strong>check-out è confermato</strong> → appaiono nel mese del checkout<br>
+                  • Se la prenotazione è solo registrata → appaiono nel mese del check-in<br>
+                  • L'importo usato è <strong>Importo saldato</strong> (se presente) oppure il Prezzo prenotazione<br><br>
+                  Le entrate automatiche mostrano il badge <span style="background:#DCF0FF;color:#1A6FA8;padding:1px 5px;border-radius:3px;font-size:11px">auto</span> e non possono essere modificate.
+                </div>
+              </div>
+              <div class="gs-card">
+                <div class="gs-card-title">Entrate manuali (colazioni, extra, ecc.)</div>
+                <table class="gs-table">
+                  <tr><th>Campo</th><th>Descrizione</th></tr>
+                  <tr><td><strong>Descrizione *</strong></td><td>Testo libero che identifica l'entrata</td></tr>
+                  <tr><td><strong>Importo *</strong></td><td>Importo in euro</td></tr>
+                  <tr><td><strong>Data *</strong></td><td>Data di incasso</td></tr>
+                  <tr><td>Ricorrenza</td><td>Una tantum / Mensile / Annuale</td></tr>
+                  <tr><td>Pagamento</td><td>Prenotazione / Check-out / Contanti / Bonifico / Carta</td></tr>
+                  <tr><td>Note</td><td>Riferimento fattura, descrizione aggiuntiva</td></tr>
+                </table>
+              </div>
+            </div>
+
+            <div class="gs" id="gs-cont-fissi" style="display:none">
+              <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#C0392B,#E67E22)">🔴</div>
+                <div><div class="gs-title">Costi fissi</div><div class="gs-sub">Spese ricorrenti della struttura</div></div></div>
+              <p class="gs-p">Spese sostenute indipendentemente dall'occupazione. Organizzate nel piano dei conti a 3 livelli.</p>
+              <div class="gs-card">
+                <div class="gs-card-title">Piano dei conti predefinito</div>
+                <table class="gs-table">
+                  <tr><th>Gruppo</th><th>Conto</th></tr>
+                  <tr><td><strong>🏠 Immobile</strong></td><td>Affitto / Mutuo · TARI</td></tr>
+                  <tr><td><strong>💡 Utenze</strong></td><td>Luce · Gas · Acqua · WiFi / Telefono</td></tr>
+                  <tr><td><strong>🛡️ Assicurazioni</strong></td><td>Assicurazione struttura</td></tr>
+                  <tr><td><strong>💼 Servizi professionali</strong></td><td>Commercialista · Software / Abbonamenti</td></tr>
+                </table>
+              </div>
+            </div>
+
+            <div class="gs" id="gs-cont-variabili" style="display:none">
+              <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#E67E22,#F5D87A)">🟠</div>
+                <div><div class="gs-title">Costi variabili</div><div class="gs-sub">Spese operative quotidiane</div></div></div>
+              <p class="gs-p">Spese legate all'operatività, che variano in base all'occupazione e alla stagione.</p>
+              <div class="gs-card">
+                <div class="gs-card-title">Piano dei conti predefinito</div>
+                <table class="gs-table">
+                  <tr><th>Gruppo</th><th>Conto</th></tr>
+                  <tr><td><strong>🧹 Pulizie & Biancheria</strong></td><td>Pulizie camere · Lavanderia</td></tr>
+                  <tr><td><strong>🍳 F&B</strong></td><td>Colazioni · Bevande / Minibar</td></tr>
+                  <tr><td><strong>🔧 Manutenzione</strong></td><td>Manutenzione ordinaria · Materiali di consumo</td></tr>
+                  <tr><td><strong>📣 Commerciale</strong></td><td>Commissioni OTA · Marketing / Pubblicità</td></tr>
+                </table>
+              </div>
+            </div>
+
+            <div class="gs" id="gs-cont-pdc" style="display:none">
+              <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#1A6FA8,#2AA1A0)">🗂️</div>
+                <div><div class="gs-title">Piano dei conti</div><div class="gs-sub">Gestione a 3 livelli — Gruppo → Conto → Sottoconto</div></div></div>
+              <div class="gs-card" style="margin-bottom:14px">
+                <div class="gs-card-title">Come aggiungere voci</div>
+                <div class="gs-step"><div class="gs-num">1</div>Clicca <strong>+ Gruppo</strong> per creare un nuovo contenitore principale</div>
+                <div class="gs-step"><div class="gs-num">2</div>Clicca <strong>+ Conto</strong> sull'intestazione del gruppo per aggiungere un conto figlio</div>
+                <div class="gs-step"><div class="gs-num">3</div>Clicca <strong>+ Voce</strong> su un conto o sottoconto per inserire la spesa effettiva con importo e data</div>
+                <div class="gs-step"><div class="gs-num">4</div>Usa ✏️ per modificare nome e icona di qualsiasi nodo, 🗑️ per eliminarlo</div>
+              </div>
+              <div class="gs-info">I totali si propagano automaticamente: Sottoconto → Conto → Gruppo → Totale sezione.</div>
+            </div>
+
+            <div class="gs" id="gs-cont-annuale" style="display:none">
+              <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#1A6FA8,#0D2F5A)">📅</div>
+                <div><div class="gs-title">Riepilogo annuale</div><div class="gs-sub">Tutti i 12 mesi in una vista</div></div></div>
+              <p class="gs-p">In fondo alla pagina Contabilità è presente la tabella riepilogativa con entrate, costi e saldo per ogni mese dell'anno.</p>
+              <div class="gs-card">
+                <div class="gs-card-title">Colonne della tabella</div>
+                <table class="gs-table">
+                  <tr><th>Colonna</th><th>Contenuto</th></tr>
+                  <tr><td>Entrate</td><td>Totale entrate del mese — in verde</td></tr>
+                  <tr><td>Costi fissi</td><td>Totale costi fissi — in rosso</td></tr>
+                  <tr><td>Costi variabili</td><td>Totale costi variabili — in arancione</td></tr>
+                  <tr><td>Tot. costi</td><td>Fissi + variabili</td></tr>
+                  <tr><td>Saldo</td><td>Entrate − Tot. costi (verde se positivo, rosso se negativo)</td></tr>
+                </table>
+              </div>
+              <div class="gs-info" style="margin-top:14px">I mesi futuri appaiono con opacità ridotta. La riga <strong>TOTALE ANNO</strong> riepiloga l'intero esercizio.</div>
+            </div>
+
+            <div class="gs" id="gs-cont-stampa" style="display:none">
+              <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#0D2F5A,#1A6FA8)">🖨️</div>
+                <div><div class="gs-title">Stampa</div><div class="gs-sub">Esporta il prospetto contabile</div></div></div>
+              <p class="gs-p">Il pulsante <strong>Stampa</strong> in alto a destra genera un prospetto completo del mese selezionato.</p>
+              <div class="gs-card">
+                <div class="gs-card-title">Come salvare come PDF</div>
+                <div class="gs-step"><div class="gs-num">1</div>Seleziona il mese e l'anno desiderati</div>
+                <div class="gs-step"><div class="gs-num">2</div>Clicca il pulsante <strong>🖨️ Stampa</strong></div>
+                <div class="gs-step"><div class="gs-num">3</div>Nella finestra del browser seleziona <strong>"Salva come PDF"</strong> come stampante</div>
+                <div class="gs-step"><div class="gs-num">4</div>Salva o invia il file al commercialista</div>
+              </div>
+              <div class="gs-info">Puoi anche scaricare la <strong>Guida PDF alla Contabilità</strong> dal pulsante qui sotto nel menu laterale.</div>
+            </div>
+
+            <div class="gs" id="gs-cont-faq" style="display:none">
+              <div class="gs-header"><div class="gs-icon" style="background:linear-gradient(135deg,#2AA1A0,#1A6FA8)">❓</div>
+                <div><div class="gs-title">Domande frequenti</div><div class="gs-sub">Contabilità</div></div></div>
+              <div class="gs-faq-item"><div class="gs-faq-q">❓ Le entrate delle prenotazioni non appaiono.</div><div class="gs-faq-a">Verificare che la prenotazione abbia un importo nel campo Prezzo o Importo saldato. Le entrate automatiche appaiono nel mese del checkout (se confermato) o del check-in.</div></div>
+              <div class="gs-faq-item"><div class="gs-faq-q">❓ Ho inserito una voce nel mese sbagliato.</div><div class="gs-faq-a">Aprire la voce con ✏️ e modificare la data. La voce si sposterà automaticamente nel mese corretto.</div></div>
+              <div class="gs-faq-item"><div class="gs-faq-q">❓ Come aggiungo una categoria non prevista?</div><div class="gs-faq-a">Cliccare "+ Gruppo" per aggiungere un nuovo gruppo, poi "+ Conto" per i conti figli. Il piano dei conti è completamente personalizzabile.</div></div>
+              <div class="gs-faq-item"><div class="gs-faq-q">❓ Il riepilogo annuale mostra 0 per alcuni mesi.</div><div class="gs-faq-a">È normale per i mesi in cui non sono state inserite voci. I costi fissi vanno inseriti mese per mese oppure impostati come ricorrenza "Mensile".</div></div>
+              <div class="gs-faq-item"><div class="gs-faq-q">❓ Come esporto i dati per il commercialista?</div><div class="gs-faq-a">Usare il pulsante Stampa e salvare come PDF. In alternativa il commercialista può accedere direttamente con il ruolo Contabile.</div></div>
+            </div>
+
+          </div><!-- fine guida-content-contabilita -->
         </div>
       </div>
 
@@ -1140,16 +1296,43 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script>
 function guidaSezione(id, btn) {
-  document.querySelectorAll('.gs').forEach(s => s.style.display = 'none');
-  document.querySelectorAll('.gnav').forEach(b => b.classList.remove('active'));
-  const el = document.getElementById('gs-' + id);
-  if (el) el.style.display = 'block';
-  if (btn) btn.classList.add('active');
-  const gc = document.getElementById('guida-content');
-  if (gc) gc.scrollTop = 0;
+  const ruolo = currentUserData?.ruolo||'visual';
+  const isContabile = ruolo === 'contabile';
+  if(isContabile){
+    document.querySelectorAll('#guida-content-contabilita .gs').forEach(s=>s.style.display='none');
+    document.querySelectorAll('#guida-nav-contabilita .gnav').forEach(b=>b.classList.remove('active'));
+    const el = document.getElementById('gs-cont-'+id) || document.getElementById('gs-'+id);
+    if(el) el.style.display='block';
+  } else {
+    document.querySelectorAll('#guida-content .gs').forEach(s=>s.style.display='none');
+    document.querySelectorAll('#guida-nav-gestionale .gnav').forEach(b=>b.classList.remove('active'));
+    const el = document.getElementById('gs-'+id);
+    if(el) el.style.display='block';
+    const gc = document.getElementById('guida-content');
+    if(gc) gc.scrollTop=0;
+  }
+  if(btn) btn.classList.add('active');
 }
 function scaricaGuidaPDF() {
-  window.open('https://raw.githubusercontent.com/ilgalletto/gestionale_ilgalletto/main/guida_gestionale.pdf','_blank');
+  const ruolo = currentUserData?.ruolo||'visual';
+  const url = ruolo==='contabile'
+    ? 'https://raw.githubusercontent.com/ilgalletto/gestionale_ilgalletto/main/guida_contabilita.pdf'
+    : 'https://raw.githubusercontent.com/ilgalletto/gestionale_ilgalletto/main/guida_gestionale.pdf';
+  window.open(url,'_blank');
+}
+function initGuida() {
+  const ruolo = currentUserData?.ruolo||'visual';
+  const isContabile = ruolo==='contabile';
+  document.getElementById('guida-nav-gestionale').style.display = isContabile?'none':'block';
+  document.getElementById('guida-nav-contabilita').style.display = isContabile?'block':'none';
+  document.getElementById('guida-content').style.display        = isContabile?'none':'block';
+  document.getElementById('guida-content-contabilita').style.display = isContabile?'block':'none';
+  const sub = document.getElementById('guida-sidebar-sub');
+  if(sub) sub.textContent = isContabile?'Guida alla Contabilità':'Guida al Gestionale';
+  if(isContabile){
+    const prima = document.querySelector('#guida-nav-contabilita .gnav');
+    if(prima) prima.click();
+  }
 }
 </script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -1295,6 +1478,7 @@ function navTo(page,btn){
   if(page==='stampa')renderStampa();
   if(page==='questura'){initQuestura();}
   if(page==='contabilita'){initContabilita();}
+  if(page==='guida'){initGuida();}
 }
 
 // ===== DASHBOARD =====
