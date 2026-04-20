@@ -375,12 +375,23 @@
         <div class="toolbar">
           <div class="page-title" style="margin:0">💰 Contabilità</div>
           <div style="display:flex;gap:8px;align-items:center" class="no-print">
-            <select class="form-control btn-sm" id="cont-mese" style="width:auto" onchange="renderContabilita()"></select>
-            <select class="form-control btn-sm" id="cont-anno" style="width:auto" onchange="renderContabilita()"></select>
-            <button class="btn btn-outline btn-sm" onclick="stampaContabilita()">🖨️ Stampa</button>
+            <!-- Tab switcher -->
+            <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+              <button id="tab-btn-mese" class="btn btn-sm" style="border-radius:0;background:var(--accent);color:#fff;border:none"
+                onclick="switchTabCont('mese')">📊 Mese</button>
+              <button id="tab-btn-registro" class="btn btn-sm" style="border-radius:0;background:transparent;color:var(--accent);border:none"
+                onclick="switchTabCont('registro')">📋 Registro</button>
+            </div>
+            <div id="cont-toolbar-mese" style="display:flex;gap:8px;align-items:center">
+              <select class="form-control btn-sm" id="cont-mese" style="width:auto" onchange="renderContabilita()"></select>
+              <select class="form-control btn-sm" id="cont-anno" style="width:auto" onchange="renderContabilita()"></select>
+              <button class="btn btn-outline btn-sm" onclick="stampaContabilita()">🖨️ Stampa</button>
+            </div>
           </div>
         </div>
 
+        <!-- VISTA MESE -->
+        <div id="cont-tab-mese">
         <!-- RIEPILOGO MESE -->
         <div id="cont-riepilogo-mese" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px"></div>
 
@@ -429,7 +440,36 @@
             <tfoot id="cont-tfoot-annuale"></tfoot>
           </table>
         </div>
-      </div>
+        </div><!-- fine cont-tab-mese -->
+
+        <!-- VISTA REGISTRO -->
+        <div id="cont-tab-registro" style="display:none">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+            <input class="form-control" id="reg-cerca" placeholder="🔍 Cerca descrizione..." style="max-width:220px" oninput="renderRegistro()">
+            <select class="form-control btn-sm" id="reg-tipo" style="width:auto" onchange="renderRegistro()">
+              <option value="">Tutti i tipi</option>
+              <option value="entrata">💚 Entrate</option>
+              <option value="fisso">🔴 Costi fissi</option>
+              <option value="variabile">🟠 Costi variabili</option>
+            </select>
+            <select class="form-control btn-sm" id="reg-anno" style="width:auto" onchange="renderRegistro()"></select>
+            <select class="form-control btn-sm" id="reg-mese" style="width:auto" onchange="renderRegistro()">
+              <option value="">Tutti i mesi</option>
+            </select>
+            <span id="reg-totale" style="font-size:13px;color:var(--text-muted);margin-left:4px"></span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Data</th><th>Tipo</th><th>Descrizione</th><th>Categoria / Conto</th>
+                <th>Ricorrenza</th><th style="text-align:right">Importo</th>
+                <th class="no-print"></th>
+              </tr></thead>
+              <tbody id="tb-registro"></tbody>
+              <tfoot id="tf-registro"></tfoot>
+            </table>
+          </div>
+        </div><!-- fine cont-tab-registro -->
 
       <!-- MODAL GRUPPO/CONTO -->
       <div class="modal-overlay" id="modal-gruppo-cont">
@@ -2535,7 +2575,162 @@ function aggiornaAlertQuestura(){
   }
 }
 
-// ===== CONTABILITÀ =====
+// ── Tab switcher contabilità ──────────────────────────────────────────────────
+function switchTabCont(tab){
+  const isMese = tab==='mese';
+  document.getElementById('cont-tab-mese').style.display    = isMese?'':'none';
+  document.getElementById('cont-tab-registro').style.display= isMese?'none':'';
+  document.getElementById('cont-toolbar-mese').style.display= isMese?'flex':'none';
+  document.getElementById('tab-btn-mese').style.background   = isMese?'var(--accent)':'transparent';
+  document.getElementById('tab-btn-mese').style.color        = isMese?'#fff':'var(--accent)';
+  document.getElementById('tab-btn-registro').style.background= isMese?'transparent':'var(--accent)';
+  document.getElementById('tab-btn-registro').style.color     = isMese?'var(--accent)':'#fff';
+  if(!isMese) initRegistro();
+}
+
+// ── Registro: tutte le voci di tutti i mesi ───────────────────────────────────
+let registroCache = [];
+
+async function initRegistro(){
+  const anno = parseInt(document.getElementById('cont-anno')?.value||new Date().getFullYear());
+  // Popola selettore anno
+  const regAnno = document.getElementById('reg-anno');
+  if(!regAnno.options.length){
+    for(let y=anno-2;y<=anno+1;y++){
+      const o=document.createElement('option');
+      o.value=y; o.textContent=y;
+      if(y===anno) o.selected=true;
+      regAnno.appendChild(o);
+    }
+  }
+  // Popola selettore mese
+  const regMese=document.getElementById('reg-mese');
+  if(regMese.options.length===1){
+    MESI_CONT.forEach((m,i)=>{
+      const o=document.createElement('option');
+      o.value=i; o.textContent=m; regMese.appendChild(o);
+    });
+  }
+  await caricaRegistro();
+}
+
+async function caricaRegistro(){
+  const annoSel = parseInt(document.getElementById('reg-anno')?.value||new Date().getFullYear());
+  const tipi = ['fisso','variabile','entrata'];
+  registroCache = [];
+  // Carica tutti i 12 mesi per l'anno selezionato
+  const promises = [];
+  for(let m=0;m<12;m++){
+    for(const tipo of tipi){
+      promises.push(
+        loadVociCont(tipo,m,annoSel).then(voci=>
+          voci.forEach(v=>registroCache.push({...v, _tipo:tipo, _mese:m, _anno:annoSel}))
+        )
+      );
+    }
+  }
+  // Aggiungi anche le entrate automatiche da prenotazioni
+  for(let m=0;m<12;m++){
+    entratePrenotazioniMese(m,annoSel).forEach(v=>
+      registroCache.push({...v, _tipo:'entrata', _mese:m, _anno:annoSel})
+    );
+  }
+  await Promise.all(promises);
+  // Ordina per data decrescente
+  registroCache.sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  renderRegistro();
+}
+
+function renderRegistro(){
+  const tb = document.getElementById('tb-registro');
+  const tf = document.getElementById('tf-registro');
+  if(!tb) return;
+  const cerca  = (document.getElementById('reg-cerca')?.value||'').toLowerCase();
+  const tipo   = document.getElementById('reg-tipo')?.value||'';
+  const meseSel= document.getElementById('reg-mese')?.value;
+  const colori = {entrata:'#2a7a3b', fisso:'#C0392B', variabile:'#E67E22'};
+  const labels = {entrata:'💚 Entrata', fisso:'🔴 Costo fisso', variabile:'🟠 Costo var.'};
+  const bgs    = {entrata:'#EEF7F0',   fisso:'#FDECEA',        variabile:'#FEF5E7'};
+
+  let filtrate = registroCache.filter(v=>{
+    if(tipo && v._tipo!==tipo) return false;
+    if(meseSel!==''&&meseSel!==undefined&&v._mese!==parseInt(meseSel)) return false;
+    if(cerca && !(v.desc||'').toLowerCase().includes(cerca)) return false;
+    return true;
+  });
+
+  if(!filtrate.length){
+    tb.innerHTML=`<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📋</div><p>Nessuna voce trovata</p></div></td></tr>`;
+    tf.innerHTML='';
+    document.getElementById('reg-totale').textContent='';
+    return;
+  }
+
+  const totEntrate  = filtrate.filter(v=>v._tipo==='entrata').reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
+  const totCosti    = filtrate.filter(v=>v._tipo!=='entrata').reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
+  document.getElementById('reg-totale').textContent =
+    `${filtrate.length} voci — Entrate: €${totEntrate.toFixed(2)} · Costi: €${totCosti.toFixed(2)}`;
+
+  tb.innerHTML = filtrate.map(v=>{
+    const col = colori[v._tipo]||'var(--accent)';
+    const bg  = bgs[v._tipo]||'var(--bg)';
+    const lbl = labels[v._tipo]||v._tipo;
+    const isAuto = v._auto;
+    // Trova nome conto nel PDC
+    const pdc = v._tipo==='fisso' ? pdcStato.fissi : v._tipo==='variabile' ? pdcStato.variabili : [];
+    const nodo = pdc.find(n=>n.id===v.sottocontoId);
+    const catLabel = nodo ? nodo.nome : (v.cat||'—');
+    return `<tr>
+      <td style="white-space:nowrap;font-size:12px">${v.data?formatDate(v.data):MESI_CONT[v._mese]}</td>
+      <td><span style="background:${bg};color:${col};padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;white-space:nowrap">${lbl}</span></td>
+      <td>
+        <div style="font-size:13px;font-weight:500">${v.desc||'—'}</div>
+        ${v.note?`<div style="font-size:11px;color:var(--text-muted)">${v.note}</div>`:''}
+        ${isAuto?`<span style="background:#DCF0FF;color:#1A6FA8;padding:1px 4px;border-radius:3px;font-size:10px">auto</span>`:''}
+      </td>
+      <td style="font-size:12px;color:var(--text-muted)">${catLabel}</td>
+      <td style="font-size:12px;color:var(--text-muted)">${v.ricorrenza&&v.ricorrenza!=='una_tantum'?'🔄 '+v.ricorrenza:'—'}</td>
+      <td style="text-align:right;font-weight:700;color:${col};white-space:nowrap">€${parseFloat(v.importo||0).toFixed(2)}</td>
+      <td class="no-print" style="white-space:nowrap">
+        ${!isAuto?`
+          <button class="btn btn-sm btn-outline" style="padding:3px 8px" onclick="editVoceRegistro('${v._tipo}','${v.id}',${v._mese},${v._anno})">✏️</button>
+          <button class="btn btn-sm btn-danger"  style="padding:3px 8px" onclick="eliminaVoceRegistro('${v._tipo}','${v.id}',${v._mese},${v._anno})">🗑️</button>
+        `:'<span style="font-size:11px;color:var(--text-muted)">—</span>'}
+      </td>
+    </tr>`;
+  }).join('');
+
+  tf.innerHTML=`<tr style="font-weight:700;background:var(--surface2)">
+    <td colspan="5">Totale visualizzato</td>
+    <td style="text-align:right;color:${totEntrate-totCosti>=0?'#2a7a3b':'#C0392B'}">
+      Saldo: €${(totEntrate-totCosti).toFixed(2)}
+    </td>
+    <td></td>
+  </tr>`;
+}
+
+async function editVoceRegistro(tipo, id, mese, anno){
+  // Imposta mese/anno nei selettori principali e apri modal
+  document.getElementById('cont-mese').value = mese;
+  document.getElementById('cont-anno').value  = anno;
+  // Ricarica stato per quel mese
+  const[fissi,variabili,entrate] = await Promise.all([
+    loadVociCont('fisso',mese,anno),
+    loadVociCont('variabile',mese,anno),
+    loadVociCont('entrata',mese,anno),
+  ]);
+  contStato = {fissi,variabili,entrate};
+  openModalVoce(tipo, null, id);
+}
+
+async function eliminaVoceRegistro(tipo, id, mese, anno){
+  document.getElementById('cont-mese').value = mese;
+  document.getElementById('cont-anno').value  = anno;
+  await eliminaVoceCont(tipo, id);
+  await caricaRegistro();
+}
+
+
 const MESI_CONT = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
   'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 
