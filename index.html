@@ -1224,6 +1224,7 @@ function startListeners(){
   unsubPren=db.collection('prenotazioni').orderBy('checkin','asc').onSnapshot(snap=>{
     allPrenotazioni=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderPrenotazioni();renderDashboard();aggiornaCalendario();renderClienti();renderStampa();
+    renderCamere();
     aggiornaAlertQuestura();
   });
   unsubCamere=db.collection('camere').orderBy('numero','asc').onSnapshot(snap=>{
