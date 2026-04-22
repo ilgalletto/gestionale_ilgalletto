@@ -2356,13 +2356,13 @@ function aggiornaCalendario(){
         const pren=allPrenotazioni.find(p=>p.cameraId===cam.id&&p.checkin<=dateStr&&p.checkout>dateStr);
         const isFirst=pren&&(pren.checkin===dateStr||g===1);
         if(pren&&isFirst){
-          // Calcola quanti giorni restano da questo punto fino alla fine del mese o al checkout
-          const finePrenotazione=new Date(pren.checkout);
-          const fineMese=new Date(a,m+1,0);
-          const fineEffettiva=finePrenotazione<fineMese?finePrenotazione:fineMese;
+          // checkout è il giorno di partenza (escluso) — la camera è libera nel giorno di checkout
+          const finePrenotazione=new Date(pren.checkout);        // giorno escluso
+          const fineMese=new Date(a,m+1,0);                      // ultimo giorno del mese
+          const fineEffettiva=finePrenotazione<fineMese?finePrenotazione:new Date(a,m+1,1);
           const inizioEffettivo=g===1&&pren.checkin<dateStr?1:g;
-          const durInMese=Math.round((fineEffettiva-new Date(a,m,inizioEffettivo))/(1000*60*60*24))+1;
-          const durReale=Math.min(durInMese,giorniMese-g+1);
+          const durInMese=Math.round((fineEffettiva-new Date(a,m,inizioEffettivo))/(1000*60*60*24));
+          const durReale=Math.max(1,Math.min(durInMese,giorniMese-g+1));
           grid+=`<div class="cal-cell" style="overflow:visible;z-index:2">
             <div class="cal-booking" title="${pren.cognome||''} ${pren.nome||''}" style="width:calc(${durReale*100}% + ${(durReale-1)*1}px)">
               ${pren.cognome||''} ${pren.nome||''}
