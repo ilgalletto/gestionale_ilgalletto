@@ -1118,14 +1118,73 @@
       <!-- IMPOSTAZIONI -->
       <div class="page admin-only" id="page-impostazioni">
         <div class="page-title">Impostazioni</div>
-        <div class="table-wrap">
+
+        <!-- UTENTI -->
+        <div style="font-weight:700;font-size:15px;color:var(--accent);margin-bottom:12px">👥 Utenti</div>
+        <div class="table-wrap" style="margin-bottom:32px">
           <table>
             <thead><tr><th>Email</th><th>Nome</th><th>Ruolo</th><th>Stato</th><th></th></tr></thead>
             <tbody id="tb-utenti"></tbody>
           </table>
         </div>
+
+        <!-- CANALI DI PRENOTAZIONE -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-weight:700;font-size:15px;color:var(--accent)">📣 Canali di prenotazione</div>
+          <button class="btn btn-sm btn-primary no-print" onclick="aggiungiCanale()">+ Aggiungi</button>
+        </div>
+        <div class="table-wrap" style="margin-bottom:32px">
+          <table>
+            <thead><tr><th>Emoji</th><th>Nome canale</th><th class="no-print"></th></tr></thead>
+            <tbody id="tb-canali"></tbody>
+          </table>
+        </div>
+
+        <!-- TIPOLOGIE CAMERA -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-weight:700;font-size:15px;color:var(--accent)">🛏️ Tipologie camera</div>
+          <button class="btn btn-sm btn-primary no-print" onclick="aggiungiTipologia()">+ Aggiungi</button>
+        </div>
+        <div class="table-wrap" style="margin-bottom:16px">
+          <table>
+            <thead><tr><th>Tipologia</th><th class="no-print"></th></tr></thead>
+            <tbody id="tb-tipologie"></tbody>
+          </table>
+        </div>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CANALE -->
+<div class="modal-overlay" id="modal-canale">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title" id="modal-canale-title">Nuovo canale</div>
+    <input type="hidden" id="can-id">
+    <div class="form-row">
+      <div class="form-group" style="flex:0 0 70px"><label class="form-label">Emoji</label>
+        <input class="form-control" id="can-emoji" placeholder="📞" maxlength="4" style="text-align:center;font-size:20px"></div>
+      <div class="form-group"><label class="form-label">Nome canale *</label>
+        <input class="form-control" id="can-nome" placeholder="es. Booking.com, WhatsApp..."></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-canale')">Annulla</button>
+      <button class="btn btn-primary" onclick="salvaCanale()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TIPOLOGIA -->
+<div class="modal-overlay" id="modal-tipologia">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-title" id="modal-tipo-title">Nuova tipologia</div>
+    <input type="hidden" id="tipo-id">
+    <div class="form-group"><label class="form-label">Nome tipologia *</label>
+      <input class="form-control" id="tipo-nome" placeholder="es. Doppia, Suite, Appartamento..."></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-tipologia')">Annulla</button>
+      <button class="btn btn-primary" onclick="salvaTipologia()">Salva</button>
     </div>
   </div>
 </div>
@@ -1177,16 +1236,7 @@
     <div class="form-group"><label class="form-label">Canale di prenotazione</label>
       <select class="form-control" id="cl-canale">
         <option value="">— Seleziona —</option>
-        <option>Telefono</option>
-        <option>Booking.com</option>
-        <option>Airbnb</option>
-        <option>Di passaggio</option>
-        <option>Sito web</option>
-        <option>Email</option>
-        <option>WhatsApp</option>
-        <option>Agenzia</option>
-        <option>Passaparola</option>
-        <option>Altro</option>
+      </select>
       </select>
     </div>
     <div class="form-group"><label class="form-label">Note</label>
@@ -1216,11 +1266,8 @@
     <div class="form-row">
       <div class="form-group"><label class="form-label">Canale prenotazione</label>
         <select class="form-control" id="p-canale">
-          <option value="">— Seleziona —</option>
-          <option>Telefono</option><option>Booking.com</option><option>Airbnb</option>
-          <option>Di passaggio</option><option>Sito web</option><option>Email</option>
-          <option>WhatsApp</option><option>Agenzia</option><option>Passaparola</option><option>Altro</option>
-        </select>
+              <option value="">— Seleziona —</option>
+            </select>
       </div>
       <div class="form-group"><label class="form-label">Camera *</label>
         <select class="form-control" id="p-camera"></select>
@@ -1321,7 +1368,8 @@
     </div>
     <div class="form-group"><label class="form-label">Tipo</label>
       <select class="form-control" id="c-tipo">
-        <option>Singola</option><option>Doppia</option><option>Matrimoniale</option>
+        <option>Doppia</option>
+      </select>
         <option>Tripla</option><option>Suite</option><option>Appartamento</option>
       </select>
     </div>
@@ -1458,6 +1506,9 @@ function showApp(){
   startListeners();
   aggiornaCalendario();
   initPrintDate();
+  // Carica canali e tipologie da Firestore
+  loadCanali().then(()=>renderCanali());
+  loadTipologie().then(()=>renderTipologie());
 }
 async function doLogin(){
   const email=document.getElementById('auth-email').value.trim();
@@ -1521,6 +1572,7 @@ function navTo(page,btn){
   if(page==='questura'){initQuestura();}
   if(page==='contabilita'){initContabilita();}
   if(page==='guida'){initGuida();}
+  if(page==='impostazioni'){renderCanali();renderTipologie();}
 }
 
 // ===== DASHBOARD =====
@@ -1548,27 +1600,18 @@ function renderDashboard(){
       const ch = p.canale || '—';
       conteggio[ch] = (conteggio[ch]||0) + 1;
     });
-    // Emoji per canale
-    const emoji = {
-      'Booking.com':'🏨','Airbnb':'🏠','Telefono':'📞','Email':'✉️',
-      'WhatsApp':'💬','Sito web':'🌐','Di passaggio':'🚶','Agenzia':'🏢',
-      'Passaparola':'🗣️','Altro':'📌','—':'❓'
-    };
-    // Colori per canale
+    // Emoji dai canali dinamici (con fallback hardcoded)
+    const emojiFallback = {'Booking.com':'🏨','Airbnb':'🏠','Telefono':'📞','Email':'✉️',
+      'WhatsApp':'💬','Sito web':'🌐','Di passaggio':'🚶','Agenzia':'🏢','Passaparola':'🗣️','Altro':'📌','—':'❓'};
+    const emojiMap = {};
+    allCanali.forEach(c=>{ if(c.emoji) emojiMap[c.nome]=c.emoji; });
     const colori = {
-      'Booking.com':['#003580','#E8F0FF'],
-      'Airbnb':['#FF5A5F','#FFF0F0'],
-      'Telefono':['#2AA1A0','#E0F5F5'],
-      'Email':['#8E44AD','#F5EEF8'],
-      'WhatsApp':['#25D366','#EAFAF1'],
-      'Sito web':['#1A6FA8','#DCF0FF'],
-      'Di passaggio':['#E67E22','#FEF5E7'],
-      'Agenzia':['#7F8C8D','#F2F3F4'],
-      'Passaparola':['#E91E63','#FCE4EC'],
-      'Altro':['#6A8DA8','#EEF6FB'],
-      '—':['#95A5A6','#F2F3F4'],
+      'Booking.com':['#003580','#E8F0FF'],'Airbnb':['#FF5A5F','#FFF0F0'],
+      'Telefono':['#2AA1A0','#E0F5F5'],'Email':['#8E44AD','#F5EEF8'],
+      'WhatsApp':['#25D366','#EAFAF1'],'Sito web':['#1A6FA8','#DCF0FF'],
+      'Di passaggio':['#E67E22','#FEF5E7'],'Agenzia':['#7F8C8D','#F2F3F4'],
+      'Passaparola':['#E91E63','#FCE4EC'],'Altro':['#6A8DA8','#EEF6FB'],'—':['#95A5A6','#F2F3F4'],
     };
-    // Ordina per quantità decrescente
     const sorted = Object.entries(conteggio).sort((a,b)=>b[1]-a[1]);
     if(!sorted.length){
       canaliGrid.innerHTML='<div style="color:var(--text-muted);font-size:13px">Nessuna prenotazione registrata</div>';
@@ -1576,11 +1619,9 @@ function renderDashboard(){
       canaliGrid.innerHTML = sorted.map(([ch, n])=>{
         const pct = totPren > 0 ? ((n/totPren)*100).toFixed(0) : 0;
         const [colTesto, colBg] = colori[ch] || ['#1A6FA8','#DCF0FF'];
-        const em = emoji[ch] || '📌';
-        return `<div style="
-          background:${colBg};border:1.5px solid ${colTesto}22;border-radius:10px;
-          padding:12px 16px;min-width:120px;flex:0 0 auto;
-          display:flex;flex-direction:column;gap:4px;
+        const em = emojiMap[ch] || emojiFallback[ch] || '📌';
+        return `<div style="background:${colBg};border:1.5px solid ${colTesto}22;border-radius:10px;
+          padding:12px 16px;min-width:120px;flex:0 0 auto;display:flex;flex-direction:column;gap:4px;
           box-shadow:0 1px 4px rgba(0,0,0,.06)">
           <div style="font-size:18px;line-height:1">${em}</div>
           <div style="font-size:12px;font-weight:600;color:${colTesto};margin-top:2px">${ch}</div>
@@ -1588,7 +1629,6 @@ function renderDashboard(){
             <span style="font-size:22px;font-weight:700;color:${colTesto};font-family:'DM Serif Display',serif">${n}</span>
             <span style="font-size:12px;color:${colTesto};opacity:.75">${pct}%</span>
           </div>
-          <!-- Barra percentuale -->
           <div style="height:3px;background:${colTesto}22;border-radius:2px;margin-top:2px">
             <div style="height:100%;width:${pct}%;background:${colTesto};border-radius:2px;transition:width .4s"></div>
           </div>
@@ -1657,6 +1697,7 @@ function openModalPrenotazione(id){
   editingPrenId=id||null;
   document.getElementById('modal-pren-title').textContent=id?'Modifica prenotazione':'Nuova prenotazione';
   populateCameraSelect();
+  aggiornaSelectCanali();
   if(id){
     const p=allPrenotazioni.find(x=>x.id===id);
     document.getElementById('p-nome').value=p.nome||'';
@@ -1885,6 +1926,7 @@ function stampaScheda(){
 function openModalCliente(kEnc){
   editingCliKey=kEnc||null;
   document.getElementById('modal-cli-title').textContent=kEnc?'Modifica cliente':'Nuovo cliente';
+  aggiornaSelectCanali();
   const fields=['cl-nome','cl-cognome','cl-telefono','cl-email','cl-via','cl-citta','cl-provincia','cl-cap','cl-doc-num','cl-note'];
   fields.forEach(id=>document.getElementById(id).value='');
   document.getElementById('cl-doc-tipo').value='';
@@ -2298,6 +2340,7 @@ function renderCamere(){
 function openModalCamera(id){
   editingCamId=id||null;
   document.getElementById('modal-cam-title').textContent=id?'Modifica camera':'Nuova camera';
+  aggiornaSelectTipologie();
   if(id){const c=allCamere.find(x=>x.id===id);document.getElementById('c-numero').value=c.numero||'';document.getElementById('c-nome').value=c.nome||'';document.getElementById('c-tipo').value=c.tipo||'Doppia';document.getElementById('c-note').value=c.note||''}
   else{['c-numero','c-nome','c-note'].forEach(i=>document.getElementById(i).value='');document.getElementById('c-tipo').value='Doppia'}
   document.getElementById('modal-camera').classList.add('open');
@@ -2535,6 +2578,211 @@ async function cambiaRuolo(uid,nuovoRuolo){
 }
 async function approvaUtente(uid){await db.collection('utenti').doc(uid).update({stato:'approvato'});showToast('Utente approvato ✓','success')}
 async function rimuoviUtente(uid){if(!confirm('Rimuovere?'))return;await db.collection('utenti').doc(uid).delete();showToast('Rimosso','success')}
+
+// ===== CANALI DI PRENOTAZIONE =====
+const CANALI_DEFAULT = [
+  {id:'c1',nome:'Telefono',emoji:'📞'},
+  {id:'c2',nome:'Booking.com',emoji:'🏨'},
+  {id:'c3',nome:'Airbnb',emoji:'🏠'},
+  {id:'c4',nome:'Di passaggio',emoji:'🚶'},
+  {id:'c5',nome:'Sito web',emoji:'🌐'},
+  {id:'c6',nome:'Email',emoji:'✉️'},
+  {id:'c7',nome:'WhatsApp',emoji:'💬'},
+  {id:'c8',nome:'Agenzia',emoji:'🏢'},
+  {id:'c9',nome:'Passaparola',emoji:'🗣️'},
+  {id:'c10',nome:'Altro',emoji:'📌'},
+];
+let allCanali = [];
+
+async function loadCanali(){
+  try{
+    const snap = await db.collection('impostazioni').doc('canali').get();
+    if(snap.exists && snap.data().lista?.length){
+      allCanali = snap.data().lista;
+    } else {
+      allCanali = [...CANALI_DEFAULT];
+      await saveCanali();
+    }
+  }catch(e){ allCanali = [...CANALI_DEFAULT]; }
+}
+async function saveCanali(){
+  await db.collection('impostazioni').doc('canali').set({lista: allCanali});
+}
+
+function renderCanali(){
+  const tb = document.getElementById('tb-canali');
+  if(!tb) return;
+  if(!allCanali.length){
+    tb.innerHTML='<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--text-muted)">Nessun canale</td></tr>';
+    return;
+  }
+  tb.innerHTML = allCanali.map((c,i)=>`<tr>
+    <td style="font-size:20px;width:50px;text-align:center">${c.emoji||'📌'}</td>
+    <td><strong>${c.nome}</strong></td>
+    <td class="no-print" style="white-space:nowrap;text-align:right">
+      <button class="btn btn-sm btn-outline" onclick="editCanale('${c.id}')">✏️</button>
+      <button class="btn btn-sm btn-danger"  onclick="eliminaCanale('${c.id}')">🗑️</button>
+      ${i>0?`<button class="btn btn-sm btn-outline" onclick="spostaCanale('${c.id}',-1)" title="Su">▲</button>`:''}
+      ${i<allCanali.length-1?`<button class="btn btn-sm btn-outline" onclick="spostaCanale('${c.id}',1)" title="Giù">▼</button>`:''}
+    </td>
+  </tr>`).join('');
+  // Aggiorna i select canale in tutto il gestionale
+  aggiornaSelectCanali();
+}
+
+function aggiungiCanale(){
+  document.getElementById('can-id').value='';
+  document.getElementById('can-emoji').value='';
+  document.getElementById('can-nome').value='';
+  document.getElementById('modal-canale-title').textContent='Nuovo canale';
+  document.getElementById('modal-canale').classList.add('open');
+}
+function editCanale(id){
+  const c = allCanali.find(x=>x.id===id);
+  if(!c) return;
+  document.getElementById('can-id').value=c.id;
+  document.getElementById('can-emoji').value=c.emoji||'';
+  document.getElementById('can-nome').value=c.nome;
+  document.getElementById('modal-canale-title').textContent='Modifica canale';
+  document.getElementById('modal-canale').classList.add('open');
+}
+async function salvaCanale(){
+  const id    = document.getElementById('can-id').value;
+  const nome  = document.getElementById('can-nome').value.trim();
+  const emoji = document.getElementById('can-emoji').value.trim();
+  if(!nome){ showToast('Nome obbligatorio','error'); return; }
+  if(id){
+    const idx = allCanali.findIndex(c=>c.id===id);
+    if(idx>=0) allCanali[idx] = {id, nome, emoji};
+  } else {
+    allCanali.push({id:'c'+Date.now(), nome, emoji});
+  }
+  await saveCanali();
+  closeModal('modal-canale');
+  renderCanali();
+  showToast('Canale salvato ✓','success');
+}
+async function eliminaCanale(id){
+  if(!confirm('Eliminare questo canale?')) return;
+  allCanali = allCanali.filter(c=>c.id!==id);
+  await saveCanali();
+  renderCanali();
+  showToast('Canale eliminato','success');
+}
+async function spostaCanale(id, dir){
+  const idx = allCanali.findIndex(c=>c.id===id);
+  const newIdx = idx+dir;
+  if(newIdx<0||newIdx>=allCanali.length) return;
+  [allCanali[idx],allCanali[newIdx]] = [allCanali[newIdx],allCanali[idx]];
+  await saveCanali();
+  renderCanali();
+}
+function aggiornaSelectCanali(){
+  // Aggiorna tutti i select canale nel DOM
+  const selects = document.querySelectorAll('#p-canale, #cl-canale');
+  selects.forEach(sel=>{
+    const val = sel.value;
+    sel.innerHTML = '<option value="">— Seleziona —</option>' +
+      allCanali.map(c=>`<option value="${c.nome}" ${val===c.nome?'selected':''}>${c.emoji||''} ${c.nome}</option>`).join('');
+  });
+}
+
+// ===== TIPOLOGIE CAMERA =====
+const TIPOLOGIE_DEFAULT = [
+  {id:'t1',nome:'Singola'},
+  {id:'t2',nome:'Doppia'},
+  {id:'t3',nome:'Matrimoniale'},
+  {id:'t4',nome:'Tripla'},
+  {id:'t5',nome:'Suite'},
+  {id:'t6',nome:'Appartamento'},
+];
+let allTipologie = [];
+
+async function loadTipologie(){
+  try{
+    const snap = await db.collection('impostazioni').doc('tipologie').get();
+    if(snap.exists && snap.data().lista?.length){
+      allTipologie = snap.data().lista;
+    } else {
+      allTipologie = [...TIPOLOGIE_DEFAULT];
+      await saveTipologie();
+    }
+  }catch(e){ allTipologie = [...TIPOLOGIE_DEFAULT]; }
+}
+async function saveTipologie(){
+  await db.collection('impostazioni').doc('tipologie').set({lista: allTipologie});
+}
+
+function renderTipologie(){
+  const tb = document.getElementById('tb-tipologie');
+  if(!tb) return;
+  if(!allTipologie.length){
+    tb.innerHTML='<tr><td colspan="2" style="text-align:center;padding:20px;color:var(--text-muted)">Nessuna tipologia</td></tr>';
+    return;
+  }
+  tb.innerHTML = allTipologie.map((t,i)=>`<tr>
+    <td><strong>${t.nome}</strong></td>
+    <td class="no-print" style="white-space:nowrap;text-align:right">
+      <button class="btn btn-sm btn-outline" onclick="editTipologia('${t.id}')">✏️</button>
+      <button class="btn btn-sm btn-danger"  onclick="eliminaTipologia('${t.id}')">🗑️</button>
+      ${i>0?`<button class="btn btn-sm btn-outline" onclick="spostaTipologia('${t.id}',-1)">▲</button>`:''}
+      ${i<allTipologie.length-1?`<button class="btn btn-sm btn-outline" onclick="spostaTipologia('${t.id}',1)">▼</button>`:''}
+    </td>
+  </tr>`).join('');
+  aggiornaSelectTipologie();
+}
+
+function aggiungiTipologia(){
+  document.getElementById('tipo-id').value='';
+  document.getElementById('tipo-nome').value='';
+  document.getElementById('modal-tipo-title').textContent='Nuova tipologia';
+  document.getElementById('modal-tipologia').classList.add('open');
+}
+function editTipologia(id){
+  const t = allTipologie.find(x=>x.id===id);
+  if(!t) return;
+  document.getElementById('tipo-id').value=t.id;
+  document.getElementById('tipo-nome').value=t.nome;
+  document.getElementById('modal-tipo-title').textContent='Modifica tipologia';
+  document.getElementById('modal-tipologia').classList.add('open');
+}
+async function salvaTipologia(){
+  const id   = document.getElementById('tipo-id').value;
+  const nome = document.getElementById('tipo-nome').value.trim();
+  if(!nome){ showToast('Nome obbligatorio','error'); return; }
+  if(id){
+    const idx = allTipologie.findIndex(t=>t.id===id);
+    if(idx>=0) allTipologie[idx] = {id, nome};
+  } else {
+    allTipologie.push({id:'t'+Date.now(), nome});
+  }
+  await saveTipologie();
+  closeModal('modal-tipologia');
+  renderTipologie();
+  showToast('Tipologia salvata ✓','success');
+}
+async function eliminaTipologia(id){
+  if(!confirm('Eliminare questa tipologia?')) return;
+  allTipologie = allTipologie.filter(t=>t.id!==id);
+  await saveTipologie();
+  renderTipologie();
+  showToast('Tipologia eliminata','success');
+}
+async function spostaTipologia(id, dir){
+  const idx = allTipologie.findIndex(t=>t.id===id);
+  const newIdx = idx+dir;
+  if(newIdx<0||newIdx>=allTipologie.length) return;
+  [allTipologie[idx],allTipologie[newIdx]] = [allTipologie[newIdx],allTipologie[idx]];
+  await saveTipologie();
+  renderTipologie();
+}
+function aggiornaSelectTipologie(){
+  const sel = document.getElementById('c-tipo');
+  if(!sel) return;
+  const val = sel.value;
+  sel.innerHTML = allTipologie.map(t=>`<option value="${t.nome}" ${val===t.nome?'selected':''}>${t.nome}</option>`).join('');
+}
+
 
 function aggiornaAlertQuestura(){
   const badge = document.getElementById('questura-badge');
