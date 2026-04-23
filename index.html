@@ -313,7 +313,8 @@
           </div>
         </div>
         <div class="cal-months-wrap" id="cal-months-wrap"></div>
-      </div>
+        <!-- Legenda canali -->
+        <div id="cal-legenda" style="display:flex;flex-wrap:wrap;gap:8px;padding:16px 0 8px;border-top:1px solid var(--border);margin-top:8px"></div>
 
       <!-- PRENOTAZIONI -->
       <div class="page" id="page-prenotazioni">
@@ -2366,6 +2367,37 @@ async function eliminaCamera(id){
 const MESI=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 function calAnniDelta(d){calAnno+=d;aggiornaCalendario()}
 
+// Colori calendario per canale
+const COLORI_CANALE = {
+  'Booking.com':  {bg:'#003580', bordo:'#002255', testo:'#fff'},
+  'Airbnb':       {bg:'#FF5A5F', bordo:'#e03f44', testo:'#fff'},
+  'Telefono':     {bg:'#2AA1A0', bordo:'#1f7a79', testo:'#fff'},
+  'Email':        {bg:'#8E44AD', bordo:'#6c3483', testo:'#fff'},
+  'WhatsApp':     {bg:'#25D366', bordo:'#1da851', testo:'#fff'},
+  'Sito web':     {bg:'#1A6FA8', bordo:'#145580', testo:'#fff'},
+  'Di passaggio': {bg:'#E67E22', bordo:'#ca6f1e', testo:'#fff'},
+  'Agenzia':      {bg:'#7F8C8D', bordo:'#616a6b', testo:'#fff'},
+  'Passaparola':  {bg:'#E91E63', bordo:'#c2185b', testo:'#fff'},
+  'Altro':        {bg:'#6A8DA8', bordo:'#4e6f87', testo:'#fff'},
+};
+const COL_DEFAULT = {bg:'#1A6FA8', bordo:'#145580', testo:'#fff'};
+
+function coloreCanaleCalendario(canale){
+  if(!canale) return COL_DEFAULT;
+  // Prima cerca nei canali dinamici per trovare un colore associato
+  if(COLORI_CANALE[canale]) return COLORI_CANALE[canale];
+  // Per canali personalizzati genera un colore deterministico
+  let hash=0;
+  for(let i=0;i<canale.length;i++) hash=canale.charCodeAt(i)+((hash<<5)-hash);
+  const h=Math.abs(hash)%360;
+  return {bg:`hsl(${h},55%,38%)`, bordo:`hsl(${h},55%,28%)`, testo:'#fff'};
+}
+function emojiCanaleCalendario(canale){
+  if(!canale) return '';
+  const found = allCanali.find(c=>c.nome===canale);
+  return found?.emoji||'';
+}
+
 function aggiornaCalendario(){
   const wrap=document.getElementById('cal-months-wrap');
   if(!wrap)return;
@@ -2399,19 +2431,22 @@ function aggiornaCalendario(){
         const pren=allPrenotazioni.find(p=>p.cameraId===cam.id&&p.checkin<=dateStr&&p.checkout>dateStr);
         const isFirst=pren&&(pren.checkin===dateStr||g===1);
         if(pren&&isFirst){
-          // checkout è il giorno di partenza (escluso) — la camera è libera nel giorno di checkout
-          const finePrenotazione=new Date(pren.checkout);        // giorno escluso
-          const fineMese=new Date(a,m+1,0);                      // ultimo giorno del mese
+          const finePrenotazione=new Date(pren.checkout);
+          const fineMese=new Date(a,m+1,0);
           const fineEffettiva=finePrenotazione<fineMese?finePrenotazione:new Date(a,m+1,1);
           const inizioEffettivo=g===1&&pren.checkin<dateStr?1:g;
           const durInMese=Math.round((fineEffettiva-new Date(a,m,inizioEffettivo))/(1000*60*60*24));
           const durReale=Math.max(1,Math.min(durInMese,giorniMese-g+1));
+          const colCal=coloreCanaleCalendario(pren.canale);
+          const em = emojiCanaleCalendario(pren.canale);
           grid+=`<div class="cal-cell" style="overflow:visible;z-index:2">
-            <div class="cal-booking" title="${pren.cognome||''} ${pren.nome||''}" style="width:calc(${durReale*100}% + ${(durReale-1)*1}px)">
-              ${pren.cognome||''} ${pren.nome||''}
+            <div class="cal-booking" title="${pren.cognome||''} ${pren.nome||''}\n${pren.canale||''}"
+              style="width:calc(${durReale*100}% + ${(durReale-1)*1}px);background:${colCal.bg};border:1.5px solid ${colCal.bordo};color:${colCal.testo}">
+              ${em?`<span style="margin-right:3px;font-size:10px">${em}</span>`:''}${pren.cognome||''} ${pren.nome||''}
             </div></div>`;
         } else if(pren){
-          grid+=`<div class="cal-cell cal-occ"></div>`;
+          const colCal=coloreCanaleCalendario(pren.canale);
+          grid+=`<div class="cal-cell" style="background:${colCal.bg}44"></div>`;
         } else {
           grid+=`<div class="cal-cell"></div>`;
         }
@@ -2426,6 +2461,26 @@ function aggiornaCalendario(){
       <div class="cal-grid-wrap">${grid}</div>
     </div>`;
   }).join('');
+
+  // Legenda canali presenti nelle prenotazioni
+  const legenda = document.getElementById('cal-legenda');
+  if(legenda){
+    const canaliUsati = [...new Set(allPrenotazioni.map(p=>p.canale||'—'))];
+    if(canaliUsati.length){
+      legenda.innerHTML = '<span style="font-size:11px;color:var(--text-muted);font-weight:600;align-self:center">LEGENDA:</span>' +
+        canaliUsati.map(ch=>{
+          const col = coloreCanaleCalendario(ch);
+          const em  = emojiCanaleCalendario(ch);
+          return `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;
+            border-radius:20px;font-size:11px;font-weight:600;
+            background:${col.bg};color:${col.testo};border:1px solid ${col.bordo}">
+            ${em?em+' ':''}${ch}
+          </span>`;
+        }).join('');
+    } else {
+      legenda.innerHTML='';
+    }
+  }
 }
 
 // ===== STAMPA =====
