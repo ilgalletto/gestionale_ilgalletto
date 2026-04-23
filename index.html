@@ -325,7 +325,7 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Ospite</th><th>Camera</th><th>Check-in</th><th>Check-out</th><th>Notti</th><th>Persone</th><th>Prezzo</th><th>Canale</th><th>Stato</th><th class="no-print"></th></tr></thead>
+            <thead><tr><th>Ospite</th><th>Camera</th><th>Check-in</th><th>Check-out</th><th>Notti</th><th>Persone</th><th>Prezzo</th><th>Pagamento</th><th>Canale</th><th>Stato</th><th class="no-print"></th></tr></thead>
             <tbody id="tb-prenotazioni"></tbody>
           </table>
         </div>
@@ -1280,6 +1280,31 @@
       <div class="form-group"><label class="form-label">Check-in *</label><input class="form-control" id="p-checkin" type="date"></div>
       <div class="form-group"><label class="form-label">Check-out *</label><input class="form-control" id="p-checkout" type="date"></div>
     </div>
+    <div class="section-divider">💳 Pagamento</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Modalità pagamento</label>
+        <select class="form-control" id="p-modalita-pag" onchange="aggiornaCampiPagamento()">
+          <option value="checkout">Saldo al check-out</option>
+          <option value="prenotazione">Saldo completo alla prenotazione</option>
+          <option value="caparra">Caparra + saldo al check-out</option>
+        </select>
+      </div>
+      <div class="form-group" id="p-caparra-wrap" style="display:none">
+        <label class="form-label">Caparra (€)</label>
+        <input class="form-control" id="p-caparra" type="number" min="0" step="0.01" placeholder="0.00">
+      </div>
+      <div class="form-group" id="p-metodo-wrap">
+        <label class="form-label">Metodo pagamento</label>
+        <select class="form-control" id="p-metodo-pag">
+          <option value="">—</option>
+          <option value="contanti">Contanti</option>
+          <option value="carta">Carta</option>
+          <option value="bonifico">Bonifico</option>
+          <option value="online">Online (OTA)</option>
+        </select>
+      </div>
+    </div>
+    <div id="p-pag-stato" style="display:none;margin-bottom:8px"></div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Notti</label><input class="form-control" id="p-notti" type="number" min="1" readonly></div>
       <div class="form-group"><label class="form-label">N° persone</label><input class="form-control" id="p-ospiti" type="number" min="1" placeholder="1"></div>
@@ -1343,18 +1368,34 @@
 <div class="modal-overlay" id="modal-checkout">
   <div class="modal">
     <div class="modal-title">🏁 Check-out ospite</div>
-    <div id="co-riepilogo" style="background:var(--surface2);border-radius:8px;padding:14px;margin-bottom:20px;font-size:14px"></div>
+    <div id="co-riepilogo" style="background:var(--surface2);border-radius:8px;padding:14px;margin-bottom:14px;font-size:14px"></div>
+    <!-- Riepilogo pagamenti -->
+    <div id="co-pag-riepilogo" style="display:none;background:#EEF7F0;border:1.5px solid #2a7a3b33;border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:13px"></div>
     <div class="section-divider">Dati partenza</div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Ora partenza</label><input class="form-control" id="co-ora" type="time"></div>
-      <div class="form-group"><label class="form-label">Importo saldato (€)</label><input class="form-control" id="co-saldo" type="number" min="0" step="0.01"></div>
+      <div class="form-group"><label class="form-label">Saldo da incassare (€)</label>
+        <input class="form-control" id="co-saldo" type="number" min="0" step="0.01">
+        <div id="co-saldo-hint" style="font-size:11px;color:var(--text-muted);margin-top:3px"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Metodo pagamento</label>
+        <select class="form-control" id="co-metodo">
+          <option value="">—</option>
+          <option value="contanti">Contanti</option>
+          <option value="carta">Carta</option>
+          <option value="bonifico">Bonifico</option>
+          <option value="online">Online (OTA)</option>
+        </select>
+      </div>
     </div>
     <div class="form-group"><label class="form-label">Note check-out</label>
       <textarea class="form-control" id="co-note" rows="2" placeholder="Stato camera, feedback ospite..."></textarea>
     </div>
-    <div class="modal-actions">
+    <div class="modal-actions" style="flex-wrap:wrap;gap:8px">
       <button class="btn btn-outline" onclick="closeModal('modal-checkout')">Annulla</button>
-      <button class="btn btn-primary" onclick="stampaRicevuta()">🖨️ Stampa ricevuta</button>
+      <button class="btn btn-outline" onclick="stampaRicevuta()">🖨️ Stampa ricevuta</button>
+      <button class="btn btn-primary" style="background:#2a7a3b" id="btn-registra-co"
+        onclick="registraInContabilitaCheckout()">💰 Registra in contabilità</button>
       <button class="btn btn-primary" style="background:#1A6FA8" onclick="confermaCheckout()">🏁 Conferma partenza</button>
     </div>
   </div>
@@ -1668,29 +1709,43 @@ function statoPrenotazione(p){
 // ===== PRENOTAZIONI =====
 function renderPrenotazioni(){
   const tb=document.getElementById('tb-prenotazioni');
-  if(!allPrenotazioni.length){tb.innerHTML='<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📋</div><p>Nessuna prenotazione</p></div></td></tr>';return}
+  if(!allPrenotazioni.length){tb.innerHTML='<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">📋</div><p>Nessuna prenotazione</p></div></td></tr>';return}
   const sorted=[...allPrenotazioni].sort((a,b)=>b.checkin.localeCompare(a.checkin));
   const canEdit=currentUserData?.ruolo==='admin'||currentUserData?.ruolo==='proprietario';
   const oggi=toDateStr(new Date());
   tb.innerHTML=sorted.map(p=>{
     const n=calcolaNotti(p.checkin,p.checkout); const s=statoPrenotazione(p);
-    // Bottoni check-in / check-out contestuali
     let btnCI='', btnCO='';
     const puoCheckin=!p.checkinConfermato&&!p.checkoutConfermato&&p.checkin<=oggi&&p.checkout>oggi;
     const puoCheckout=p.checkinConfermato&&!p.checkoutConfermato;
     if(puoCheckin) btnCI=`<button class="btn btn-sm" style="background:#2AA1A0;color:#fff" onclick="openModalCheckin('${p.id}')">✅ Check-in</button>`;
     if(puoCheckout) btnCO=`<button class="btn btn-sm" style="background:#1A6FA8;color:#fff" onclick="openModalCheckout('${p.id}')">🏁 Check-out</button>`;
+    // Badge pagamento
+    const caparra=parseFloat(p.caparra||0);
+    const prezzo=parseFloat(p.prezzo||0);
+    let pagBadge='';
+    if(p.modalitaPag==='prenotazione'){
+      pagBadge=`<span class="badge" style="background:#EEF7F0;color:#2a7a3b">💚 Saldo</span>`;
+    } else if(p.modalitaPag==='caparra'&&caparra>0){
+      pagBadge=`<span class="badge" style="background:#DCF0FF;color:#1A6FA8">💳 Cap. €${caparra.toFixed(0)}</span>`;
+    } else {
+      pagBadge=`<span class="badge badge-free">Al checkout</span>`;
+    }
+    if(p.contabRegistrato) pagBadge+=` <span style="font-size:10px;color:#2a7a3b" title="Registrata in contabilità">✅</span>`;
     return`<tr>
       <td><strong>${p.cognome||''} ${p.nome||''}</strong>${p.telefono?`<br><small style="color:var(--text-muted)">${p.telefono}</small>`:''}</td>
       <td>${nomeCameraById(p.cameraId)}</td>
       <td>${formatDate(p.checkin)}${p.checkinConfermato?`<br><small style="color:var(--accent2)">✓ ${p.oraCheckin||''}</small>`:''}</td>
       <td>${formatDate(p.checkout)}${p.checkoutConfermato?`<br><small style="color:var(--text-muted)">✓ ${p.oraCheckout||''}</small>`:''}</td>
-      <td>${n}</td><td>${p.nOspiti||1} pers.</td><td>€${parseFloat(p.prezzo||0).toFixed(2)}</td>
+      <td>${n}</td><td>${p.nOspiti||1} pers.</td>
+      <td>€${prezzo.toFixed(2)}</td>
+      <td style="white-space:nowrap">${pagBadge}</td>
       <td>${p.canale||'—'}</td>
       <td><span class="badge ${s.cls}">${s.label}</span></td>
-      <td class="no-print" style="white-space:nowrap">${btnCI}${btnCO}</td>
-      <td class="no-print">${canEdit?`<button class="btn btn-sm btn-outline" onclick="editPrenotazione('${p.id}')">✏️</button>
-        <button class="btn btn-sm btn-danger" onclick="eliminaPrenotazione('${p.id}')">🗑️</button>`:''}</td>
+      <td class="no-print" style="white-space:nowrap">${btnCI}${btnCO}
+        ${canEdit?`<button class="btn btn-sm btn-outline" onclick="editPrenotazione('${p.id}')">✏️</button>
+        <button class="btn btn-sm btn-danger" onclick="eliminaPrenotazione('${p.id}')">🗑️</button>`:''}
+      </td>
     </tr>`;
   }).join('');
 }
@@ -1712,22 +1767,33 @@ function openModalPrenotazione(id){
     document.getElementById('p-checkout').value=p.checkout||'';
     document.getElementById('p-prezzo').value=p.prezzo||'';
     document.getElementById('p-ospiti').value=p.nOspiti||'';
+    document.getElementById('p-modalita-pag').value=p.modalitaPag||'checkout';
+    document.getElementById('p-caparra').value=p.caparra||'';
+    document.getElementById('p-metodo-pag').value=p.metodoPag||'';
     aggNotti();
   } else {
-    ['p-nome','p-cognome','p-telefono','p-email','p-prezzo'].forEach(i=>document.getElementById(i).value='');
+    ['p-nome','p-cognome','p-telefono','p-email','p-prezzo','p-caparra'].forEach(i=>document.getElementById(i).value='');
     document.getElementById('p-checkin').value='';
     document.getElementById('p-checkout').value='';
     document.getElementById('p-notti').value='';
     document.getElementById('p-ospiti').value='';
     document.getElementById('p-canale').value='';
+    document.getElementById('p-modalita-pag').value='checkout';
+    document.getElementById('p-metodo-pag').value='';
     document.getElementById('p-suggerimenti').style.display='none';
     ospitiBozzaPren=[];
     document.getElementById('pren-ospiti-section').style.display='none';
     document.getElementById('btn-toggle-ospiti').textContent='👥 Aggiungi dati ospiti aggiuntivi (opzionale)';
   }
+  aggiornaCampiPagamento();
   document.getElementById('modal-prenotazione').classList.add('open');
   document.getElementById('p-checkin').oninput=aggNotti;
   document.getElementById('p-checkout').oninput=aggNotti;
+}
+
+function aggiornaCampiPagamento(){
+  const mod = document.getElementById('p-modalita-pag').value;
+  document.getElementById('p-caparra-wrap').style.display = mod==='caparra'?'':'none';
 }
 function aggNotti(){
   const ci=document.getElementById('p-checkin').value;
@@ -1769,7 +1835,10 @@ async function salvaPrenotazione(){
   const cameraId=document.getElementById('p-camera').value;
   const checkin=document.getElementById('p-checkin').value;
   const checkout=document.getElementById('p-checkout').value;
-  const prezzo=document.getElementById('p-prezzo').value;
+  const prezzo=parseFloat(document.getElementById('p-prezzo').value)||0;
+  const modalitaPag=document.getElementById('p-modalita-pag').value;
+  const caparra=parseFloat(document.getElementById('p-caparra').value)||0;
+  const metodoPag=document.getElementById('p-metodo-pag').value;
   if(!nome||!cognome||!cameraId||!checkin||!checkout){showToast('Compila i campi obbligatori','error');return}
   if(checkin>=checkout){showToast('Il check-out deve essere dopo il check-in','error');return}
   const conflitto=allPrenotazioni.find(p=>{
@@ -1785,14 +1854,17 @@ async function salvaPrenotazione(){
     canale:document.getElementById('p-canale').value,
     cameraId,checkin,checkout,
     nOspiti:parseInt(document.getElementById('p-ospiti').value)||1,
-    prezzo:parseFloat(prezzo)||0,
+    prezzo,
+    modalitaPag,
+    caparra: modalitaPag==='caparra'?caparra:0,
+    metodoPag,
+    contabRegistrato: false,
     ospiti: raccogliOspitiPren() || [],
     aggiornata:firebase.firestore.FieldValue.serverTimestamp()
   };
   try{
     if(editingPrenId){await db.collection('prenotazioni').doc(editingPrenId).update(data)}
     else{data.creata=firebase.firestore.FieldValue.serverTimestamp();data.creataDA=currentUser.uid;await db.collection('prenotazioni').add(data)}
-    // Aggiorna/crea cliente automaticamente
     await syncClienteDaPrenotazione(data);
     closeModal('modal-prenotazione');showToast('Prenotazione salvata ✓','success');
   }catch(e){showToast('Errore: '+e.message,'error')}
@@ -2225,14 +2297,41 @@ function openModalCheckout(id){
   checkoutPrenId=id;
   const p=allPrenotazioni.find(x=>x.id===id);
   if(!p)return;
+  const prezzo=parseFloat(p.prezzo||0);
+  const caparra=parseFloat(p.caparra||0);
+  const residuo=prezzo-caparra;
   document.getElementById('co-riepilogo').innerHTML=`
     <strong style="font-size:16px">${p.cognome||''} ${p.nome||''}</strong><br>
     🛏️ ${nomeCameraById(p.cameraId)} &nbsp;·&nbsp; Check-in: ${formatDate(p.checkin)} (ore ${p.oraCheckin||'—'})<br>
-    Soggiorno: <strong>${calcolaNotti(p.checkin,p.checkout)} notti</strong> &nbsp;·&nbsp; Importo: <strong>€${parseFloat(p.prezzo||0).toFixed(2)}</strong>`;
+    Soggiorno: <strong>${calcolaNotti(p.checkin,p.checkout)} notti</strong> &nbsp;·&nbsp; Totale: <strong>€${prezzo.toFixed(2)}</strong>`;
+
+  // Riepilogo pagamenti
+  const pagRiep = document.getElementById('co-pag-riepilogo');
+  if(caparra>0){
+    pagRiep.style.display='block';
+    pagRiep.innerHTML=`
+      <div style="font-weight:600;color:#2a7a3b;margin-bottom:6px">💳 Situazione pagamenti</div>
+      <div style="display:flex;justify-content:space-between"><span>Totale soggiorno:</span><span><strong>€${prezzo.toFixed(2)}</strong></span></div>
+      <div style="display:flex;justify-content:space-between;color:#1A6FA8"><span>Caparra ricevuta (${p.metodoPag||''}): </span><span>− €${caparra.toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between;border-top:1px solid #2a7a3b33;margin-top:6px;padding-top:6px;font-weight:700;color:#2a7a3b">
+        <span>Residuo da incassare:</span><span>€${residuo.toFixed(2)}</span>
+      </div>`;
+  } else {
+    pagRiep.style.display='none';
+  }
+
   const now=new Date();
   document.getElementById('co-ora').value=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  document.getElementById('co-saldo').value=parseFloat(p.prezzo||0).toFixed(2);
+  document.getElementById('co-saldo').value=residuo>0?residuo.toFixed(2):prezzo.toFixed(2);
+  document.getElementById('co-metodo').value=p.metodoPag||'';
   document.getElementById('co-note').value='';
+  const hint=document.getElementById('co-saldo-hint');
+  if(hint) hint.textContent=caparra>0?`Caparra già versata: €${caparra.toFixed(2)}`:'';
+
+  // Nascondi bottone registra se già registrato
+  const btnReg=document.getElementById('btn-registra-co');
+  if(btnReg) btnReg.style.display=p.contabRegistrato?'none':'';
+
   document.getElementById('modal-checkout').classList.add('open');
 }
 
@@ -2242,17 +2341,68 @@ async function confermaCheckout(){
   const ora=document.getElementById('co-ora').value;
   const saldo=parseFloat(document.getElementById('co-saldo').value)||0;
   const note=document.getElementById('co-note').value.trim();
+  const metodo=document.getElementById('co-metodo').value;
   try{
     await db.collection('prenotazioni').doc(checkoutPrenId).update({
-      checkoutConfermato:true,
-      oraCheckout:ora,
-      saldoPagato:saldo,
-      noteCheckout:note,
+      checkoutConfermato:true, oraCheckout:ora,
+      saldoPagato:saldo, noteCheckout:note,
+      metodoPagCheckout:metodo,
       checkoutTS:firebase.firestore.FieldValue.serverTimestamp()
     });
     closeModal('modal-checkout');
     showToast(`🏁 Check-out confermato: ${p.cognome||''} ${p.nome||''} – ore ${ora}`,'success');
   }catch(e){showToast('Errore: '+e.message,'error')}
+}
+
+// Registra entrata in contabilità dal checkout
+async function registraInContabilitaCheckout(){
+  const p=allPrenotazioni.find(x=>x.id===checkoutPrenId);
+  if(!p)return;
+  if(p.contabRegistrato){showToast('Già registrata in contabilità','error');return}
+  const saldo=parseFloat(document.getElementById('co-saldo').value)||0;
+  const caparra=parseFloat(p.caparra||0);
+  const metodo=document.getElementById('co-metodo').value||p.metodoPag||'';
+  const dataRif=p.checkout||toDateStr(new Date());
+  const mese=new Date(dataRif).getMonth();
+  const anno=new Date(dataRif).getFullYear();
+  // Crea voce entrata
+  const voceId=`pag_${checkoutPrenId}_${Date.now()}`;
+  const descr=`Soggiorno ${p.cognome||''} ${p.nome||''} (${formatDate(p.checkin)}–${formatDate(p.checkout)})`;
+  const voci=[{
+    id:voceId,
+    desc:descr+(caparra>0?` — Saldo residuo (caparra €${caparra.toFixed(2)} già versata)`:' — Pagamento completo'),
+    importo:saldo,
+    data:dataRif,
+    cat:'Soggiorno (incasso)',
+    pagamento:metodo||'checkout',
+    ricorrenza:'una_tantum',
+    note:`Camera ${nomeCameraById(p.cameraId)} · ${calcolaNotti(p.checkin,p.checkout)} notti`,
+  }];
+  // Se c'era caparra registra anche quella (nel mese del checkin)
+  if(caparra>0){
+    const meseCaparra=new Date(p.checkin).getMonth();
+    const annoCaparra=new Date(p.checkin).getFullYear();
+    const vociCapExist=await loadVociCont('entrata',meseCaparra,annoCaparra);
+    const capGiaReg=vociCapExist.find(v=>v.id===`cap_${checkoutPrenId}`);
+    if(!capGiaReg){
+      vociCapExist.push({
+        id:`cap_${checkoutPrenId}`,
+        desc:`Caparra: ${p.cognome||''} ${p.nome||''} (${formatDate(p.checkin)}–${formatDate(p.checkout)})`,
+        importo:caparra, data:p.checkin,
+        cat:'Soggiorno (incasso)', pagamento:p.metodoPag||'prenotazione',
+        ricorrenza:'una_tantum', note:`Camera ${nomeCameraById(p.cameraId)}`,
+      });
+      await saveVociCont('entrata',meseCaparra,annoCaparra,vociCapExist);
+    }
+  }
+  // Registra il saldo al checkout
+  const vociEsist=await loadVociCont('entrata',mese,anno);
+  vociEsist.push(...voci);
+  await saveVociCont('entrata',mese,anno,vociEsist);
+  // Marca prenotazione come registrata
+  await db.collection('prenotazioni').doc(checkoutPrenId).update({contabRegistrato:true});
+  showToast('✅ Entrata registrata in contabilità!','success');
+  document.getElementById('btn-registra-co').style.display='none';
 }
 
 function stampaRicevuta(){
