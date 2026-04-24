@@ -273,6 +273,7 @@
           font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;line-height:1.4"></span>
       </button>
       <button class="nav-item" onclick="navTo('contabilita',this)"><span class="nav-icon">💰</span><span>Contabilità</span></button>
+      <button class="nav-item no-visual" onclick="navTo('statistiche',this)"><span class="nav-icon">📈</span><span>Statistiche</span></button>
       <button class="nav-item proprietario-only admin-show no-visual" onclick="navTo('camere',this)"><span class="nav-icon">🛏️</span><span>Camere</span></button>
       <button class="nav-item admin-only" onclick="navTo('impostazioni',this)"><span class="nav-icon">⚙️</span><span>Impostazioni</span></button>
       <!-- Guida in fondo, separata -->
@@ -1108,6 +1109,69 @@
         </div>
       </div>
 
+      <!-- STATISTICHE -->
+      <div class="page" id="page-statistiche">
+        <div class="toolbar">
+          <div class="page-title" style="margin:0">📈 Statistiche</div>
+          <div style="display:flex;gap:8px;align-items:center" class="no-print">
+            <select class="form-control btn-sm" id="stat-anno" style="width:auto" onchange="renderStatistiche()"></select>
+            <button class="btn btn-outline btn-sm" onclick="stampaStatistiche()">🖨️ Stampa</button>
+          </div>
+        </div>
+
+        <!-- CARD RIEPILOGO ANNO -->
+        <div id="stat-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px"></div>
+
+        <!-- TABELLA PER CAMERA -->
+        <div style="font-weight:700;font-size:15px;color:var(--accent);margin-bottom:12px">
+          🛏️ Dettaglio per camera — <span id="stat-anno-label"></span>
+        </div>
+        <div class="table-wrap" style="margin-bottom:28px">
+          <table>
+            <thead><tr>
+              <th>Camera</th>
+              <th>Piano / Tipo</th>
+              <th style="text-align:right">Giorni disp.</th>
+              <th style="text-align:right">Giorni pren.</th>
+              <th style="text-align:right">% Occup.</th>
+              <th style="text-align:right">Incasso tot.</th>
+              <th style="text-align:right">€/notte medio</th>
+              <th style="text-align:right">Soggiorni</th>
+            </tr></thead>
+            <tbody id="stat-tbody"></tbody>
+            <tfoot id="stat-tfoot"></tfoot>
+          </table>
+        </div>
+
+        <!-- GRAFICO MENSILE -->
+        <div style="font-weight:700;font-size:15px;color:var(--accent);margin-bottom:12px">
+          📊 Occupazione e incasso mensile — <span id="stat-anno-label2"></span>
+        </div>
+        <div id="stat-grafico" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:24px"></div>
+
+        <!-- CANALI + MESI -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div>
+            <div style="font-weight:700;font-size:15px;color:var(--accent);margin-bottom:12px">📣 Canali più redditizi</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Canale</th><th style="text-align:right">Soggiorni</th><th style="text-align:right">Incasso</th><th style="text-align:right">%</th></tr></thead>
+                <tbody id="stat-canali"></tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:15px;color:var(--accent);margin-bottom:12px">🌙 Soggiorni per mese</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Mese</th><th style="text-align:right">Soggiorni</th><th style="text-align:right">Notti tot.</th><th style="text-align:right">Incasso</th></tr></thead>
+                <tbody id="stat-mesi"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div><!-- fine page-statistiche -->
+
       <!-- CAMERE -->
       <div class="page" id="page-camere">
         <div class="toolbar">
@@ -1587,6 +1651,7 @@ function startListeners(){
     renderPrenotazioni();renderDashboard();aggiornaCalendario();renderClienti();renderStampa();
     renderCamere();
     aggiornaAlertQuestura();
+    if(document.getElementById('page-statistiche')?.classList.contains('active')) renderStatistiche();
   });
   unsubCamere=db.collection('camere').orderBy('numero','asc').onSnapshot(snap=>{
     allCamere=snap.docs.map(d=>({id:d.id,...d.data()}));
@@ -1616,6 +1681,7 @@ function navTo(page,btn){
   if(page==='contabilita'){initContabilita();}
   if(page==='guida'){initGuida();}
   if(page==='impostazioni'){renderCanali();renderTipologie();}
+  if(page==='statistiche'){initStatistiche();}
 }
 
 // ===== DASHBOARD =====
@@ -3032,6 +3098,189 @@ function aggiornaAlertQuestura(){
 }
 
 // ── Tab switcher contabilità ──────────────────────────────────────────────────
+// ===== STATISTICHE =====
+const MESI_S = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+const MESI_FULL = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
+  'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+const BG_STAT = '#EEF6FB';
+
+function initStatistiche(){
+  const sel = document.getElementById('stat-anno');
+  if(!sel) return;
+  if(!sel.options.length){
+    const annoAtt = new Date().getFullYear();
+    for(let y=2024; y<=annoAtt+1; y++){
+      const o=document.createElement('option');
+      o.value=y; o.textContent=y;
+      if(y===annoAtt) o.selected=true;
+      sel.appendChild(o);
+    }
+  }
+  renderStatistiche();
+}
+
+function renderStatistiche(){
+  const anno = parseInt(document.getElementById('stat-anno')?.value||new Date().getFullYear());
+  document.getElementById('stat-anno-label').textContent  = anno;
+  document.getElementById('stat-anno-label2').textContent = anno;
+  const prensAnno = allPrenotazioni.filter(p=>new Date(p.checkin).getFullYear()===anno);
+  const isBisestile = anno%4===0&&(anno%100!==0||anno%400===0);
+  const giorniAnno  = isBisestile?366:365;
+  const totCamere   = allCamere.length||1;
+
+  // ── Per camera ──────────────────────────────────────────────────────────────
+  let totInc=0, totNot=0, totSog=0;
+  const righe = allCamere.map(cam=>{
+    const prens = prensAnno.filter(p=>p.cameraId===cam.id);
+    const notti = prens.reduce((s,p)=>s+calcolaNotti(p.checkin,p.checkout),0);
+    const incasso=prens.reduce((s,p)=>s+(parseFloat(p.saldoPagato||p.prezzo||0)),0);
+    const mediaN= notti>0?incasso/notti:0;
+    const pct   = ((notti/giorniAnno)*100).toFixed(1);
+    totInc+=incasso; totNot+=notti; totSog+=prens.length;
+    const colPct=parseFloat(pct)>=70?'#2a7a3b':parseFloat(pct)>=40?'#E67E22':'#C0392B';
+    return {cam,prens,notti,incasso,mediaN,pct,colPct};
+  });
+
+  const tbody=document.getElementById('stat-tbody');
+  if(tbody) tbody.innerHTML=righe.map(({cam,prens,notti,incasso,mediaN,pct,colPct})=>`
+    <tr>
+      <td><strong>${cam.numero}</strong></td>
+      <td style="font-size:12px;color:var(--text-muted)">${cam.nome||''} · ${cam.tipo||''}</td>
+      <td style="text-align:right">${giorniAnno}</td>
+      <td style="text-align:right;font-weight:600">${notti}</td>
+      <td style="text-align:right">
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px">
+          <div style="width:54px;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${Math.min(parseFloat(pct),100)}%;background:${colPct};border-radius:3px"></div>
+          </div>
+          <span style="color:${colPct};font-weight:700;min-width:38px;text-align:right">${pct}%</span>
+        </div>
+      </td>
+      <td style="text-align:right;font-weight:700;color:#2a7a3b">€${incasso.toFixed(2)}</td>
+      <td style="text-align:right">€${mediaN.toFixed(2)}</td>
+      <td style="text-align:right">${prens.length}</td>
+    </tr>`).join('');
+
+  const pctTot=((totNot/(giorniAnno*totCamere))*100).toFixed(1);
+  const medTot=totNot>0?totInc/totNot:0;
+  const colTot=parseFloat(pctTot)>=70?'#2a7a3b':parseFloat(pctTot)>=40?'#E67E22':'#C0392B';
+  const tfoot=document.getElementById('stat-tfoot');
+  if(tfoot) tfoot.innerHTML=`<tr style="background:var(--surface2);font-weight:700;font-size:13px">
+    <td colspan="2">TOTALE — ${allCamere.length} camera${allCamere.length!==1?'e':''}</td>
+    <td style="text-align:right">${giorniAnno*totCamere}</td>
+    <td style="text-align:right">${totNot}</td>
+    <td style="text-align:right;color:${colTot}">${pctTot}%</td>
+    <td style="text-align:right;color:#2a7a3b;font-size:15px">€${totInc.toFixed(2)}</td>
+    <td style="text-align:right">€${medTot.toFixed(2)}</td>
+    <td style="text-align:right">${totSog}</td>
+  </tr>`;
+
+  // ── Cards ───────────────────────────────────────────────────────────────────
+  const cards=document.getElementById('stat-cards');
+  if(cards) cards.innerHTML=[
+    {label:'Soggiorni',         val:totSog,                         col:'#1A6FA8',bg:'#DCF0FF'},
+    {label:'Notti prenotate',   val:totNot,                         col:'#2AA1A0',bg:'#E0F5F5'},
+    {label:'Occupazione media', val:pctTot+'%',                     col:colTot,   bg:parseFloat(pctTot)>=60?'#EEF7F0':'#FEF5E7'},
+    {label:'Incasso totale',    val:'€'+totInc.toFixed(0),          col:'#2a7a3b',bg:'#EEF7F0'},
+    {label:'€ / notte medio',   val:'€'+medTot.toFixed(2),          col:'#8E44AD',bg:'#F5EEF8'},
+    {label:'Camere attive',     val:allCamere.length,               col:'#0D2F5A',bg:BG_STAT},
+  ].map(r=>`<div style="background:${r.bg};border-radius:10px;padding:14px 16px;border:1.5px solid ${r.col}22">
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:${r.col};font-weight:600;margin-bottom:5px">${r.label}</div>
+    <div style="font-size:22px;font-weight:700;color:${r.col}">${r.val}</div>
+  </div>`).join('');
+
+  // ── Grafico mensile ─────────────────────────────────────────────────────────
+  const datiMesi = MESI_S.map((nome,m)=>{
+    const prM  = prensAnno.filter(p=>new Date(p.checkin).getMonth()===m);
+    const notM = prM.reduce((s,p)=>s+calcolaNotti(p.checkin,p.checkout),0);
+    const incM = prM.reduce((s,p)=>s+(parseFloat(p.saldoPagato||p.prezzo||0)),0);
+    const giM  = new Date(anno,m+1,0).getDate()*totCamere;
+    const pctM = totCamere>0?parseFloat(((notM/giM)*100).toFixed(1)):0;
+    return {nome,notM,incM,pctM,prens:prM.length};
+  });
+  const maxPct=Math.max(...datiMesi.map(d=>d.pctM),1);
+  const maxInc=Math.max(...datiMesi.map(d=>d.incM),1);
+  const grafH=100;
+  const meseCor=new Date().getMonth();
+  const graf=document.getElementById('stat-grafico');
+  if(graf) graf.innerHTML=`
+    <div style="display:flex;align-items:flex-end;gap:4px;height:${grafH+56}px">
+      ${datiMesi.map((d,i)=>{
+        const hP=Math.max(2,Math.round((d.pctM/maxPct)*grafH));
+        const hI=Math.max(d.incM>0?2:0,Math.round((d.incM/maxInc)*grafH));
+        const fut=i>meseCor&&anno===new Date().getFullYear();
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px">
+          <div style="font-size:8px;color:var(--text-muted);height:14px;display:flex;align-items:flex-end">
+            ${d.pctM>0?d.pctM+'%':''}
+          </div>
+          <div style="display:flex;align-items:flex-end;gap:2px;height:${grafH}px">
+            <div style="width:11px;height:${hP}px;background:${fut?'#C8DFF0':'#1A6FA8'};border-radius:2px 2px 0 0"
+              title="${d.nome}: occupazione ${d.pctM}%"></div>
+            <div style="width:11px;height:${hI}px;background:${fut?'#BFD9C3':'#2a7a3b'};border-radius:2px 2px 0 0"
+              title="${d.nome}: €${d.incM.toFixed(0)}"></div>
+          </div>
+          <div style="font-size:9px;font-weight:600;color:${i===meseCor&&anno===new Date().getFullYear()?'var(--accent)':'var(--text-muted)'};margin-top:3px">${d.nome}</div>
+          <div style="font-size:8px;color:var(--text-muted)">${d.prens>0?d.prens+'gg':''}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:14px;margin-top:10px;justify-content:center">
+      <span style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:5px">
+        <span style="width:12px;height:8px;background:#1A6FA8;border-radius:2px;display:inline-block"></span>Occupazione %</span>
+      <span style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:5px">
+        <span style="width:12px;height:8px;background:#2a7a3b;border-radius:2px;display:inline-block"></span>Incasso €</span>
+    </div>`;
+
+  // ── Canali ─────────────────────────────────────────────────────────────────
+  const perCan={};
+  prensAnno.forEach(p=>{
+    const ch=p.canale||'—';
+    if(!perCan[ch]) perCan[ch]={s:0,i:0};
+    perCan[ch].s++; perCan[ch].i+=parseFloat(p.saldoPagato||p.prezzo||0);
+  });
+  const sortCan=Object.entries(perCan).sort((a,b)=>b[1].i-a[1].i);
+  const elCan=document.getElementById('stat-canali');
+  if(elCan) elCan.innerHTML=sortCan.length
+    ? sortCan.map(([ch,v])=>{
+        const pct=totInc>0?((v.i/totInc)*100).toFixed(1):0;
+        const em=emojiCanaleCalendario(ch);
+        return `<tr><td>${em?em+' ':''}${ch}</td>
+          <td style="text-align:right">${v.s}</td>
+          <td style="text-align:right;font-weight:600;color:#2a7a3b">€${v.i.toFixed(2)}</td>
+          <td style="text-align:right">${pct}%</td></tr>`;
+      }).join('')
+    : '<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--text-muted)">Nessun dato</td></tr>';
+
+  // ── Mesi ────────────────────────────────────────────────────────────────────
+  const elMesi=document.getElementById('stat-mesi');
+  if(elMesi) elMesi.innerHTML=datiMesi.map((d,i)=>{
+    const fut=i>meseCor&&anno===new Date().getFullYear();
+    return `<tr style="${fut?'opacity:.45':''}">
+      <td><strong>${MESI_FULL[i]}</strong></td>
+      <td style="text-align:right">${d.prens}</td>
+      <td style="text-align:right">${d.notM}</td>
+      <td style="text-align:right;${d.incM>0?'font-weight:600;color:#2a7a3b':'color:var(--text-muted)'}">
+        ${d.incM>0?'€'+d.incM.toFixed(2):'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function stampaStatistiche(){
+  const anno=document.getElementById('stat-anno')?.value;
+  const w=window.open('','_blank');
+  const cnt=document.getElementById('page-statistiche').innerHTML;
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Statistiche ${anno} — B&B Il Galletto</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>body{font-family:'DM Sans',sans-serif;padding:24px;color:#0D2436;font-size:12px}
+  .no-print,select,button{display:none!important}table{width:100%;border-collapse:collapse}
+  th{background:#E3F0F8;padding:7px 10px;font-size:10px;text-transform:uppercase}
+  td{padding:6px 10px;border-top:1px solid #C8DFF0}</style></head><body>
+  <h2 style="font-family:'DM Serif Display',serif;color:#1A6FA8;margin-bottom:4px">B&B Il Galletto — Statistiche ${anno}</h2>
+  ${cnt}</body></html>`);
+  w.document.close(); setTimeout(()=>w.print(),400);
+}
+
 function switchTabCont(tab){
   const isMese = tab==='mese';
   document.getElementById('cont-tab-mese').style.display    = isMese?'':'none';
