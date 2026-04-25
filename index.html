@@ -3125,7 +3125,11 @@ function renderStatistiche(){
   document.getElementById('stat-anno-label2').textContent = anno;
   const prensAnno = allPrenotazioni.filter(p=>new Date(p.checkin).getFullYear()===anno);
   const isBisestile = anno%4===0&&(anno%100!==0||anno%400===0);
-  const giorniAnno  = isBisestile?366:365;
+  const giorniAnnoTotali = isBisestile?366:365;
+  // Per il 2026 il gestionale parte dal 1° aprile: giorni disponibili = aprile → dicembre
+  const dataStart = (anno===2026) ? new Date(2026,3,1) : new Date(anno,0,1); // 1 apr 2026 o 1 gen
+  const dataEnd   = new Date(anno+1,0,1);
+  const giorniAnno = Math.round((dataEnd-dataStart)/(1000*60*60*24));
   const totCamere   = allCamere.length||1;
 
   // ── Per camera ──────────────────────────────────────────────────────────────
@@ -3194,9 +3198,11 @@ function renderStatistiche(){
     const prM  = prensAnno.filter(p=>new Date(p.checkin).getMonth()===m);
     const notM = prM.reduce((s,p)=>s+calcolaNotti(p.checkin,p.checkout),0);
     const incM = prM.reduce((s,p)=>s+(parseFloat(p.saldoPagato||p.prezzo||0)),0);
-    const giM  = new Date(anno,m+1,0).getDate()*totCamere;
-    const pctM = totCamere>0?parseFloat(((notM/giM)*100).toFixed(1)):0;
-    return {nome,notM,incM,pctM,prens:prM.length};
+    // Per 2026 i mesi gen-mar non sono disponibili
+    const meseDisponibile = anno!==2026 || m>=3;
+    const giM  = meseDisponibile ? new Date(anno,m+1,0).getDate()*totCamere : 0;
+    const pctM = giM>0 ? parseFloat(((notM/giM)*100).toFixed(1)) : 0;
+    return {nome,notM,incM,pctM,prens:prM.length,meseDisponibile};
   });
   const maxPct=Math.max(...datiMesi.map(d=>d.pctM),1);
   const maxInc=Math.max(...datiMesi.map(d=>d.incM),1);
@@ -3206,21 +3212,22 @@ function renderStatistiche(){
   if(graf) graf.innerHTML=`
     <div style="display:flex;align-items:flex-end;gap:4px;height:${grafH+56}px">
       ${datiMesi.map((d,i)=>{
-        const hP=Math.max(2,Math.round((d.pctM/maxPct)*grafH));
+        const hP=Math.max(d.pctM>0?2:0,Math.round((d.pctM/maxPct)*grafH));
         const hI=Math.max(d.incM>0?2:0,Math.round((d.incM/maxInc)*grafH));
         const fut=i>meseCor&&anno===new Date().getFullYear();
-        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px">
+        const nonDisp=!d.meseDisponibile;
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px${nonDisp?';opacity:.3':''}">
           <div style="font-size:8px;color:var(--text-muted);height:14px;display:flex;align-items:flex-end">
-            ${d.pctM>0?d.pctM+'%':''}
+            ${d.pctM>0&&!nonDisp?d.pctM+'%':''}
           </div>
           <div style="display:flex;align-items:flex-end;gap:2px;height:${grafH}px">
-            <div style="width:11px;height:${hP}px;background:${fut?'#C8DFF0':'#1A6FA8'};border-radius:2px 2px 0 0"
-              title="${d.nome}: occupazione ${d.pctM}%"></div>
-            <div style="width:11px;height:${hI}px;background:${fut?'#BFD9C3':'#2a7a3b'};border-radius:2px 2px 0 0"
-              title="${d.nome}: €${d.incM.toFixed(0)}"></div>
+            <div style="width:11px;height:${nonDisp?2:hP}px;background:${nonDisp?'#ddd':fut?'#C8DFF0':'#1A6FA8'};border-radius:2px 2px 0 0"
+              title="${d.nome}${nonDisp?' (non disponibile)':': occupazione '+d.pctM+'%'}"></div>
+            <div style="width:11px;height:${nonDisp?2:hI}px;background:${nonDisp?'#ddd':fut?'#BFD9C3':'#2a7a3b'};border-radius:2px 2px 0 0"
+              title="${d.nome}${nonDisp?' (non disponibile)':': €'+d.incM.toFixed(0)}"></div>
           </div>
           <div style="font-size:9px;font-weight:600;color:${i===meseCor&&anno===new Date().getFullYear()?'var(--accent)':'var(--text-muted)'};margin-top:3px">${d.nome}</div>
-          <div style="font-size:8px;color:var(--text-muted)">${d.prens>0?d.prens+'gg':''}</div>
+          <div style="font-size:8px;color:var(--text-muted)">${d.prens>0&&!nonDisp?d.prens+'gg':''}</div>
         </div>`;
       }).join('')}
     </div>
@@ -3255,12 +3262,14 @@ function renderStatistiche(){
   const elMesi=document.getElementById('stat-mesi');
   if(elMesi) elMesi.innerHTML=datiMesi.map((d,i)=>{
     const fut=i>meseCor&&anno===new Date().getFullYear();
-    return `<tr style="${fut?'opacity:.45':''}">
-      <td><strong>${MESI_FULL[i]}</strong></td>
-      <td style="text-align:right">${d.prens}</td>
-      <td style="text-align:right">${d.notM}</td>
-      <td style="text-align:right;${d.incM>0?'font-weight:600;color:#2a7a3b':'color:var(--text-muted)'}">
-        ${d.incM>0?'€'+d.incM.toFixed(2):'—'}</td>
+    const nonDisp=!d.meseDisponibile;
+    return `<tr style="${fut||nonDisp?'opacity:.4':''}">
+      <td><strong>${MESI_FULL[i]}</strong>${nonDisp?` <span style="font-size:10px;color:var(--text-muted)">(n/d)</span>`:''}
+      </td>
+      <td style="text-align:right">${nonDisp?'—':d.prens}</td>
+      <td style="text-align:right">${nonDisp?'—':d.notM}</td>
+      <td style="text-align:right;${d.incM>0&&!nonDisp?'font-weight:600;color:#2a7a3b':'color:var(--text-muted)'}">
+        ${d.incM>0&&!nonDisp?'€'+d.incM.toFixed(2):'—'}</td>
     </tr>`;
   }).join('');
 }
