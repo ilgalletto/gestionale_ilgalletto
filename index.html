@@ -276,6 +276,7 @@
       <button class="nav-item no-visual" onclick="navTo('statistiche',this)"><span class="nav-icon">📈</span><span>Statistiche</span></button>
       <button class="nav-item proprietario-only admin-show no-visual" onclick="navTo('camere',this)"><span class="nav-icon">🛏️</span><span>Camere</span></button>
       <button class="nav-item admin-only" onclick="navTo('impostazioni',this)"><span class="nav-icon">⚙️</span><span>Impostazioni</span></button>
+      <button class="nav-item admin-only" onclick="navTo('struttura',this)"><span class="nav-icon">🏠</span><span>Struttura</span></button>
       <!-- Guida in fondo, separata -->
       <div style="flex:1"></div>
       <div style="border-top:1px solid var(--border);margin:8px 0"></div>
@@ -1181,6 +1182,94 @@
         <div class="camere-grid" id="camere-grid"></div>
       </div>
 
+      <!-- STRUTTURA -->
+      <div class="page admin-only" id="page-struttura">
+        <div class="toolbar">
+          <div class="page-title" style="margin:0">🏠 Struttura</div>
+          <button class="btn btn-primary no-print" onclick="salvaStruttura()">💾 Salva</button>
+        </div>
+
+        <div style="max-width:820px">
+
+          <!-- DATI GENERALI -->
+          <div style="font-weight:700;font-size:14px;color:var(--accent);margin-bottom:14px">📋 Dati generali</div>
+          <div class="form-row">
+            <div class="form-group" style="flex:2"><label class="form-label">Nome struttura *</label>
+              <input class="form-control" id="str-nome" placeholder="es. B&B Il Galletto"></div>
+            <div class="form-group"><label class="form-label">Tipo struttura</label>
+              <select class="form-control" id="str-tipo">
+                <option>B&B</option><option>Affittacamere</option><option>Hotel</option>
+                <option>Pensione</option><option>Appartamento</option><option>Casa vacanze</option><option>Altro</option>
+              </select></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group" style="flex:2"><label class="form-label">Indirizzo</label>
+              <input class="form-control" id="str-indirizzo" placeholder="Via, numero civico, città"></div>
+            <div class="form-group"><label class="form-label">Comune</label>
+              <input class="form-control" id="str-comune" placeholder="es. Porto San Giorgio"></div>
+            <div class="form-group"><label class="form-label">Provincia</label>
+              <input class="form-control" id="str-provincia" placeholder="FM" maxlength="2" style="text-transform:uppercase"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Latitudine</label>
+              <input class="form-control" id="str-lat" type="number" step="0.00001" placeholder="43.17563"></div>
+            <div class="form-group"><label class="form-label">Longitudine</label>
+              <input class="form-control" id="str-lon" type="number" step="0.00001" placeholder="13.77041"></div>
+            <div class="form-group"><label class="form-label">CAP</label>
+              <input class="form-control" id="str-cap" placeholder="63822" maxlength="5"></div>
+          </div>
+
+          <!-- CONTATTI -->
+          <div style="font-weight:700;font-size:14px;color:var(--accent);margin:20px 0 14px">📞 Contatti</div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Telefono *</label>
+              <input class="form-control" id="str-telefono" placeholder="+39 335..."></div>
+            <div class="form-group"><label class="form-label">Email principale</label>
+              <input class="form-control" id="str-email" type="email" placeholder="info@struttura.it"></div>
+            <div class="form-group"><label class="form-label">Sito web</label>
+              <input class="form-control" id="str-sito" placeholder="www.struttura.it"></div>
+          </div>
+
+          <!-- DATI FISCALI / IDENTIFICATIVI -->
+          <div style="font-weight:700;font-size:14px;color:var(--accent);margin:20px 0 14px">🪪 Dati identificativi</div>
+          <div class="form-row">
+            <div class="form-group" style="flex:2"><label class="form-label">Codice CIN / CIR / CIS</label>
+              <input class="form-control" id="str-cin" placeholder="Codice identificativo nazionale"></div>
+            <div class="form-group" style="flex:2"><label class="form-label">Partita IVA / Codice fiscale</label>
+              <input class="form-control" id="str-piva" placeholder="IT00000000000"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Referente / Titolare *</label>
+              <input class="form-control" id="str-referente" placeholder="Nome e cognome"></div>
+            <div class="form-group"><label class="form-label">Codice Questura (Alloggiati Web)</label>
+              <input class="form-control" id="str-codice-questura" placeholder="es. APFM000001-0001"></div>
+          </div>
+
+          <!-- ORARI -->
+          <div style="font-weight:700;font-size:14px;color:var(--accent);margin:20px 0 14px">🕐 Orari</div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Check-in minimo</label>
+              <input class="form-control" id="str-ci-min" type="time" value="14:00"></div>
+            <div class="form-group"><label class="form-label">Check-in massimo</label>
+              <input class="form-control" id="str-ci-max" type="time" value="20:00"></div>
+            <div class="form-group"><label class="form-label">Check-out entro</label>
+              <input class="form-control" id="str-co-max" type="time" value="11:00"></div>
+          </div>
+
+          <!-- NOTE -->
+          <div style="font-weight:700;font-size:14px;color:var(--accent);margin:20px 0 14px">📝 Note e regole della struttura</div>
+          <div class="form-group">
+            <textarea class="form-control" id="str-note" rows="4"
+              placeholder="Regole della casa, informazioni per gli ospiti, istruzioni di accesso..."></textarea>
+          </div>
+
+          <div id="str-saved-msg" style="display:none;color:#2a7a3b;font-weight:600;font-size:13px;padding:10px 0">
+            ✅ Dati struttura salvati correttamente
+          </div>
+
+        </div>
+      </div><!-- fine page-struttura -->
+
       <!-- IMPOSTAZIONI -->
       <div class="page admin-only" id="page-impostazioni">
         <div class="page-title">Impostazioni</div>
@@ -1682,6 +1771,7 @@ function navTo(page,btn){
   if(page==='guida'){initGuida();}
   if(page==='impostazioni'){renderCanali();renderTipologie();}
   if(page==='statistiche'){initStatistiche();}
+  if(page==='struttura'){initStruttura();}
 }
 
 // ===== DASHBOARD =====
@@ -2850,6 +2940,55 @@ async function cambiaRuolo(uid,nuovoRuolo){
 }
 async function approvaUtente(uid){await db.collection('utenti').doc(uid).update({stato:'approvato'});showToast('Utente approvato ✓','success')}
 async function rimuoviUtente(uid){if(!confirm('Rimuovere?'))return;await db.collection('utenti').doc(uid).delete();showToast('Rimosso','success')}
+
+// ===== STRUTTURA =====
+const CAMPI_STRUTTURA = [
+  'nome','tipo','indirizzo','comune','provincia','cap',
+  'lat','lon','telefono','email','sito',
+  'cin','piva','referente','codice-questura',
+  'ci-min','ci-max','co-max','note'
+];
+
+async function initStruttura(){
+  try{
+    const snap = await db.collection('impostazioni').doc('struttura').get();
+    if(snap.exists){
+      const d = snap.data();
+      CAMPI_STRUTTURA.forEach(f=>{
+        const el = document.getElementById('str-'+f);
+        if(el && d[f] !== undefined) el.value = d[f];
+      });
+    }
+  }catch(e){ console.warn('initStruttura:',e); }
+}
+
+async function salvaStruttura(){
+  const data = {};
+  CAMPI_STRUTTURA.forEach(f=>{
+    const el = document.getElementById('str-'+f);
+    if(el) data[f] = el.value.trim();
+  });
+  data.aggiornata = firebase.firestore.FieldValue.serverTimestamp();
+  try{
+    await db.collection('impostazioni').doc('struttura').set(data);
+    const msg = document.getElementById('str-saved-msg');
+    if(msg){ msg.style.display='block'; setTimeout(()=>msg.style.display='none',3000); }
+    showToast('Dati struttura salvati ✓','success');
+    // Aggiorna il titolo nell'header se presente
+    if(data.nome){
+      const hdrTitle = document.querySelector('.header-title');
+      if(hdrTitle) hdrTitle.textContent = data.nome;
+    }
+    // Aggiorna il codice questura in localStorage per Alloggiati Web
+    if(data['codice-questura']){
+      const cfg = JSON.parse(localStorage.getItem('questura_cfg')||'{}');
+      cfg.codice = data['codice-questura'];
+      localStorage.setItem('questura_cfg', JSON.stringify(cfg));
+      const qCod = document.getElementById('q-codice');
+      if(qCod) qCod.value = data['codice-questura'];
+    }
+  }catch(e){ showToast('Errore: '+e.message,'error'); }
+}
 
 // ===== CANALI DI PRENOTAZIONE =====
 const CANALI_DEFAULT = [
