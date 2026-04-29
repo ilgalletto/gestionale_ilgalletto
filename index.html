@@ -330,6 +330,29 @@
           <div class="page-title" style="margin:0">Prenotazioni</div>
           <button class="btn btn-primary no-visual no-print" onclick="openModalPrenotazione()">+ Nuova prenotazione</button>
         </div>
+        <!-- BARRA RICERCA -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center" class="no-print">
+          <div style="position:relative;flex:1;min-width:200px;max-width:280px">
+            <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px">🔍</span>
+            <input class="form-control" id="pren-cerca-nome" placeholder="Nominativo..."
+              style="padding-left:34px" oninput="renderPrenotazioni()">
+          </div>
+          <div style="position:relative;min-width:120px">
+            <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px">🛏️</span>
+            <input class="form-control" id="pren-cerca-camera" placeholder="N° camera"
+              style="padding-left:32px;max-width:130px" oninput="renderPrenotazioni()">
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <label style="font-size:12px;color:var(--text-muted);white-space:nowrap;font-weight:600">Check-in:</label>
+            <input class="form-control" id="pren-cerca-ci" type="date" style="width:auto" oninput="renderPrenotazioni()">
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <label style="font-size:12px;color:var(--text-muted);white-space:nowrap;font-weight:600">Check-out:</label>
+            <input class="form-control" id="pren-cerca-co" type="date" style="width:auto" oninput="renderPrenotazioni()">
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="resetFiltroPren()" title="Azzera filtri">✕ Azzera</button>
+          <span id="pren-count" style="font-size:12px;color:var(--text-muted)"></span>
+        </div>
         <div class="table-wrap">
           <table>
             <thead><tr><th>Ospite</th><th>Camera</th><th>Check-in</th><th>Check-out</th><th>Notti</th><th>Persone</th><th>Prezzo</th><th>Pagamento</th><th>Canale</th><th>Stato</th><th class="no-print"></th></tr></thead>
@@ -1910,13 +1933,55 @@ function statoPrenotazione(p){
 }
 
 // ===== PRENOTAZIONI =====
+function resetFiltroPren(){
+  ['pren-cerca-nome','pren-cerca-camera','pren-cerca-ci','pren-cerca-co'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value='';
+  });
+  renderPrenotazioni();
+}
+
 function renderPrenotazioni(){
   const tb=document.getElementById('tb-prenotazioni');
   if(!allPrenotazioni.length){tb.innerHTML='<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">📋</div><p>Nessuna prenotazione</p></div></td></tr>';return}
+
+  // Leggi filtri
+  const cercaNome   = (document.getElementById('pren-cerca-nome')?.value||'').toLowerCase().trim();
+  const cercaCam    = (document.getElementById('pren-cerca-camera')?.value||'').trim();
+  const cercaCi     = document.getElementById('pren-cerca-ci')?.value||'';
+  const cercaCo     = document.getElementById('pren-cerca-co')?.value||'';
+
   const sorted=[...allPrenotazioni].sort((a,b)=>b.checkin.localeCompare(a.checkin));
+
+  const filtrate = sorted.filter(p=>{
+    if(cercaNome){
+      const full=`${p.nome||''} ${p.cognome||''} ${p.cognome||''} ${p.nome||''}`.toLowerCase();
+      if(!full.includes(cercaNome)) return false;
+    }
+    if(cercaCam){
+      const cam=allCamere.find(c=>c.id===p.cameraId);
+      if(!String(cam?.numero||'').includes(cercaCam)) return false;
+    }
+    if(cercaCi && p.checkin!==cercaCi) return false;
+    if(cercaCo && p.checkout!==cercaCo) return false;
+    return true;
+  });
+
+  // Contatore risultati
+  const count=document.getElementById('pren-count');
+  if(count){
+    const hasFilter=cercaNome||cercaCam||cercaCi||cercaCo;
+    count.textContent=hasFilter?`${filtrate.length} di ${sorted.length} prenotazioni`:'';
+  }
+
+  if(!filtrate.length){
+    tb.innerHTML='<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">🔍</div><p>Nessuna prenotazione trovata con questi filtri</p></div></td></tr>';
+    return;
+  }
+
   const canEdit=currentUserData?.ruolo==='admin'||currentUserData?.ruolo==='proprietario';
   const oggi=toDateStr(new Date());
-  tb.innerHTML=sorted.map(p=>{
+  tb.innerHTML=filtrate.map(p=>{
     const n=calcolaNotti(p.checkin,p.checkout); const s=statoPrenotazione(p);
     let btnCI='', btnCO='';
     const puoCheckin=!p.checkinConfermato&&!p.checkoutConfermato&&p.checkin<=oggi&&p.checkout>oggi;
