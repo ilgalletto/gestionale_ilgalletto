@@ -276,7 +276,7 @@
       <button class="nav-item no-visual" onclick="navTo('statistiche',this)"><span class="nav-icon">📈</span><span>Statistiche</span></button>
       <button class="nav-item proprietario-only admin-show no-visual" onclick="navTo('camere',this)"><span class="nav-icon">🛏️</span><span>Camere</span></button>
       <button class="nav-item admin-only" onclick="navTo('impostazioni',this)"><span class="nav-icon">⚙️</span><span>Impostazioni</span></button>
-      <button class="nav-item admin-only" onclick="navTo('struttura',this)"><span class="nav-icon">🏠</span><span>Struttura</span></button>
+      <button class="nav-item proprietario-only admin-show" onclick="navTo('struttura',this)"><span class="nav-icon">🏠</span><span>Struttura</span></button>
       <!-- Guida in fondo, separata -->
       <div style="flex:1"></div>
       <div style="border-top:1px solid var(--border);margin:8px 0"></div>
@@ -687,6 +687,7 @@
                   <tr><td>💰 Contabilità</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">✗</td><td class="ok">✓ completo</td></tr>
                   <tr><td>Questura</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">✗</td><td class="no">✗</td></tr>
                   <tr><td>Camere</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">✗</td><td class="no">✗</td></tr>
+                  <tr><td>🏠 Struttura</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">✗</td><td class="no">✗</td></tr>
                   <tr><td>Impostazioni utenti</td><td class="ok">✓</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td></tr>
                 </table>
               </div>
@@ -1183,7 +1184,7 @@
       </div>
 
       <!-- STRUTTURA -->
-      <div class="page admin-only" id="page-struttura">
+      <div class="page proprietario-only admin-show" id="page-struttura">
         <div class="toolbar">
           <div class="page-title" style="margin:0">🏠 Struttura</div>
           <button class="btn btn-primary no-print" onclick="salvaStruttura()">💾 Salva</button>
