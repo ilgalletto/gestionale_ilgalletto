@@ -2021,7 +2021,18 @@ async function salvaPrenotazione(){
   };
   try{
     if(editingPrenId){await db.collection('prenotazioni').doc(editingPrenId).update(data)}
-    else{data.creata=firebase.firestore.FieldValue.serverTimestamp();data.creataDA=currentUser.uid;await db.collection('prenotazioni').add(data)}
+    else{
+      data.creata=firebase.firestore.FieldValue.serverTimestamp();
+      data.creataDA=currentUser.uid;
+      const ref = await db.collection('prenotazioni').add(data);
+      // Se caparra → registra subito caparra + previsione residuo in contabilità
+      if(data.modalitaPag==='caparra' && data.caparra>0){
+        await registraCaparraEPrevisione(ref.id, data);
+      } else if(data.modalitaPag==='prenotazione' && data.prezzo>0){
+        // Saldo completo alla prenotazione → registra entrata immediata
+        await registraEntrataDiretta(ref.id, data);
+      }
+    }
     await syncClienteDaPrenotazione(data);
     closeModal('modal-prenotazione');showToast('Prenotazione salvata ✓','success');
   }catch(e){showToast('Errore: '+e.message,'error')}
@@ -2511,52 +2522,126 @@ async function confermaCheckout(){
   }catch(e){showToast('Errore: '+e.message,'error')}
 }
 
-// Registra entrata in contabilità dal checkout
+// ── Registrazione caparra immediata + previsione residuo ──────────────────────
+async function registraCaparraEPrevisione(prenId, p){
+  const caparra  = parseFloat(p.caparra||0);
+  const prezzo   = parseFloat(p.prezzo||0);
+  const residuo  = prezzo - caparra;
+  const descBase = `${p.cognome||''} ${p.nome||''} — camera ${nomeCameraById(p.cameraId)} (${formatDate(p.checkin)}–${formatDate(p.checkout)})`;
+
+  // 1. Caparra → entrata nel mese del check-in
+  const mCi=new Date(p.checkin).getMonth(), aCi=new Date(p.checkin).getFullYear();
+  const vociCi=await loadVociCont('entrata',mCi,aCi);
+  if(!vociCi.find(v=>v.id===`cap_${prenId}`)){
+    vociCi.push({
+      id:`cap_${prenId}`,
+      desc:`Caparra: ${descBase}`,
+      importo:caparra, data:p.checkin,
+      cat:'Soggiorno (incasso)', pagamento:p.metodoPag||'prenotazione',
+      ricorrenza:'una_tantum', note:'', _prenId:prenId,
+    });
+    await saveVociCont('entrata',mCi,aCi,vociCi);
+  }
+
+  // 2. Residuo → previsione nel mese del check-out
+  if(residuo>0){
+    const mCo=new Date(p.checkout).getMonth(), aCo=new Date(p.checkout).getFullYear();
+    const vociCo=await loadVociCont('entrata',mCo,aCo);
+    if(!vociCo.find(v=>v.id===`prev_${prenId}`)){
+      vociCo.push({
+        id:`prev_${prenId}`,
+        desc:`Previsione saldo: ${descBase}`,
+        importo:residuo, data:p.checkout,
+        cat:'Soggiorno (incasso)', pagamento:'checkout',
+        ricorrenza:'una_tantum', note:'', _prenId:prenId,
+        _previsione:true, // flag visivo
+      });
+      await saveVociCont('entrata',mCo,aCo,vociCo);
+    }
+  }
+  // Marca prenotazione come caparra registrata
+  await db.collection('prenotazioni').doc(prenId).update({caparraRegistrata:true});
+}
+
+// ── Saldo completo alla prenotazione ─────────────────────────────────────────
+async function registraEntrataDiretta(prenId, p){
+  const prezzo=parseFloat(p.prezzo||0);
+  if(!prezzo) return;
+  const mCi=new Date(p.checkin).getMonth(), aCi=new Date(p.checkin).getFullYear();
+  const voci=await loadVociCont('entrata',mCi,aCi);
+  if(!voci.find(v=>v.id===`sal_${prenId}`)){
+    voci.push({
+      id:`sal_${prenId}`,
+      desc:`Saldo: ${p.cognome||''} ${p.nome||''} — camera ${nomeCameraById(p.cameraId)} (${formatDate(p.checkin)}–${formatDate(p.checkout)})`,
+      importo:prezzo, data:p.checkin,
+      cat:'Soggiorno (incasso)', pagamento:p.metodoPag||'prenotazione',
+      ricorrenza:'una_tantum', note:'', _prenId:prenId,
+    });
+    await saveVociCont('entrata',mCi,aCi,voci);
+  }
+  await db.collection('prenotazioni').doc(prenId).update({contabRegistrato:true});
+}
+
+// ── Registrazione al checkout: converte previsione in reale ─────────────────
 async function registraInContabilitaCheckout(){
   const p=allPrenotazioni.find(x=>x.id===checkoutPrenId);
   if(!p)return;
   if(p.contabRegistrato){showToast('Già registrata in contabilità','error');return}
-  const saldo=parseFloat(document.getElementById('co-saldo').value)||0;
-  const caparra=parseFloat(p.caparra||0);
+
+  const importoFinale=parseFloat(document.getElementById('co-saldo').value)||0;
   const metodo=document.getElementById('co-metodo').value||p.metodoPag||'';
-  const dataRif=p.checkout||toDateStr(new Date());
-  const mese=new Date(dataRif).getMonth();
-  const anno=new Date(dataRif).getFullYear();
-  // Crea voce entrata
-  const voceId=`pag_${checkoutPrenId}_${Date.now()}`;
-  const descr=`Soggiorno ${p.cognome||''} ${p.nome||''} (${formatDate(p.checkin)}–${formatDate(p.checkout)})`;
-  const voci=[{
-    id:voceId,
-    desc:descr+(caparra>0?` — Saldo residuo (caparra €${caparra.toFixed(2)} già versata)`:' — Pagamento completo'),
-    importo:saldo,
-    data:dataRif,
-    cat:'Soggiorno (incasso)',
-    pagamento:metodo||'checkout',
-    ricorrenza:'una_tantum',
-    note:`Camera ${nomeCameraById(p.cameraId)} · ${calcolaNotti(p.checkin,p.checkout)} notti`,
-  }];
-  // Se c'era caparra registra anche quella (nel mese del checkin)
-  if(caparra>0){
-    const meseCaparra=new Date(p.checkin).getMonth();
-    const annoCaparra=new Date(p.checkin).getFullYear();
-    const vociCapExist=await loadVociCont('entrata',meseCaparra,annoCaparra);
-    const capGiaReg=vociCapExist.find(v=>v.id===`cap_${checkoutPrenId}`);
-    if(!capGiaReg){
-      vociCapExist.push({
-        id:`cap_${checkoutPrenId}`,
-        desc:`Caparra: ${p.cognome||''} ${p.nome||''} (${formatDate(p.checkin)}–${formatDate(p.checkout)})`,
-        importo:caparra, data:p.checkin,
-        cat:'Soggiorno (incasso)', pagamento:p.metodoPag||'prenotazione',
-        ricorrenza:'una_tantum', note:`Camera ${nomeCameraById(p.cameraId)}`,
+  const caparra=parseFloat(p.caparra||0);
+  const prezzo=parseFloat(p.prezzo||0);
+  const mCo=new Date(p.checkout).getMonth(), aCo=new Date(p.checkout).getFullYear();
+  const descBase=`${p.cognome||''} ${p.nome||''} — camera ${nomeCameraById(p.cameraId)} (${formatDate(p.checkin)}–${formatDate(p.checkout)})`;
+
+  if(p.modalitaPag==='caparra' && caparra>0){
+    // Converti la previsione in entrata reale con l'importo modificato
+    const vociCo=await loadVociCont('entrata',mCo,aCo);
+    const idxPrev=vociCo.findIndex(v=>v.id===`prev_${checkoutPrenId}`);
+    const nuovaVoce={
+      id:`prev_${checkoutPrenId}`,
+      desc:`Saldo: ${descBase}`,
+      importo:importoFinale, data:p.checkout,
+      cat:'Soggiorno (incasso)', pagamento:metodo||'checkout',
+      ricorrenza:'una_tantum', note:'',
+      _prenId:checkoutPrenId,
+      _previsione:false, // ora è reale
+    };
+    if(idxPrev>=0) vociCo[idxPrev]=nuovaVoce;
+    else vociCo.push(nuovaVoce);
+    await saveVociCont('entrata',mCo,aCo,vociCo);
+
+    // Se la caparra non era stata ancora registrata (prenotazione modificata), registrala ora
+    if(!p.caparraRegistrata){
+      const mCi=new Date(p.checkin).getMonth(), aCi=new Date(p.checkin).getFullYear();
+      const vociCi=await loadVociCont('entrata',mCi,aCi);
+      if(!vociCi.find(v=>v.id===`cap_${checkoutPrenId}`)){
+        vociCi.push({
+          id:`cap_${checkoutPrenId}`,
+          desc:`Caparra: ${descBase}`,
+          importo:caparra, data:p.checkin,
+          cat:'Soggiorno (incasso)', pagamento:p.metodoPag||'prenotazione',
+          ricorrenza:'una_tantum', note:'', _prenId:checkoutPrenId,
+        });
+        await saveVociCont('entrata',mCi,aCi,vociCi);
+      }
+    }
+  } else {
+    // Nessuna caparra — registra saldo direttamente
+    const vociCo=await loadVociCont('entrata',mCo,aCo);
+    if(!vociCo.find(v=>v.id===`sal_${checkoutPrenId}`)){
+      vociCo.push({
+        id:`sal_${checkoutPrenId}`,
+        desc:`Saldo: ${descBase}`,
+        importo:importoFinale, data:p.checkout,
+        cat:'Soggiorno (incasso)', pagamento:metodo||'checkout',
+        ricorrenza:'una_tantum', note:'', _prenId:checkoutPrenId,
       });
-      await saveVociCont('entrata',meseCaparra,annoCaparra,vociCapExist);
+      await saveVociCont('entrata',mCo,aCo,vociCo);
     }
   }
-  // Registra il saldo al checkout
-  const vociEsist=await loadVociCont('entrata',mese,anno);
-  vociEsist.push(...voci);
-  await saveVociCont('entrata',mese,anno,vociEsist);
-  // Marca prenotazione come registrata
+
   await db.collection('prenotazioni').doc(checkoutPrenId).update({contabRegistrato:true});
   showToast('✅ Entrata registrata in contabilità!','success');
   document.getElementById('btn-registra-co').style.display='none';
@@ -3863,17 +3948,22 @@ function vociInAlbero(sottocontoId,gruppoId,pdc){
 }
 
 function htmlVoceLine(v,tipo,colore){
+  const isPrevisione = v._previsione===true;
+  const sfondo = isPrevisione ? 'background:repeating-linear-gradient(45deg,#fff,#fff 4px,#FEF9EC 4px,#FEF9EC 8px)' : '';
+  const badgePrevisione = isPrevisione
+    ? `<span style="background:#F5D87A;color:#7a5c00;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:6px">📅 previsione</span>`
+    : '';
   return`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px 6px 32px;
-    border-bottom:1px solid var(--border)">
+    border-bottom:1px solid var(--border);${sfondo}">
     <div style="flex:1;min-width:0">
-      <span style="font-size:12px;color:var(--text)">${v.desc}</span>
+      <span style="font-size:12px;color:var(--text)">${v.desc}</span>${badgePrevisione}
       <span style="font-size:11px;color:var(--text-muted);margin-left:8px">${v.data?formatDate(v.data):''}
         ${v.ricorrenza&&v.ricorrenza!=='una_tantum'?`<span style="color:var(--accent)"> 🔄${v.ricorrenza}</span>`:''}
         ${v.note?` · ${v.note}`:''}
         ${v._auto?`<span style="background:#DCF0FF;color:#1A6FA8;padding:1px 4px;border-radius:3px;font-size:10px;margin-left:4px">auto</span>`:''}
       </span>
     </div>
-    <span style="font-size:13px;font-weight:700;color:${colore};min-width:70px;text-align:right">€${parseFloat(v.importo||0).toFixed(2)}</span>
+    <span style="font-size:13px;font-weight:700;color:${isPrevisione?'#E67E22':colore};min-width:70px;text-align:right">€${parseFloat(v.importo||0).toFixed(2)}</span>
     ${!v._auto?`<button class="btn btn-sm btn-outline no-print" style="padding:2px 6px;font-size:10px" onclick="editVoceCont('${tipo}','${v.id}')">✏️</button>
     <button class="btn btn-sm btn-danger no-print" style="padding:2px 6px;font-size:10px" onclick="eliminaVoceCont('${tipo}','${v.id}')">🗑️</button>`:''}
   </div>`;
