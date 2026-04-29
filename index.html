@@ -272,6 +272,11 @@
         <span id="questura-badge" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);
           font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;line-height:1.4"></span>
       </button>
+      <button class="nav-item no-visual" id="nav-richieste" onclick="navTo('richieste',this)" style="position:relative">
+        <span class="nav-icon">📩</span><span>Richieste</span>
+        <span id="richieste-badge" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);
+          background:#E67E22;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;line-height:1.4"></span>
+      </button>
       <button class="nav-item" onclick="navTo('contabilita',this)"><span class="nav-icon">💰</span><span>Contabilità</span></button>
       <button class="nav-item no-visual" onclick="navTo('statistiche',this)"><span class="nav-icon">📈</span><span>Statistiche</span></button>
       <button class="nav-item proprietario-only admin-show no-visual" onclick="navTo('camere',this)"><span class="nav-icon">🛏️</span><span>Camere</span></button>
@@ -549,6 +554,46 @@
             <button class="btn btn-outline" onclick="closeModal('modal-voce-cont')">Annulla</button>
             <button class="btn btn-primary" onclick="salvaVoceCont()">Salva</button>
           </div>
+        </div>
+      </div>
+
+            <!-- RICHIESTE PRENOTAZIONE -->
+      <div class="page" id="page-richieste">
+        <div class="toolbar">
+          <div class="page-title" style="margin:0">📩 Richieste di prenotazione</div>
+          <div style="display:flex;gap:8px" class="no-print">
+            <a href="https://ilgalletto.github.io/gestionale_ilgalletto/prenota.html" target="_blank"
+              class="btn btn-outline btn-sm">🔗 Apri portale pubblico ↗</a>
+            <button class="btn btn-sm" onclick="copiaLinkPortale()"
+              style="background:#EEF7F0;color:#2a7a3b;border:1px solid #2a7a3b33">📋 Copia link</button>
+          </div>
+        </div>
+
+        <div style="background:#EEF7F0;border-left:4px solid #2a7a3b;border-radius:0 8px 8px 0;
+          padding:12px 16px;font-size:13px;color:#2a7a3b;margin-bottom:20px">
+          🌐 Portale pubblico: <strong>ilgalletto.github.io/gestionale_ilgalletto/prenota.html</strong>
+          — condividilo con i tuoi clienti via WhatsApp, email o social.
+        </div>
+
+        <!-- FILTRI -->
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap" class="no-print">
+          <select class="form-control btn-sm" id="rich-filtro-stato" style="width:auto" onchange="renderRichieste()">
+            <option value="">Tutti gli stati</option>
+            <option value="in_attesa">⏳ In attesa</option>
+            <option value="confermata">✅ Confermata</option>
+            <option value="rifiutata">❌ Rifiutata</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Codice</th><th>Ospite</th><th>Camera</th>
+              <th>Check-in</th><th>Check-out</th><th>Notti</th><th>Ospiti</th>
+              <th>Stato</th><th>Ricevuta</th><th class="no-print">Azioni</th>
+            </tr></thead>
+            <tbody id="tb-richieste"></tbody>
+          </table>
         </div>
       </div>
 
@@ -1768,6 +1813,7 @@ function navTo(page,btn){
   if(page==='calendario')aggiornaCalendario();
   if(page==='stampa')renderStampa();
   if(page==='questura'){initQuestura();}
+  if(page==='richieste'){initRichieste();}
   if(page==='contabilita'){initContabilita();}
   if(page==='guida'){initGuida();}
   if(page==='impostazioni'){renderCanali();renderTipologie();}
@@ -3323,6 +3369,115 @@ function aggiornaAlertQuestura(){
 }
 
 // ── Tab switcher contabilità ──────────────────────────────────────────────────
+// ===== RICHIESTE PRENOTAZIONE =====
+let allRichieste = [], unsubRichieste = null;
+
+function initRichieste(){
+  if(unsubRichieste) return; // già in ascolto
+  unsubRichieste = db.collection('richieste_prenotazione')
+    .orderBy('creata','desc')
+    .onSnapshot(snap=>{
+      allRichieste = snap.docs.map(d=>({id:d.id,...d.data()}));
+      renderRichieste();
+      aggiornaRichiesteBadge();
+    });
+}
+
+function aggiornaRichiesteBadge(){
+  const badge = document.getElementById('richieste-badge');
+  if(!badge) return;
+  const n = allRichieste.filter(r=>r.stato==='in_attesa').length;
+  badge.style.display = n>0?'inline-block':'none';
+  badge.textContent = n;
+}
+
+function renderRichieste(){
+  const tb = document.getElementById('tb-richieste');
+  if(!tb) return;
+  const filtroStato = document.getElementById('rich-filtro-stato')?.value||'';
+  const lista = filtroStato ? allRichieste.filter(r=>r.stato===filtroStato) : allRichieste;
+
+  if(!lista.length){
+    tb.innerHTML=`<tr><td colspan="10"><div class="empty-state">
+      <div class="empty-icon">📩</div>
+      <p>${filtroStato?'Nessuna richiesta in questo stato':'Nessuna richiesta ancora ricevuta'}</p>
+    </div></td></tr>`;
+    return;
+  }
+
+  tb.innerHTML = lista.map(r=>{
+    const statoStyle = r.stato==='in_attesa'
+      ? 'background:#FEF5E7;color:#E67E22'
+      : r.stato==='confermata'
+        ? 'background:#EEF7F0;color:#2a7a3b'
+        : 'background:#FDECEA;color:#C0392B';
+    const statoLabel = r.stato==='in_attesa'?'⏳ In attesa'
+      : r.stato==='confermata'?'✅ Confermata':'❌ Rifiutata';
+    const data = r.creata?.toDate ? r.creata.toDate().toLocaleDateString('it-IT') : '—';
+
+    return `<tr>
+      <td style="font-family:monospace;font-size:12px;font-weight:600;color:var(--accent)">${r.codice||'—'}</td>
+      <td>
+        <strong>${r.cognome||''} ${r.nome||''}</strong>
+        <br><small style="color:var(--text-muted)">${r.telefono||''}</small>
+        <br><small style="color:var(--text-muted)">${r.email||''}</small>
+      </td>
+      <td>Camera ${r.cameraNumero||'—'}<br><small style="color:var(--text-muted)">${r.cameraTipo||''}</small></td>
+      <td>${formatDate(r.checkin)}</td>
+      <td>${formatDate(r.checkout)}</td>
+      <td>${r.notti||'—'}</td>
+      <td>${r.nOspiti||'—'}</td>
+      <td><span class="badge" style="${statoStyle};border-radius:6px;padding:3px 8px">${statoLabel}</span></td>
+      <td style="font-size:12px;color:var(--text-muted)">${data}</td>
+      <td class="no-print" style="white-space:nowrap">
+        ${r.stato==='in_attesa'?`
+          <button class="btn btn-sm" style="background:#EEF7F0;color:#2a7a3b;border:1px solid #2a7a3b33"
+            onclick="gestisciRichiesta('${r.id}','confermata')">✅ Conferma</button>
+          <button class="btn btn-sm" style="background:#FDECEA;color:#C0392B;border:1px solid #C0392B33"
+            onclick="gestisciRichiesta('${r.id}','rifiutata')">❌ Rifiuta</button>
+          <button class="btn btn-sm btn-primary" onclick="convertiInPrenotazione('${r.id}')">📋 Converti</button>
+        `:r.stato==='confermata'?`
+          <button class="btn btn-sm btn-primary" onclick="convertiInPrenotazione('${r.id}')">📋 Converti in pren.</button>
+        `:'<span style="color:var(--text-muted);font-size:12px">—</span>'}
+        ${r.note?`<div style="font-size:11px;color:var(--text-muted);margin-top:4px;max-width:180px;white-space:normal">💬 ${r.note}</div>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function gestisciRichiesta(id, nuovoStato){
+  if(nuovoStato==='rifiutata' && !confirm('Rifiutare questa richiesta?')) return;
+  await db.collection('richieste_prenotazione').doc(id).update({stato:nuovoStato});
+  showToast(nuovoStato==='confermata'?'Richiesta confermata ✓':'Richiesta rifiutata','success');
+}
+
+async function convertiInPrenotazione(id){
+  const r = allRichieste.find(x=>x.id===id);
+  if(!r) return;
+  // Pre-compila il modal prenotazione con i dati della richiesta
+  await gestisciRichiesta(id,'confermata');
+  openModalPrenotazione();
+  // Attendi che il modal sia aperto
+  setTimeout(()=>{
+    document.getElementById('p-nome').value = r.nome||'';
+    document.getElementById('p-cognome').value = r.cognome||'';
+    document.getElementById('p-telefono').value = r.telefono||'';
+    document.getElementById('p-email').value = r.email||'';
+    document.getElementById('p-camera').value = r.cameraId||'';
+    document.getElementById('p-checkin').value = r.checkin||'';
+    document.getElementById('p-checkout').value = r.checkout||'';
+    document.getElementById('p-ospiti').value = r.nOspiti||'1';
+    document.getElementById('p-canale').value = 'Portale web';
+    aggNotti();
+    showToast('Dati pre-compilati dalla richiesta — inserisci il prezzo e salva','success');
+  },300);
+}
+
+function copiaLinkPortale(){
+  const link = 'https://ilgalletto.github.io/gestionale_ilgalletto/prenota.html';
+  navigator.clipboard.writeText(link).then(()=>showToast('Link copiato negli appunti ✓','success'));
+}
+
 // ===== STATISTICHE =====
 const MESI_S = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
 const MESI_FULL = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',

@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prenota — B&B Il Galletto · Porto San Giorgio</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blu:#0D2F5A; --turchese:#2AA1A0; --oro:#C9A84C;
+  --sabbia:#F7F3ED; --bianco:#FFFFFF; --testo:#1a1a2e;
+  --muted:#6B7A8D; --border:#DDD8D0; --green:#2a7a3b;
+  --red:#C0392B; --radius:12px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--sabbia);color:var(--testo);min-height:100vh}
+
+/* ── HERO ── */
+.hero{
+  background:linear-gradient(160deg,var(--blu) 0%,#1A4A7A 55%,var(--turchese) 100%);
+  padding:48px 24px 56px; text-align:center; position:relative; overflow:hidden;
+}
+.hero::before{
+  content:''; position:absolute; inset:0;
+  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.hero-logo{width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.3);margin-bottom:16px;position:relative}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(26px,5vw,40px);color:#fff;font-weight:700;line-height:1.2;position:relative}
+.hero h1 em{color:var(--oro);font-style:italic}
+.hero p{color:rgba(255,255,255,.75);margin-top:10px;font-size:15px;letter-spacing:.03em;position:relative}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:6px 14px;
+  color:rgba(255,255,255,.9);font-size:12px;margin-top:14px;backdrop-filter:blur(4px);position:relative}
+
+/* ── STEP INDICATOR ── */
+.steps{display:flex;justify-content:center;gap:0;padding:28px 24px 0;max-width:600px;margin:0 auto}
+.step{display:flex;align-items:center;gap:8px;flex:1}
+.step-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;transition:all .3s;flex-shrink:0}
+.step.active .step-num{background:var(--turchese);color:#fff}
+.step.done .step-num{background:var(--green);color:#fff}
+.step:not(.active):not(.done) .step-num{background:var(--border);color:var(--muted)}
+.step-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.step.active .step-label{color:var(--turchese)}
+.step.done .step-label{color:var(--green)}
+.step-line{flex:1;height:2px;background:var(--border);margin:0 8px;min-width:20px}
+.step.done .step-line{background:var(--green)}
+
+/* ── CONTAINER ── */
+.container{max-width:900px;margin:0 auto;padding:32px 20px 60px}
+
+/* ── CARD ── */
+.card{background:var(--bianco);border-radius:var(--radius);border:1px solid var(--border);
+  padding:28px;margin-bottom:20px;box-shadow:0 2px 16px rgba(0,0,0,.06)}
+.card-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--blu);margin-bottom:6px;font-weight:700}
+.card-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.section-hidden{display:none}
+
+/* ── DATEPICKER ── */
+.date-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.date-box{border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;transition:all .2s}
+.date-box:hover{border-color:var(--turchese)}
+.date-box.selected{border-color:var(--turchese);background:#F0FAFA}
+.date-box label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px}
+.date-box input{border:none;outline:none;font-size:16px;font-weight:600;color:var(--blu);background:transparent;width:100%;font-family:'DM Sans',sans-serif;cursor:pointer}
+.date-box input::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.6}
+
+/* ── NOTTI BADGE ── */
+.notti-badge{display:none;text-align:center;margin:-8px 0 16px;
+  background:linear-gradient(135deg,var(--turchese),var(--blu));
+  color:#fff;border-radius:8px;padding:10px;font-size:14px;font-weight:600}
+
+/* ── CAMERE ── */
+.camere-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.camera-card{border:2px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;
+  transition:all .2s;position:relative}
+.camera-card:hover{border-color:var(--turchese);transform:translateY(-2px);box-shadow:0 8px 24px rgba(42,161,160,.15)}
+.camera-card.selected{border-color:var(--turchese);background:#F0FAFA}
+.camera-card.occupata{opacity:.45;cursor:not-allowed;pointer-events:none}
+.camera-header{background:linear-gradient(135deg,var(--blu),#1A4A7A);padding:16px 18px;color:#fff}
+.camera-numero{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;line-height:1}
+.camera-piano{font-size:11px;opacity:.75;margin-top:2px;text-transform:uppercase;letter-spacing:.06em}
+.camera-body{padding:14px 18px}
+.camera-tipo{font-size:13px;font-weight:600;color:var(--testo);margin-bottom:6px}
+.camera-note{font-size:12px;color:var(--muted);line-height:1.5}
+.camera-status{position:absolute;top:10px;right:10px;font-size:10px;font-weight:700;
+  padding:3px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.05em}
+.status-libera{background:#E8F8F5;color:var(--green)}
+.status-occupata{background:#FDECEA;color:var(--red)}
+.camera-sel-ico{display:none;position:absolute;bottom:12px;right:12px;
+  width:24px;height:24px;background:var(--turchese);border-radius:50%;
+  align-items:center;justify-content:center;color:#fff;font-size:13px}
+.camera-card.selected .camera-sel-ico{display:flex}
+
+/* ── FORM ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:560px){.form-grid{grid-template-columns:1fr}}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-group label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.form-group input,.form-group select,.form-group textarea{
+  border:1.5px solid var(--border);border-radius:8px;padding:11px 14px;
+  font-size:14px;font-family:'DM Sans',sans-serif;color:var(--testo);
+  outline:none;transition:border .2s;background:#fff}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--turchese)}
+.form-group textarea{resize:vertical;min-height:80px}
+
+/* ── RIEPILOGO ── */
+.riepilogo-box{background:linear-gradient(135deg,#F0F7FF,#F0FAFA);
+  border:1.5px solid var(--turchese);border-radius:12px;padding:20px 22px;margin-bottom:20px}
+.riepilogo-row{display:flex;justify-content:space-between;align-items:baseline;
+  padding:6px 0;border-bottom:1px solid rgba(42,161,160,.15)}
+.riepilogo-row:last-child{border:none;margin-top:8px;padding-top:12px}
+.riepilogo-label{font-size:13px;color:var(--muted)}
+.riepilogo-val{font-size:13px;font-weight:600;color:var(--blu)}
+.riepilogo-total .riepilogo-label{font-size:15px;font-weight:700;color:var(--blu)}
+.riepilogo-total .riepilogo-val{font-size:18px;font-weight:700;color:var(--turchese)}
+
+/* ── BOTTONI ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:13px 28px;border-radius:10px;font-size:14px;font-weight:600;
+  cursor:pointer;border:none;transition:all .2s;font-family:'DM Sans',sans-serif}
+.btn-primary{background:linear-gradient(135deg,var(--turchese),var(--blu));color:#fff}
+.btn-primary:hover{opacity:.88;transform:translateY(-1px);box-shadow:0 6px 20px rgba(42,161,160,.35)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-outline{background:transparent;color:var(--blu);border:1.5px solid var(--border)}
+.btn-outline:hover{border-color:var(--turchese);color:var(--turchese)}
+.btn-row{display:flex;gap:12px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+
+/* ── SUCCESS ── */
+.success-box{text-align:center;padding:48px 24px}
+.success-ico{font-size:56px;margin-bottom:16px;animation:pop .5s ease}
+.success-title{font-family:'Playfair Display',serif;font-size:26px;color:var(--green);margin-bottom:10px}
+.success-sub{font-size:15px;color:var(--muted);line-height:1.6;max-width:420px;margin:0 auto}
+.success-code{display:inline-block;margin-top:18px;background:var(--sabbia);
+  border:1.5px solid var(--border);border-radius:8px;padding:10px 20px;
+  font-family:monospace;font-size:16px;letter-spacing:.1em;color:var(--blu);font-weight:700}
+@keyframes pop{0%{transform:scale(.5);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+
+/* ── ALERT ── */
+.alert{padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none}
+.alert-err{background:#FDECEA;color:var(--red);border:1px solid #F1948A}
+.alert-info{background:#EEF7F0;color:var(--green);border:1px solid #A9DFBF}
+
+/* ── FOOTER ── */
+.footer{text-align:center;padding:24px;font-size:12px;color:var(--muted);border-top:1px solid var(--border)}
+.footer a{color:var(--turchese);text-decoration:none}
+
+/* ── LOADING ── */
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--turchese);
+  border-radius:50%;animation:spin .8s linear infinite;margin:40px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:600px){
+  .date-row{grid-template-columns:1fr}
+  .btn-row{flex-direction:column}
+  .btn{width:100%}
+  .steps{gap:2px}
+  .step-label{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <img class="hero-logo" src="https://raw.githubusercontent.com/ilgalletto/gestionale_ilgalletto/main/logo.jpg"
+       alt="B&B Il Galletto" onerror="this.style.display='none'">
+  <h1>B&B <em>Il Galletto</em></h1>
+  <p>Porto San Giorgio · Affacciato sull'Adriatico</p>
+  <div class="hero-badge">🌊 A pochi passi dal mare &nbsp;·&nbsp; 🍳 Colazione inclusa</div>
+</div>
+
+<!-- STEP INDICATOR -->
+<div class="steps" id="steps">
+  <div class="step active" id="step-1">
+    <div class="step-num">1</div>
+    <div class="step-label">Date</div>
+  </div>
+  <div class="step-line"></div>
+  <div class="step" id="step-2">
+    <div class="step-num">2</div>
+    <div class="step-label">Camera</div>
+  </div>
+  <div class="step-line"></div>
+  <div class="step" id="step-3">
+    <div class="step-num">3</div>
+    <div class="step-label">Dati</div>
+  </div>
+  <div class="step-line"></div>
+  <div class="step" id="step-4">
+    <div class="step-num">4</div>
+    <div class="step-label">Conferma</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- STEP 1 — DATE -->
+  <div id="sec-date" class="card">
+    <div class="card-title">📅 Quando vuoi venire?</div>
+    <div class="card-sub">Seleziona le date di arrivo e partenza</div>
+    <div class="date-row">
+      <div class="date-box selected">
+        <label>Check-in</label>
+        <input type="date" id="in-checkin" min="">
+      </div>
+      <div class="date-box">
+        <label>Check-out</label>
+        <input type="date" id="in-checkout" min="">
+      </div>
+    </div>
+    <div class="notti-badge" id="notti-badge"></div>
+    <div class="form-grid" style="max-width:360px">
+      <div class="form-group">
+        <label>N° ospiti</label>
+        <select id="in-ospiti">
+          <option value="1">1 persona</option>
+          <option value="2" selected>2 persone</option>
+          <option value="3">3 persone</option>
+          <option value="4">4 persone</option>
+          <option value="5">5 persone</option>
+          <option value="6">6 persone</option>
+        </select>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="cercaDisponibilita()">Cerca disponibilità →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2 — CAMERE -->
+  <div id="sec-camere" class="card section-hidden">
+    <div class="card-title">🛏️ Scegli la camera</div>
+    <div class="card-sub" id="sub-camere">Camere disponibili per le date selezionate</div>
+    <div class="alert alert-err" id="alert-camere"></div>
+    <div id="loading-camere"><div class="spinner"></div></div>
+    <div class="camere-grid" id="camere-grid"></div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="goStep(1)">← Modifica date</button>
+      <button class="btn btn-primary" id="btn-step3" onclick="goStep(3)" disabled>Continua →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3 — DATI OSPITE -->
+  <div id="sec-dati" class="card section-hidden">
+    <div class="card-title">👤 I tuoi dati</div>
+    <div class="card-sub">Inserisci i tuoi dati di contatto per la richiesta</div>
+    <div class="alert alert-err" id="alert-dati"></div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nome *</label>
+        <input type="text" id="in-nome" placeholder="Mario" autocomplete="given-name">
+      </div>
+      <div class="form-group">
+        <label>Cognome *</label>
+        <input type="text" id="in-cognome" placeholder="Rossi" autocomplete="family-name">
+      </div>
+      <div class="form-group">
+        <label>Telefono *</label>
+        <input type="tel" id="in-telefono" placeholder="+39 333 000 0000" autocomplete="tel">
+      </div>
+      <div class="form-group">
+        <label>Email *</label>
+        <input type="email" id="in-email" placeholder="mario@email.it" autocomplete="email">
+      </div>
+      <div class="form-group full">
+        <label>Note o richieste particolari</label>
+        <textarea id="in-note" placeholder="Allergie, richieste speciali, orario di arrivo previsto..."></textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="goStep(2)">← Cambia camera</button>
+      <button class="btn btn-primary" onclick="goStep(4)">Riepilogo →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4 — RIEPILOGO -->
+  <div id="sec-riepilogo" class="card section-hidden">
+    <div class="card-title">✅ Riepilogo richiesta</div>
+    <div class="card-sub">Verifica i dati prima di inviare. Il gestore ti contatterà per confermare.</div>
+    <div class="alert alert-err" id="alert-riepilogo"></div>
+    <div class="riepilogo-box" id="riepilogo-box"></div>
+    <div style="background:#FEF9EC;border:1px solid #F5D87A;border-radius:10px;padding:14px 16px;font-size:13px;color:#7a5c00;margin-bottom:20px">
+      ℹ️ Questa è una <strong>richiesta di disponibilità</strong>. Il gestore ti contatterà entro 24 ore per confermare la prenotazione e concordare le modalità di pagamento.
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="goStep(3)">← Modifica dati</button>
+      <button class="btn btn-primary" id="btn-invia" onclick="inviaRichiesta()">📩 Invia richiesta</button>
+    </div>
+  </div>
+
+  <!-- SUCCESSO -->
+  <div id="sec-success" class="card section-hidden">
+    <div class="success-box">
+      <div class="success-ico">🎉</div>
+      <div class="success-title">Richiesta inviata!</div>
+      <div class="success-sub">Grazie per aver scelto B&B Il Galletto. Ti contatteremo entro <strong>24 ore</strong> al numero o email che hai indicato per confermare la tua prenotazione.</div>
+      <div class="success-code" id="codice-richiesta"></div>
+      <br><br>
+      <button class="btn btn-outline" onclick="window.location.reload()">Nuova ricerca</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <strong>B&B Il Galletto</strong> · Porto San Giorgio (FM) ·
+  <a href="tel:+393357531240">+39 335 753 1240</a> ·
+  <a href="mailto:nderobertis@gmail.com">nderobertis@gmail.com</a><br>
+  <span style="margin-top:6px;display:block">
+    Per assistenza immediata scrivi su
+    <a href="https://wa.me/393357531240?text=Ciao, vorrei informazioni sulla disponibilità" target="_blank">WhatsApp 💬</a>
+  </span>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyAi8gcS_HL9i1HYNiQJF2SazsiDnsD9jCI",
+  authDomain:"b-b-il-galletto.firebaseapp.com",
+  projectId:"b-b-il-galletto",
+  storageBucket:"b-b-il-galletto.firebasestorage.app",
+  messagingSenderId:"912561249765",
+  appId:"1:912561249765:web:cc1219861660ff8371630c"
+});
+const db = firebase.firestore();
+
+// ── Stato ────────────────────────────────────────────────────────────────────
+let allCamere=[], allPrenotazioni=[], cameraSelezionata=null, stepCorrente=1;
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+const oggi = new Date().toISOString().split('T')[0];
+document.getElementById('in-checkin').min = oggi;
+document.getElementById('in-checkout').min = oggi;
+document.getElementById('in-checkin').addEventListener('change', aggNotti);
+document.getElementById('in-checkout').addEventListener('change', aggNotti);
+
+function aggNotti(){
+  const ci = document.getElementById('in-checkin').value;
+  const co = document.getElementById('in-checkout').value;
+  const badge = document.getElementById('notti-badge');
+  // checkout min = checkin + 1
+  if(ci){
+    const minCo = new Date(ci); minCo.setDate(minCo.getDate()+1);
+    document.getElementById('in-checkout').min = minCo.toISOString().split('T')[0];
+  }
+  if(ci && co && co > ci){
+    const n = Math.round((new Date(co)-new Date(ci))/(1000*60*60*24));
+    badge.style.display='block';
+    badge.textContent = `🌙 ${n} nott${n===1?'e':'i'}`;
+  } else {
+    badge.style.display='none';
+  }
+}
+
+function formatDateIT(d){
+  if(!d) return '—';
+  const [y,m,g]=d.split('-');
+  return `${g}/${m}/${y}`;
+}
+
+function calNotti(ci,co){
+  return Math.round((new Date(co)-new Date(ci))/(1000*60*60*24));
+}
+
+// ── Step navigation ───────────────────────────────────────────────────────────
+function goStep(n){
+  // Validazione step 3
+  if(n===4){
+    const nome=document.getElementById('in-nome').value.trim();
+    const cognome=document.getElementById('in-cognome').value.trim();
+    const tel=document.getElementById('in-telefono').value.trim();
+    const email=document.getElementById('in-email').value.trim();
+    if(!nome||!cognome||!tel||!email){
+      mostraAlert('alert-dati','Compila tutti i campi obbligatori (*)');
+      return;
+    }
+    nascondiAlert('alert-dati');
+    buildRiepilogo();
+  }
+  const sezioni=['date','camere','dati','riepilogo','success'];
+  sezioni.forEach((s,i)=>{
+    document.getElementById(`sec-${s}`).classList.toggle('section-hidden',i!==n-1);
+  });
+  // Steps
+  ['step-1','step-2','step-3','step-4'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    el.classList.remove('active','done');
+    if(i+1===n) el.classList.add('active');
+    else if(i+1<n) el.classList.add('done');
+  });
+  stepCorrente=n;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── Cerca disponibilità ───────────────────────────────────────────────────────
+async function cercaDisponibilita(){
+  const ci = document.getElementById('in-checkin').value;
+  const co = document.getElementById('in-checkout').value;
+  if(!ci||!co||co<=ci){
+    alert('Seleziona date valide');return;
+  }
+  goStep(2);
+  document.getElementById('loading-camere').style.display='block';
+  document.getElementById('camere-grid').innerHTML='';
+  try{
+    // Carica camere e prenotazioni in parallelo
+    const [snapCamere,snapPren] = await Promise.all([
+      db.collection('camere').orderBy('numero','asc').get(),
+      db.collection('prenotazioni').get()
+    ]);
+    allCamere = snapCamere.docs.map(d=>({id:d.id,...d.data()}));
+    allPrenotazioni = snapPren.docs.map(d=>({id:d.id,...d.data()}));
+    document.getElementById('loading-camere').style.display='none';
+    renderCamereDisponibili(ci,co);
+  }catch(e){
+    document.getElementById('loading-camere').style.display='none';
+    mostraAlert('alert-camere','Errore nel caricamento delle camere. Riprova o contattaci direttamente.');
+    console.error(e);
+  }
+}
+
+function isDisponibile(cam,ci,co){
+  return !allPrenotazioni.some(p=>
+    p.cameraId===cam.id && p.checkin<co && p.checkout>ci
+  );
+}
+
+function renderCamereDisponibili(ci,co){
+  const grid = document.getElementById('camere-grid');
+  const n = calNotti(ci,co);
+  document.getElementById('sub-camere').textContent =
+    `${formatDateIT(ci)} → ${formatDateIT(co)} · ${n} nott${n===1?'e':'i'}`;
+
+  if(!allCamere.length){
+    grid.innerHTML='<p style="color:var(--muted);padding:20px">Nessuna camera configurata.</p>';
+    return;
+  }
+
+  grid.innerHTML = allCamere.map(cam=>{
+    const libera = isDisponibile(cam,ci,co);
+    return `<div class="camera-card${libera?'':' occupata'}" onclick="selezionaCamera('${cam.id}')" id="cam-${cam.id}">
+      <div class="camera-header">
+        <div class="camera-numero">${cam.numero}</div>
+        <div class="camera-piano">${cam.nome||'Piano'}</div>
+      </div>
+      <div class="camera-body">
+        <div class="camera-tipo">${cam.tipo||'Camera'}</div>
+        <div class="camera-note">${cam.note||'Camera confortevole con tutti i servizi'}</div>
+      </div>
+      <div class="camera-status ${libera?'status-libera':'status-occupata'}">
+        ${libera?'✓ Disponibile':'✗ Occupata'}
+      </div>
+      <div class="camera-sel-ico">✓</div>
+    </div>`;
+  }).join('');
+
+  const disponibili = allCamere.filter(c=>isDisponibile(c,ci,co)).length;
+  if(!disponibili){
+    mostraAlert('alert-camere','Nessuna camera disponibile per le date selezionate. Prova a modificare le date o contattaci direttamente.');
+  }
+}
+
+function selezionaCamera(id){
+  cameraSelezionata = allCamere.find(c=>c.id===id);
+  document.querySelectorAll('.camera-card').forEach(el=>el.classList.remove('selected'));
+  document.getElementById('cam-'+id)?.classList.add('selected');
+  document.getElementById('btn-step3').disabled=false;
+}
+
+// ── Riepilogo ─────────────────────────────────────────────────────────────────
+function buildRiepilogo(){
+  const ci=document.getElementById('in-checkin').value;
+  const co=document.getElementById('in-checkout').value;
+  const n=calNotti(ci,co);
+  const nome=document.getElementById('in-nome').value.trim();
+  const cognome=document.getElementById('in-cognome').value.trim();
+  const tel=document.getElementById('in-telefono').value.trim();
+  const email=document.getElementById('in-email').value.trim();
+  const note=document.getElementById('in-note').value.trim();
+  const ospiti=document.getElementById('in-ospiti').value;
+  const cam=cameraSelezionata;
+
+  document.getElementById('riepilogo-box').innerHTML=`
+    <div class="riepilogo-row">
+      <span class="riepilogo-label">🛏️ Camera</span>
+      <span class="riepilogo-val">N° ${cam.numero} — ${cam.tipo||''} (${cam.nome||''})</span>
+    </div>
+    <div class="riepilogo-row">
+      <span class="riepilogo-label">📅 Check-in</span>
+      <span class="riepilogo-val">${formatDateIT(ci)}</span>
+    </div>
+    <div class="riepilogo-row">
+      <span class="riepilogo-label">📅 Check-out</span>
+      <span class="riepilogo-val">${formatDateIT(co)}</span>
+    </div>
+    <div class="riepilogo-row">
+      <span class="riepilogo-label">🌙 Notti</span>
+      <span class="riepilogo-val">${n}</span>
+    </div>
+    <div class="riepilogo-row">
+      <span class="riepilogo-label">👥 Ospiti</span>
+      <span class="riepilogo-val">${ospiti} person${ospiti===1?'a':'e'}</span>
+    </div>
+    <div class="riepilogo-row">
+      <span class="riepilogo-label">👤 Nominativo</span>
+      <span class="riepilogo-val">${cognome} ${nome}</span>
+    </div>
+    <div class="riepilogo-row">
+      <span class="riepilogo-label">📞 Telefono</span>
+      <span class="riepilogo-val">${tel}</span>
+    </div>
+    <div class="riepilogo-row">
+      <span class="riepilogo-label">✉️ Email</span>
+      <span class="riepilogo-val">${email}</span>
+    </div>
+    ${note?`<div class="riepilogo-row">
+      <span class="riepilogo-label">📝 Note</span>
+      <span class="riepilogo-val" style="text-align:right;max-width:60%">${note}</span>
+    </div>`:''}
+    <div class="riepilogo-row riepilogo-total">
+      <span class="riepilogo-label">Stato richiesta</span>
+      <span class="riepilogo-val" style="color:#E67E22">⏳ In attesa di conferma</span>
+    </div>`;
+}
+
+// ── Invio richiesta ───────────────────────────────────────────────────────────
+async function inviaRichiesta(){
+  const btn=document.getElementById('btn-invia');
+  btn.disabled=true; btn.textContent='Invio in corso...';
+  const ci=document.getElementById('in-checkin').value;
+  const co=document.getElementById('in-checkout').value;
+  const codice='RQ'+Date.now().toString(36).toUpperCase().slice(-6);
+  const richiesta={
+    codice,
+    nome:document.getElementById('in-nome').value.trim(),
+    cognome:document.getElementById('in-cognome').value.trim(),
+    telefono:document.getElementById('in-telefono').value.trim(),
+    email:document.getElementById('in-email').value.trim(),
+    note:document.getElementById('in-note').value.trim(),
+    nOspiti:parseInt(document.getElementById('in-ospiti').value),
+    cameraId:cameraSelezionata.id,
+    cameraNumero:cameraSelezionata.numero,
+    cameraTipo:cameraSelezionata.tipo||'',
+    checkin:ci, checkout:co,
+    notti:calNotti(ci,co),
+    stato:'in_attesa',
+    canale:'Portale web',
+    creata:firebase.firestore.FieldValue.serverTimestamp(),
+  };
+  try{
+    await db.collection('richieste_prenotazione').add(richiesta);
+    document.getElementById('codice-richiesta').textContent='Codice: '+codice;
+    // Nascondi tutto tranne success
+    ['date','camere','dati','riepilogo'].forEach(s=>
+      document.getElementById('sec-'+s).classList.add('section-hidden'));
+    document.getElementById('sec-success').classList.remove('section-hidden');
+    document.getElementById('steps').style.display='none';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }catch(e){
+    mostraAlert('alert-riepilogo','Errore nell\'invio. Riprova o contattaci via WhatsApp.');
+    btn.disabled=false; btn.textContent='📩 Invia richiesta';
+  }
+}
+
+function mostraAlert(id,msg){
+  const el=document.getElementById(id);
+  el.textContent=msg; el.style.display='block';
+  el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function nascondiAlert(id){
+  document.getElementById(id).style.display='none';
+}
+</script>
+</body>
+</html>
