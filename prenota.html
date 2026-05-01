@@ -462,6 +462,8 @@ function renderCamereDisponibili(ci,co){
   const disponibili = allCamere.filter(c=>isDisponibile(c,ci,co)).length;
   if(!disponibili){
     mostraAlert('alert-camere','Nessuna camera disponibile per le date selezionate. Prova a modificare le date o contattaci direttamente.');
+  } else {
+    nascondiAlert('alert-camere');
   }
 }
 
