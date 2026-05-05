@@ -433,6 +433,7 @@
             <div style="font-weight:700;font-size:14px;color:#2a7a3b;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
               <span>💚 Entrate</span>
               <button class="btn btn-sm no-print" style="background:#EEF7F0;color:#2a7a3b;border:1px solid #2a7a3b33" onclick="openModalVoce('entrata')">+ Aggiungi</button>
+              <button class="btn btn-sm no-print" style="background:#FEF3CD;color:#7a5c00;border:1px solid #F5D87A" onclick="pulisciDuplicatiContabilita()" title="Rimuove voci manuali duplicate delle entrate automatiche">🧹 Rimuovi duplicati</button>
             </div>
             <div id="cont-entrate-lista"></div>
           </div>
@@ -3851,10 +3852,11 @@ function renderRegistro(){
       <td style="font-size:12px;color:var(--text-muted)">${v.ricorrenza&&v.ricorrenza!=='una_tantum'?'🔄 '+v.ricorrenza:'—'}</td>
       <td style="text-align:right;font-weight:700;color:${col};white-space:nowrap">€${parseFloat(v.importo||0).toFixed(2)}</td>
       <td class="no-print" style="white-space:nowrap">
-        ${!isAuto?`
-          <button class="btn btn-sm btn-outline" style="padding:3px 8px" onclick="editVoceRegistro('${v._tipo}','${v.id}',${v._mese},${v._anno})">✏️</button>
-          <button class="btn btn-sm btn-danger"  style="padding:3px 8px" onclick="eliminaVoceRegistro('${v._tipo}','${v.id}',${v._mese},${v._anno})">🗑️</button>
-        `:'<span style="font-size:11px;color:var(--text-muted)">—</span>'}
+        ${isAuto
+          ? `<button class="btn btn-sm btn-outline" style="padding:3px 8px" onclick="editVoceAutoRegistro('${v._tipo}','${v.id}',${v._mese},${v._anno})">✏️ modifica</button>`
+          : `<button class="btn btn-sm btn-outline" style="padding:3px 8px" onclick="editVoceRegistro('${v._tipo}','${v.id}',${v._mese},${v._anno})">✏️</button>
+          <button class="btn btn-sm btn-danger"  style="padding:3px 8px" onclick="eliminaVoceRegistro('${v._tipo}','${v.id}',${v._mese},${v._anno})">🗑️</button>`
+        }
       </td>
     </tr>`;
   }).join('');
@@ -3981,7 +3983,12 @@ async function saveVociCont(tipo,mese,anno,voci){
 }
 
 // ── Entrate automatiche da prenotazioni ───────────────────────────────────
-function entratePrenotazioniMese(mese,anno){
+// Se esiste un override manuale (editVoceAuto), la voce auto viene soppressa
+function entratePrenotazioniMese(mese,anno,entrateExtra){
+  // entrateExtra può essere passato o letto da contStato
+  const extra = entrateExtra || contStato.entrate || [];
+  const overrideIds = new Set(extra.filter(v=>v._overrideOf).map(v=>v._overrideOf));
+
   return allPrenotazioni.filter(p=>{
     const importo=parseFloat(p.prezzo||p.saldoPagato||0);
     if(!importo) return false;
@@ -3989,6 +3996,9 @@ function entratePrenotazioniMese(mese,anno){
     if(!dataRef) return false;
     const d=new Date(dataRef);
     return d.getMonth()===mese&&d.getFullYear()===anno;
+  }).filter(p=>{
+    // Se esiste un override per questa voce auto, non mostrarla (l'override la sostituisce)
+    return !overrideIds.has('pren_'+p.id);
   }).map(p=>({
     id:'pren_'+p.id,
     desc:`Soggiorno: ${p.cognome||''} ${p.nome||''}`,
@@ -4016,8 +4026,8 @@ async function renderContabilita(){
   pdcStato={fissi:pdcFissi,variabili:pdcVariabili};
   contStato={fissi,variabili,entrate:entrateExtra};
 
-  const entrateAuto=entratePrenotazioniMese(mese,anno);
-  const tutteEntrate=[...entrateAuto,...entrateExtra];
+  const entrateAuto=entratePrenotazioniMese(mese,anno,entrateExtra);
+  const tutteEntrate=[...entrateAuto,...entrateExtra.filter(v=>!v._overrideOf),...entrateExtra.filter(v=>v._overrideOf)];
   const totEntrate=tutteEntrate.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
   const totFissi=fissi.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
   const totVariabili=variabili.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
@@ -4184,8 +4194,11 @@ function htmlVoceLine(v,tipo,colore){
       </span>
     </div>
     <span style="font-size:13px;font-weight:700;color:${isPrevisione?'#E67E22':colore};min-width:70px;text-align:right">€${parseFloat(v.importo||0).toFixed(2)}</span>
-    ${!v._auto?`<button class="btn btn-sm btn-outline no-print" style="padding:2px 6px;font-size:10px" onclick="editVoceCont('${tipo}','${v.id}')">✏️</button>
-    <button class="btn btn-sm btn-danger no-print" style="padding:2px 6px;font-size:10px" onclick="eliminaVoceCont('${tipo}','${v.id}')">🗑️</button>`:''}
+    ${v._auto
+      ? `<button class="btn btn-sm btn-outline no-print" style="padding:2px 6px;font-size:10px" onclick="editVoceAuto('${tipo}','${v.id}')">✏️ modifica</button>`
+      : `<button class="btn btn-sm btn-outline no-print" style="padding:2px 6px;font-size:10px" onclick="editVoceCont('${tipo}','${v.id}')">✏️</button>
+    <button class="btn btn-sm btn-danger no-print" style="padding:2px 6px;font-size:10px" onclick="eliminaVoceCont('${tipo}','${v.id}')">🗑️</button>`
+    }
   </div>`;
 }
 
@@ -4311,6 +4324,25 @@ function openModalVoce(tipo, sottocontoIdPre=null, id=null){
   document.getElementById('vc-id').value=id||'';
   const label=tipo==='entrata'?'Entrata':tipo==='fisso'?'Costo fisso':'Costo variabile';
   document.getElementById('modal-voce-title').textContent=id?`Modifica ${label}`:`Nuova voce — ${label}`;
+
+  // ── Avviso anti-duplicato per le entrate ─────────────────────────────────
+  if(tipo==='entrata' && !id){
+    const{mese,anno}=getMeseAnno();
+    const autoVoci=entratePrenotazioniMese(mese,anno,contStato.entrate);
+    if(autoVoci.length>0){
+      const nomi=autoVoci.slice(0,3).map(v=>v.desc.replace('Soggiorno: ','')).join(', ');
+      const conferma=confirm(
+        `⚠️ Attenzione: in ${MESI_CONT[mese]} ${anno} sono già presenti ${autoVoci.length} entrate automatiche dalle prenotazioni (${nomi}${autoVoci.length>3?'...':''}).
+
+` +
+        `Per modificare un importo (sconto, arrotondamento), usa il pulsante ✏️ modifica sulla voce automatica.
+
+` +
+        `Vuoi aggiungere comunque una voce manuale EXTRA (es. servizi aggiuntivi, colazioni a parte)?`
+      );
+      if(!conferma) return;
+    }
+  }
   const pgEl=document.getElementById('vc-pagamento').parentElement;
   pgEl.style.display=tipo==='entrata'?'':'none';
 
@@ -4388,6 +4420,89 @@ async function eliminaVoceCont(tipo,id){
   lista=lista.filter(v=>v.id!==id);
   await saveVociCont(tipo,mese,anno,lista);
   showToast('Voce eliminata','success');
+  await renderContabilita();
+}
+
+// ── Modifica voce automatica (da prenotazione) ────────────────────────────
+// Crea una voce manuale di rettifica che sovrascrive l'importo automatico
+async function editVoceAuto(tipo, id){
+  // Trova la voce automatica nelle entrate del mese corrente
+  const{mese,anno}=getMeseAnno();
+  const autoVoce = entratePrenotazioniMese(mese,anno).find(v=>v.id===id);
+  if(!autoVoce){ showToast('Voce non trovata','error'); return; }
+
+  const nuovoImporto = prompt(
+    `Modifica importo per:\n"${autoVoce.desc}"\n\nImporto attuale: €${parseFloat(autoVoce.importo).toFixed(2)}\n\nInserisci il nuovo importo (es. sconto o arrotondamento):`,
+    parseFloat(autoVoce.importo).toFixed(2)
+  );
+  if(nuovoImporto===null) return;
+  const importoParsed = parseFloat(nuovoImporto);
+  if(isNaN(importoParsed)||importoParsed<0){ showToast('Importo non valido','error'); return; }
+
+  // Salva una voce di override nelle entrate manuali
+  const overrideId = 'override_'+id;
+  let entrate = [...contStato.entrate];
+  const idx = entrate.findIndex(v=>v.id===overrideId);
+  const nuovaVoce = {
+    id: overrideId,
+    desc: autoVoce.desc + (importoParsed !== parseFloat(autoVoce.importo) ? ' [modificato]' : ''),
+    importo: importoParsed,
+    data: autoVoce.data,
+    note: `Rettifica: originale €${parseFloat(autoVoce.importo).toFixed(2)}`,
+    ricorrenza: 'una_tantum',
+    _overrideOf: id, // flag: questa voce sovrascrive la voce auto
+  };
+  if(idx>=0) entrate[idx]=nuovaVoce; else entrate.push(nuovaVoce);
+  await saveVociCont('entrata',mese,anno,entrate);
+  showToast('Importo modificato ✓','success');
+  await renderContabilita();
+}
+
+// Stessa cosa dal registro
+async function editVoceAutoRegistro(tipo, id, mese, anno){
+  document.getElementById('cont-mese').value = mese;
+  document.getElementById('cont-anno').value = anno;
+  await renderContabilita();
+  await editVoceAuto(tipo, id);
+}
+
+// ── Blocco duplicati: controlla se esiste già voce auto prima di aggiungere manuale ──
+function existsVoceAutoPerPrenotazione(mese, anno){
+  const autoVoci = entratePrenotazioniMese(mese, anno);
+  return autoVoci.length > 0;
+}
+
+// ── Pulizia duplicati esistenti ───────────────────────────────────────────
+// Rimuove voci manuali che sono duplicate di voci automatiche (stesso nominativo/importo)
+async function pulisciDuplicatiContabilita(){
+  const{mese,anno}=getMeseAnno();
+  const autoVoci = entratePrenotazioniMese(mese, anno);
+  let entrateManuali = [...contStato.entrate];
+  const before = entrateManuali.length;
+
+  entrateManuali = entrateManuali.filter(v=>{
+    // Considera duplicato se: stesso importo E stessa prenotazione (tramite _prenId o nome nel desc)
+    const isDuplicato = autoVoci.some(auto=>{
+      const stessoImporto = Math.abs(parseFloat(v.importo)-parseFloat(auto.importo)) < 0.01;
+      // Estrai nome dalla desc automatica es. "Soggiorno: ROSSI Mario"
+      const nomePren = auto.desc.replace('Soggiorno: ','').split(' — ')[0].toLowerCase();
+      const descV = (v.desc||'').toLowerCase();
+      return stessoImporto && (
+        descV.includes(nomePren) ||
+        descV.startsWith('saldo:') && descV.includes(nomePren.split(' ')[0])
+      );
+    });
+    if(isDuplicato) console.log('Rimosso duplicato:', v.desc, '€'+v.importo);
+    return !isDuplicato;
+  });
+
+  const removed = before - entrateManuali.length;
+  if(removed === 0){
+    showToast('Nessun duplicato trovato in questo mese','success');
+    return;
+  }
+  await saveVociCont('entrata',mese,anno,entrateManuali);
+  showToast(`✅ Rimossi ${removed} duplicati in ${MESI_CONT[mese]} ${anno}`,'success');
   await renderContabilita();
 }
 
