@@ -427,13 +427,25 @@
         <!-- RIEPILOGO MESE -->
         <div id="cont-riepilogo-mese" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px"></div>
 
-        <!-- ENTRATE REALI + PREVISIONI -->
+        <!-- ENTRATE REALI -->
         <div style="margin-bottom:20px">
           <div style="font-weight:700;font-size:14px;color:#2a7a3b;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
             <span>💚 Entrate incassate</span>
             <button class="btn btn-sm no-print" style="background:#EEF7F0;color:#2a7a3b;border:1px solid #2a7a3b33" onclick="openModalVoce('entrata')">+ Aggiungi</button>
           </div>
           <div id="cont-entrate-lista"></div>
+        </div>
+
+        <!-- BOX SOSPESI -->
+        <div id="cont-sospesi-wrap" style="display:none;border:2px solid #C0392B;border-radius:10px;padding:14px;background:#FDECEA;margin-bottom:16px">
+          <div style="font-weight:700;font-size:14px;color:#C0392B;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between">
+            <span>⚠️ Sospesi da regolare</span>
+            <span id="cont-sospesi-totale" style="font-size:13px;font-weight:700;color:#C0392B"></span>
+          </div>
+          <div style="font-size:12px;color:#C0392B;margin-bottom:10px;opacity:.85">
+            Check-out già avvenuto — saldo non ancora registrato. Registra, modifica o cancella ogni voce.
+          </div>
+          <div id="cont-sospesi-lista"></div>
         </div>
 
         <!-- BOX PREVISIONI -->
@@ -443,12 +455,14 @@
             <span id="cont-previsioni-totale" style="font-size:13px;font-weight:700;color:#7a5c00"></span>
           </div>
           <div style="font-size:12px;color:#7a5c00;margin-bottom:10px;opacity:.8">
-            Saldi non ancora incassati dalle prenotazioni confermate — si aggiornano automaticamente al check-out
+            Saldi non ancora incassati — si aggiornano automaticamente al check-out
           </div>
           <div id="cont-previsioni-lista"></div>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px">
+          <!-- COSTI FISSI -->
+          <div>
           <!-- COSTI FISSI -->
           <div>
             <div style="font-weight:700;font-size:14px;color:var(--danger);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
@@ -2661,16 +2675,16 @@ async function registraCaparraEPrevisione(prenId, p){
   const residuo  = prezzo - caparra;
   const descBase = `${p.cognome||''} ${p.nome||''} — camera ${nomeCameraById(p.cameraId)} (${formatDate(p.checkin)}–${formatDate(p.checkout)})`;
 
-  // 1. Caparra → entrata nel mese della PRENOTAZIONE (oggi, data incasso reale)
-  const dataPrenotazione = toDateStr(new Date());
-  const mPren = new Date().getMonth(), aPren = new Date().getFullYear();
+  // Caparra → registrata nel mese della PRENOTAZIONE (data reale incasso)
+  const dataPrenotazione=toDateStr(new Date());
+  const mPren=new Date().getMonth(), aPren=new Date().getFullYear();
   const vociPren=await loadVociCont('entrata',mPren,aPren);
   if(!vociPren.find(v=>v.id===`cap_${prenId}`)){
     vociPren.push({
       id:`cap_${prenId}`,
       desc:`Caparra: ${descBase}`,
       importo:caparra,
-      data:dataPrenotazione,        // data reale incasso = oggi
+      data:dataPrenotazione,
       cat:'Soggiorno (incasso)',
       pagamento:p.metodoPag||'prenotazione',
       ricorrenza:'una_tantum',
@@ -2679,7 +2693,7 @@ async function registraCaparraEPrevisione(prenId, p){
     });
     await saveVociCont('entrata',mPren,aPren,vociPren);
   }
-  // Marca prenotazione come caparra registrata (salva anche la data di registrazione)
+  // Marca prenotazione come caparra registrata con data reale
   await db.collection('prenotazioni').doc(prenId).update({
     caparraRegistrata:true,
     dataRegistrazioneCaparra:dataPrenotazione,
@@ -2690,16 +2704,15 @@ async function registraCaparraEPrevisione(prenId, p){
 async function registraEntrataDiretta(prenId, p){
   const prezzo=parseFloat(p.prezzo||0);
   if(!prezzo) return;
-  // Saldo completo → registrato nel mese della PRENOTAZIONE (data incasso reale)
-  const dataPrenotazione = toDateStr(new Date());
-  const mPren = new Date().getMonth(), aPren = new Date().getFullYear();
+  const dataPrenotazione=toDateStr(new Date());
+  const mPren=new Date().getMonth(), aPren=new Date().getFullYear();
   const voci=await loadVociCont('entrata',mPren,aPren);
   if(!voci.find(v=>v.id===`sal_${prenId}`)){
     voci.push({
       id:`sal_${prenId}`,
       desc:`Saldo: ${p.cognome||''} ${p.nome||''} — camera ${nomeCameraById(p.cameraId)} (${formatDate(p.checkin)}–${formatDate(p.checkout)})`,
       importo:prezzo,
-      data:dataPrenotazione,        // data reale incasso = oggi
+      data:dataPrenotazione,
       cat:'Soggiorno (incasso)',
       pagamento:p.metodoPag||'prenotazione',
       ricorrenza:'una_tantum',
@@ -2741,24 +2754,19 @@ async function registraInContabilitaCheckout(){
     else vociCo.push(nuovaVoce);
     await saveVociCont('entrata',mCo,aCo,vociCo);
 
-    // Se la caparra non era stata ancora registrata (prenotazione modificata),
-    // la registriamo ora nel mese del checkout (data reale più vicina disponibile)
+    // Se la caparra non era stata ancora registrata (prenotazione modificata), registrala ora
     if(!p.caparraRegistrata){
-      const mCo2=new Date(p.checkout).getMonth(), aCo2=new Date(p.checkout).getFullYear();
-      const vociCap=await loadVociCont('entrata',mCo2,aCo2);
-      if(!vociCap.find(v=>v.id===`cap_${checkoutPrenId}`)){
-        vociCap.push({
+      const mCi=new Date(p.checkin).getMonth(), aCi=new Date(p.checkin).getFullYear();
+      const vociCi=await loadVociCont('entrata',mCi,aCi);
+      if(!vociCi.find(v=>v.id===`cap_${checkoutPrenId}`)){
+        vociCi.push({
           id:`cap_${checkoutPrenId}`,
           desc:`Caparra: ${descBase}`,
-          importo:caparra,
-          data:toDateStr(new Date()),
-          cat:'Soggiorno (incasso)',
-          pagamento:p.metodoPag||'prenotazione',
-          ricorrenza:'una_tantum',
-          note:`Registrata al checkout — check-in: ${formatDate(p.checkin)}`,
-          _prenId:checkoutPrenId,
+          importo:caparra, data:p.checkin,
+          cat:'Soggiorno (incasso)', pagamento:p.metodoPag||'prenotazione',
+          ricorrenza:'una_tantum', note:'', _prenId:checkoutPrenId,
         });
-        await saveVociCont('entrata',mCo2,aCo2,vociCap);
+        await saveVociCont('entrata',mCi,aCi,vociCi);
       }
     }
   } else {
@@ -4004,9 +4012,9 @@ async function saveVociCont(tipo,mese,anno,voci){
 }
 
 // ── Entrate automatiche da prenotazioni ───────────────────────────────────
-// Mostra le entrate realmente incassate nel mese:
-//   • Caparra → nel mese della DATA DI PRENOTAZIONE (dataRegistrazioneCaparra)
-//   • Saldo checkout → nel mese del checkout
+// Mostra solo entrate realmente incassate:
+//   • Caparra → nel mese della data prenotazione (dataRegistrazioneCaparra)
+//   • Saldo checkout → nel mese del checkout confermato
 //   • Saldo completo alla prenotazione → nel mese della prenotazione
 function entratePrenotazioniMese(mese,anno){
   const result=[];
@@ -4015,11 +4023,9 @@ function entratePrenotazioniMese(mese,anno){
     const caparra=parseFloat(p.caparra||0);
     const saldoPagato=parseFloat(p.saldoPagato||0);
 
-    // ── Caparra incassata ─────────────────────────────────────────────────
+    // Caparra incassata
     if(caparra>0 && p.caparraRegistrata){
-      // Data reale: dataRegistrazioneCaparra (salvata al momento della prenotazione)
-      // fallback: data di prenotazione o checkin
-      const dataCaparra = p.dataRegistrazioneCaparra || p.checkin;
+      const dataCaparra=p.dataRegistrazioneCaparra||p.checkin;
       const d=new Date(dataCaparra);
       if(d.getMonth()===mese && d.getFullYear()===anno){
         result.push({
@@ -4029,13 +4035,12 @@ function entratePrenotazioniMese(mese,anno){
           pagamento:p.metodoPag||'prenotazione',
           data:dataCaparra,
           note:`Camera ${nomeCameraById(p.cameraId)} · soggiorno ${formatDate(p.checkin)}–${formatDate(p.checkout)}`,
-          _auto:true,
-          _tipo_incasso:'caparra',
+          _auto:true, _tipo_incasso:'caparra',
         });
       }
     }
 
-    // ── Saldo incassato al check-out ──────────────────────────────────────
+    // Saldo incassato al check-out
     if(p.checkoutConfermato && p.contabRegistrato){
       const importoSaldo=saldoPagato>0?saldoPagato:(caparra>0?prezzo-caparra:prezzo);
       if(importoSaldo>0){
@@ -4048,16 +4053,15 @@ function entratePrenotazioniMese(mese,anno){
             pagamento:p.metodoPagCheckout||p.metodoPag||'checkout',
             data:p.checkout,
             note:`Camera ${nomeCameraById(p.cameraId)} · ${calcolaNotti(p.checkin,p.checkout)} notti`,
-            _auto:true,
-            _tipo_incasso:'saldo',
+            _auto:true, _tipo_incasso:'saldo',
           });
         }
       }
     }
 
-    // ── Saldo completo alla prenotazione ──────────────────────────────────
+    // Saldo completo alla prenotazione
     if(p.modalitaPag==='prenotazione' && p.contabRegistrato && !p.checkoutConfermato){
-      const dataReg = p.dataRegistrazioneCaparra || p.checkin;
+      const dataReg=p.dataRegistrazioneCaparra||p.checkin;
       const d=new Date(dataReg);
       if(d.getMonth()===mese && d.getFullYear()===anno){
         result.push({
@@ -4067,8 +4071,7 @@ function entratePrenotazioniMese(mese,anno){
           pagamento:p.metodoPag||'prenotazione',
           data:dataReg,
           note:`Camera ${nomeCameraById(p.cameraId)} · soggiorno ${formatDate(p.checkin)}–${formatDate(p.checkout)}`,
-          _auto:true,
-          _tipo_incasso:'saldo_prenotazione',
+          _auto:true, _tipo_incasso:'saldo_prenotazione',
         });
       }
     }
@@ -4076,10 +4079,12 @@ function entratePrenotazioniMese(mese,anno){
   return result;
 }
 
-// ── Previsioni entrate per mese ───────────────────────────────────────────
-// Saldi non ancora incassati, raggruppati per mese di check-out atteso
+// ── Previsioni + Sospesi per mese ─────────────────────────────────────────
+// previsioni: saldi attesi checkout futuro
+// sospesi: checkout passato, saldo non registrato
 function previsioniMese(mese,anno){
-  const result=[];
+  const previsioni=[], sospesi=[];
+  const oggi=toDateStr(new Date());
   allPrenotazioni.forEach(p=>{
     const prezzo=parseFloat(p.prezzo||0);
     const caparra=parseFloat(p.caparra||0);
@@ -4088,24 +4093,28 @@ function previsioniMese(mese,anno){
     if(p.modalitaPag==='prenotazione' && p.contabRegistrato) return;
     const saldoAtteso=caparra>0?prezzo-caparra:prezzo;
     if(saldoAtteso<=0) return;
-    const d=new Date(p.checkout);
-    if(d.getMonth()===mese && d.getFullYear()===anno){
-      result.push({
-        id:'prev_'+p.id,
+    const dCo=new Date(p.checkout);
+    if(dCo.getMonth()===mese && dCo.getFullYear()===anno){
+      const voce={
+        id:'prev_'+p.id, prenId:p.id,
         desc:`${p.cognome||''} ${p.nome||''}`,
-        importo:saldoAtteso,
-        caparra,
-        prezzo,
-        checkin:p.checkin,
-        checkout:p.checkout,
+        importo:saldoAtteso, caparra, prezzo,
+        checkin:p.checkin, checkout:p.checkout,
         camera:nomeCameraById(p.cameraId),
-        stato:p.checkoutConfermato?'checkout_fatto'
-             :p.checkinConfermato?'in_soggiorno'
-             :new Date(p.checkin)<=new Date()?'attesa_checkin':'futura',
-      });
+        metodoPag:p.metodoPagCheckout||p.metodoPag||'',
+      };
+      if(p.checkout < oggi && !p.checkoutConfermato){
+        sospesi.push({...voce, stato:'sospeso'});
+      } else {
+        previsioni.push({...voce,
+          stato:p.checkoutConfermato?'checkout_fatto'
+               :p.checkinConfermato?'in_soggiorno'
+               :new Date(p.checkin)<=new Date()?'attesa_checkin':'futura',
+        });
+      }
     }
   });
-  return result;
+  return {previsioni, sospesi};
 }
 
 // ── Render principale ──────────────────────────────────────────────────────
@@ -4126,24 +4135,25 @@ async function renderContabilita(){
 
   const entrateAuto=entratePrenotazioniMese(mese,anno);
   const tutteEntrate=[...entrateAuto,...entrateExtra];
+  const {previsioni,sospesi}=previsioniMese(mese,anno);
   const totEntrate=tutteEntrate.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
   const totFissi=fissi.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
   const totVariabili=variabili.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
+  const totPrev=previsioni.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
+  const totSosp=sospesi.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
   const saldo=totEntrate-totFissi-totVariabili;
-  // previsioni calcolate sopra (nella chiamata a renderPrevisioni)
-  const _prev=previsioniMese(mese,anno);
-  const totPrev=_prev.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
   const saldoConPrev=totEntrate+totPrev-totFissi-totVariabili;
 
   // Cards riepilogo
   document.getElementById('cont-riepilogo-mese').innerHTML=[
-    {label:'💚 Incassato',        val:'€'+totEntrate.toFixed(2),    col:'#2a7a3b', bg:'#EEF7F0'},
-    {label:'📅 Atteso (prev.)',   val:'€'+totPrev.toFixed(2),       col:'#7a5c00', bg:'#FFFDF0', brd:'#F5D87A'},
-    {label:'🔴 Costi fissi',      val:'€'+totFissi.toFixed(2),      col:'#C0392B', bg:'#FDECEA'},
-    {label:'🟠 Costi variabili',  val:'€'+totVariabili.toFixed(2),  col:'#E67E22', bg:'#FEF5E7'},
-    {label:'Saldo reale',         val:(saldo>=0?'+':'')+'€'+saldo.toFixed(2),
+    {label:'💚 Incassato',       val:'€'+totEntrate.toFixed(2),   col:'#2a7a3b', bg:'#EEF7F0'},
+    {label:'📅 Atteso (prev.)',  val:'€'+totPrev.toFixed(2),      col:'#7a5c00', bg:'#FFFDF0', brd:'#F5D87A'},
+    ...(totSosp>0?[{label:'⚠️ Sospesi', val:'€'+totSosp.toFixed(2), col:'#C0392B', bg:'#FDECEA', brd:'#C0392B'}]:[]),
+    {label:'🔴 Costi fissi',     val:'€'+totFissi.toFixed(2),     col:'#C0392B', bg:'#FDECEA'},
+    {label:'🟠 Costi variabili', val:'€'+totVariabili.toFixed(2), col:'#E67E22', bg:'#FEF5E7'},
+    {label:'Saldo reale',        val:(saldo>=0?'+':'')+'€'+saldo.toFixed(2),
       col:saldo>=0?'#2a7a3b':'#C0392B', bg:saldo>=0?'#EEF7F0':'#FDECEA'},
-    {label:'Saldo previsionale',  val:(saldoConPrev>=0?'+':'')+'€'+saldoConPrev.toFixed(2),
+    {label:'Saldo previsionale', val:(saldoConPrev>=0?'+':'')+'€'+saldoConPrev.toFixed(2),
       col:saldoConPrev>=0?'#7a5c00':'#C0392B', bg:'#FFFDF0', brd:'#F5D87A'},
   ].map(r=>`<div style="background:${r.bg};border-radius:10px;padding:16px 18px;border:1.5px solid ${r.brd||r.col+'33'}">
     <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:${r.col};font-weight:600;margin-bottom:6px">${r.label}</div>
@@ -4151,10 +4161,9 @@ async function renderContabilita(){
     <div style="font-size:11px;color:${r.col};opacity:.7;margin-top:2px">${MESI_CONT[mese]} ${anno}</div>
   </div>`).join('');
 
-  const previsioni=previsioniMese(mese,anno);
-  const totPrevisioni=previsioni.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
   renderListaVoci('cont-entrate-lista',tutteEntrate,'entrata','#2a7a3b',null);
-  renderPrevisioni('cont-previsioni-lista',previsioni,totPrevisioni);
+  renderSospesi(sospesi);
+  renderPrevisioni('cont-previsioni-lista',previsioni,totPrev);
   renderAlberoConti('cont-fissi-lista',pdcFissi,fissi,'fisso','#C0392B');
   renderAlberoConti('cont-variabili-lista',pdcVariabili,variabili,'variabile','#E67E22');
   await renderTabellaAnnuale(anno);
@@ -4307,6 +4316,121 @@ function htmlVoceLine(v,tipo,colore){
   </div>`;
 }
 
+// ── Render sospesi da regolare ────────────────────────────────────────────
+function renderSospesi(sospesi){
+  const wrap=document.getElementById('cont-sospesi-wrap');
+  const el=document.getElementById('cont-sospesi-lista');
+  const totEl=document.getElementById('cont-sospesi-totale');
+  if(!wrap||!el) return;
+  if(!sospesi.length){ wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  const tot=sospesi.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
+  if(totEl) totEl.textContent=`Totale: €${tot.toFixed(2)}`;
+  el.innerHTML=sospesi
+    .sort((a,b)=>a.checkout.localeCompare(b.checkout))
+    .map(v=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;
+      border-bottom:1px solid #f5c6c6;background:#fff8f8;border-radius:6px;margin-bottom:6px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:#0D2436">${v.desc}</div>
+        <div style="font-size:11px;color:#C0392B;margin-top:2px">
+          📅 ${formatDate(v.checkin)} → ${formatDate(v.checkout)} &nbsp;·&nbsp; 🛏️ ${v.camera}
+          ${v.caparra>0?`&nbsp;·&nbsp; Caparra versata: €${v.caparra.toFixed(2)}`:''}
+          &nbsp;·&nbsp; <strong>Totale: €${v.prezzo.toFixed(2)}</strong>
+        </div>
+      </div>
+      <span style="font-size:15px;font-weight:700;color:#C0392B;min-width:72px;text-align:right;white-space:nowrap">
+        €${parseFloat(v.importo).toFixed(2)}
+      </span>
+      <div style="display:flex;gap:6px;flex-shrink:0" class="no-print">
+        <button class="btn btn-sm" style="background:#EEF7F0;color:#2a7a3b;border:1px solid #2a7a3b44;font-size:12px"
+          onclick="registraSospeso('${v.prenId}')">💰 Registra</button>
+        <button class="btn btn-sm btn-outline" style="font-size:12px"
+          onclick="modificaSospeso('${v.prenId}','${v.importo}')">✏️ Modifica</button>
+        <button class="btn btn-sm btn-danger" style="font-size:12px"
+          onclick="cancellaSospeso('${v.prenId}')">🗑️ Cancella</button>
+      </div>
+    </div>`).join('');
+}
+
+async function registraSospeso(prenId){
+  const p=allPrenotazioni.find(x=>x.id===prenId);
+  if(!p) return;
+  const caparra=parseFloat(p.caparra||0);
+  const prezzo=parseFloat(p.prezzo||0);
+  const saldo=caparra>0?prezzo-caparra:prezzo;
+  if(!confirm(`Registrare saldo di €${saldo.toFixed(2)} per ${p.cognome||''} ${p.nome||''}?
+Checkout: ${formatDate(p.checkout)}`)) return;
+  const{mese,anno}=getMeseAnno();
+  const descBase=`${p.cognome||''} ${p.nome||''} — camera ${nomeCameraById(p.cameraId)} (${formatDate(p.checkin)}–${formatDate(p.checkout)})`;
+  const voci=await loadVociCont('entrata',mese,anno);
+  const idVoce=`saldo_reg_${prenId}`;
+  if(!voci.find(v=>v.id===idVoce)){
+    voci.push({
+      id:idVoce, desc:`Saldo: ${descBase}`,
+      importo:saldo, data:p.checkout,
+      cat:'Soggiorno (incasso)', pagamento:p.metodoPagCheckout||p.metodoPag||'checkout',
+      ricorrenza:'una_tantum', note:'Registrato da sospesi',
+      _prenId:prenId, _auto:true, _tipo_incasso:'saldo',
+    });
+    await saveVociCont('entrata',mese,anno,voci);
+  }
+  await db.collection('prenotazioni').doc(prenId).update({
+    contabRegistrato:true, checkoutConfermato:true, oraCheckout:'00:00', saldoPagato:saldo,
+  });
+  showToast(`✅ Saldo registrato: €${saldo.toFixed(2)}`,'success');
+  await renderContabilita();
+}
+
+async function modificaSospeso(prenId, importoAttuale){
+  const p=allPrenotazioni.find(x=>x.id===prenId);
+  if(!p) return;
+  const nuovoImporto=prompt(
+    `Modifica saldo per ${p.cognome||''} ${p.nome||''}
+Checkout: ${formatDate(p.checkout)}
+
+Importo atteso: €${parseFloat(importoAttuale).toFixed(2)}
+Inserisci il nuovo importo:`,
+    parseFloat(importoAttuale).toFixed(2)
+  );
+  if(nuovoImporto===null) return;
+  const importoParsed=parseFloat(nuovoImporto);
+  if(isNaN(importoParsed)||importoParsed<0){showToast('Importo non valido','error');return;}
+  const{mese,anno}=getMeseAnno();
+  const descBase=`${p.cognome||''} ${p.nome||''} — camera ${nomeCameraById(p.cameraId)} (${formatDate(p.checkin)}–${formatDate(p.checkout)})`;
+  const voci=await loadVociCont('entrata',mese,anno);
+  const idVoce=`saldo_reg_${prenId}`;
+  const idx=voci.findIndex(v=>v.id===idVoce);
+  const nuovaVoce={
+    id:idVoce, desc:`Saldo: ${descBase}`,
+    importo:importoParsed, data:p.checkout,
+    cat:'Soggiorno (incasso)', pagamento:p.metodoPagCheckout||p.metodoPag||'checkout',
+    ricorrenza:'una_tantum', note:`Modificato manualmente (originale: €${parseFloat(importoAttuale).toFixed(2)})`,
+    _prenId:prenId, _auto:true, _tipo_incasso:'saldo',
+  };
+  if(idx>=0) voci[idx]=nuovaVoce; else voci.push(nuovaVoce);
+  await saveVociCont('entrata',mese,anno,voci);
+  await db.collection('prenotazioni').doc(prenId).update({
+    contabRegistrato:true, checkoutConfermato:true, oraCheckout:'00:00', saldoPagato:importoParsed,
+  });
+  showToast(`✅ Saldo modificato: €${importoParsed.toFixed(2)}`,'success');
+  await renderContabilita();
+}
+
+async function cancellaSospeso(prenId){
+  const p=allPrenotazioni.find(x=>x.id===prenId);
+  if(!p) return;
+  if(!confirm(`Cancellare il saldo sospeso di ${p.cognome||''} ${p.nome||''}?
+La prenotazione sarà marcata come regolata senza registrare entrata.
+(Usare solo per annullamenti o pagamenti già contabilizzati altrove)`)) return;
+  await db.collection('prenotazioni').doc(prenId).update({
+    contabRegistrato:true, checkoutConfermato:true, oraCheckout:'00:00', saldoPagato:0,
+    noteCheckout:'Saldo cancellato manualmente dai sospesi',
+  });
+  showToast('Sospeso rimosso','success');
+  await renderContabilita();
+}
+
 // ── Render previsioni entrate ─────────────────────────────────────────────
 function renderPrevisioni(elId, previsioni, totale){
   const el=document.getElementById(elId);
@@ -4329,13 +4453,12 @@ function renderPrevisioni(elId, previsioni, totale){
     .sort((a,b)=>a.checkout.localeCompare(b.checkout))
     .map(v=>{
       const st=statiLabel[v.stato]||statiLabel['futura'];
-      return`<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;
-        border-bottom:1px dashed #F5D87A;">
+      return`<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px dashed #F5D87A;">
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:600;color:#0D2436">${v.desc}</div>
           <div style="font-size:11px;color:#7a5c00;margin-top:2px">
             📅 ${formatDate(v.checkin)} → ${formatDate(v.checkout)} &nbsp;·&nbsp; 🛏️ ${v.camera}
-            ${v.caparra>0?`&nbsp;·&nbsp; <span style="color:#2a7a3b">Caparra versata: €${v.caparra.toFixed(2)}</span>`:''}
+            ${v.caparra>0?`&nbsp;·&nbsp; <span style="color:#2a7a3b">Caparra: €${v.caparra.toFixed(2)}</span>`:''}
           </div>
         </div>
         <span style="background:${st.bg};color:${st.col};padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;white-space:nowrap">${st.label}</span>
@@ -4373,7 +4496,8 @@ async function renderTabellaAnnuale(anno){
       loadVociCont('entrata',m,anno),
     ]);
     const e=[...entratePrenotazioniMese(m,anno),...entrateExtraM].reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
-    const prev=previsioniMese(m,anno).reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
+    const {previsioni:_pArr,sospesi:_sArr}=previsioniMese(m,anno);
+    const prev=_pArr.reduce((s,v)=>s+(parseFloat(v.importo)||0),0)+_sArr.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
     const f=fissiM.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
     const va=variabiliM.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
     const saldo=e-f-va;
