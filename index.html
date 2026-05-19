@@ -3821,7 +3821,7 @@ async function caricaRegistro(){
   }
   // Aggiungi anche le entrate automatiche da prenotazioni
   for(let m=0;m<12;m++){
-    entratePrenotazioniMese(m,annoSel).forEach(v=>
+    entratePrenotazioniMese(m,annoSel,[]).forEach(v=>
       registroCache.push({...v, _tipo:'entrata', _mese:m, _anno:annoSel})
     );
   }
@@ -3842,10 +3842,20 @@ function renderRegistro(){
   const labels = {entrata:'💚 Entrata', fisso:'🔴 Costo fisso', variabile:'🟠 Costo var.'};
   const bgs    = {entrata:'#EEF7F0',   fisso:'#FDECEA',        variabile:'#FEF5E7'};
 
+  // Trova gli id prenotazione già registrati manualmente (saldo_reg_)
+  const prenIdsManualmenteRegistrati = new Set(
+    registroCache.filter(v=>v.id&&v.id.startsWith('saldo_reg_')).map(v=>v.id.replace('saldo_reg_',''))
+  );
+
   let filtrate = registroCache.filter(v=>{
     if(tipo && v._tipo!==tipo) return false;
     if(meseSel!==''&&meseSel!==undefined&&v._mese!==parseInt(meseSel)) return false;
     if(cerca && !(v.desc||'').toLowerCase().includes(cerca)) return false;
+    // Escludi voce auto 'saldo_' se esiste già la voce manuale 'saldo_reg_' per stessa prenotazione
+    if(v.id&&v.id.startsWith('saldo_')&&!v.id.startsWith('saldo_reg_')){
+      const prenId=v.id.replace('saldo_','');
+      if(prenIdsManualmenteRegistrati.has(prenId)) return false;
+    }
     return true;
   });
 
@@ -4016,7 +4026,11 @@ async function saveVociCont(tipo,mese,anno,voci){
 //   • Caparra → nel mese della data prenotazione (dataRegistrazioneCaparra)
 //   • Saldo checkout → nel mese del checkout confermato
 //   • Saldo completo alla prenotazione → nel mese della prenotazione
-function entratePrenotazioniMese(mese,anno){
+function entratePrenotazioniMese(mese,anno,entrateExtra){
+  // Se esiste già una voce manuale saldo_reg_ per questa prenotazione, non duplicare
+  const idsGiaRegistrati = new Set(
+    (entrateExtra||[]).filter(v=>v.id&&v.id.startsWith('saldo_reg_')).map(v=>v.id.replace('saldo_reg_',''))
+  );
   const result=[];
   allPrenotazioni.forEach(p=>{
     const prezzo=parseFloat(p.prezzo||0);
@@ -4041,7 +4055,8 @@ function entratePrenotazioniMese(mese,anno){
     }
 
     // Saldo incassato al check-out
-    if(p.checkoutConfermato && p.contabRegistrato){
+    // Salta se già registrato manualmente dai sospesi (evita duplicati)
+    if(p.checkoutConfermato && p.contabRegistrato && !idsGiaRegistrati.has(p.id)){
       const importoSaldo=saldoPagato>0?saldoPagato:(caparra>0?prezzo-caparra:prezzo);
       if(importoSaldo>0){
         const d=new Date(p.checkout);
@@ -4133,7 +4148,7 @@ async function renderContabilita(){
   pdcStato={fissi:pdcFissi,variabili:pdcVariabili};
   contStato={fissi,variabili,entrate:entrateExtra};
 
-  const entrateAuto=entratePrenotazioniMese(mese,anno);
+  const entrateAuto=entratePrenotazioniMese(mese,anno,entrateExtra);
   const tutteEntrate=[...entrateAuto,...entrateExtra];
   const {previsioni,sospesi}=previsioniMese(mese,anno);
   const totEntrate=tutteEntrate.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
@@ -4495,7 +4510,7 @@ async function renderTabellaAnnuale(anno){
       loadVociCont('variabile',m,anno),
       loadVociCont('entrata',m,anno),
     ]);
-    const e=[...entratePrenotazioniMese(m,anno),...entrateExtraM].reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
+    const e=[...entratePrenotazioniMese(m,anno,entrateExtraM),...entrateExtraM].reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
     const {previsioni:_pArr,sospesi:_sArr}=previsioniMese(m,anno);
     const prev=_pArr.reduce((s,v)=>s+(parseFloat(v.importo)||0),0)+_sArr.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
     const f=fissiM.reduce((s,v)=>s+(parseFloat(v.importo)||0),0);
