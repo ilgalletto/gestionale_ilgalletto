@@ -536,7 +536,6 @@
               <tfoot id="tf-registro"></tfoot>
             </table>
           </div>
-        </div>
         </div><!-- fine cont-tab-registro -->
 
       </div><!-- fine page-contabilita -->
@@ -4104,12 +4103,12 @@ function previsioniMese(mese,anno){
         camera:nomeCameraById(p.cameraId),
         metodoPag:p.metodoPagCheckout||p.metodoPag||'',
       };
-      if(p.checkout < oggi && !p.checkoutConfermato){
+      // Sospeso: checkout passato E saldo non ancora registrato in contabilità
+      if(p.checkout < oggi && !p.contabRegistrato){
         sospesi.push({...voce, stato:'sospeso'});
       } else {
         previsioni.push({...voce,
-          stato:p.checkoutConfermato?'checkout_fatto'
-               :p.checkinConfermato?'in_soggiorno'
+          stato:p.checkinConfermato?'in_soggiorno'
                :new Date(p.checkin)<=new Date()?'attesa_checkin':'futura',
         });
       }
