@@ -210,63 +210,125 @@
     background: var(--border);
   }
 
-  /* ── CARD ──────────────────────────────────────────────────────────────── */
+  /* ── GRIGLIA SCHEDE (proporzione carta di credito) ─────────────────────── */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
   .card {
     background: var(--white);
-    border-radius: 16px;
+    border-radius: 14px;
     border: 1px solid var(--border);
-    margin-bottom: 12px;
     box-shadow: var(--shadow);
     overflow: hidden;
-    transition: box-shadow .2s;
-  }
-  .card:hover { box-shadow: var(--shadow-lg); }
-
-  .card-header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 20px 24px;
+    transition: box-shadow .2s, transform .2s;
     cursor: pointer;
+    /* Proporzione carta di credito: larghezza / altezza = 1.586 */
+    aspect-ratio: 1.586 / 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    position: relative;
     user-select: none;
+  }
+  .card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+  .card.open {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 2px rgba(26,111,168,.2), var(--shadow-lg);
   }
 
   .card-icon {
-    width: 44px; height: 44px;
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    flex-shrink: 0;
-    background: linear-gradient(135deg, var(--blue), var(--teal));
+    font-size: 28px;
+    line-height: 1;
   }
 
   .card-title {
     font-family: 'Cormorant Garamond', serif;
-    font-size: 20px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--night);
-    flex: 1;
+    text-align: center;
+    padding: 0 12px;
+    line-height: 1.3;
   }
 
-  .card-chevron {
-    color: var(--muted);
-    transition: transform .3s ease;
-    flex-shrink: 0;
+  /* Indicatore apertura */
+  .card::after {
+    content: '';
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px; height: 3px;
+    border-radius: 2px;
+    background: var(--border);
+    transition: background .2s;
   }
-  .card.open .card-chevron { transform: rotate(180deg); }
+  .card.open::after { background: var(--blue); }
 
-  .card-body {
+  /* Nasconde chevron e header/body originali — ora usiamo il pannello */
+  .card-header { display: none; }
+  .card-chevron { display: none; }
+
+  /* ── PANNELLO DETTAGLIO (sotto la griglia) ──────────────────────────────── */
+  .card-panel {
     display: none;
-    padding: 0 24px 24px;
+    background: var(--white);
+    border-radius: 16px;
+    border: 1px solid var(--blue);
+    box-shadow: var(--shadow-lg);
+    padding: 24px;
+    margin-top: -6px;
+    margin-bottom: 20px;
     font-size: 15px;
     line-height: 1.75;
     color: #2a3f55;
-    border-top: 1px solid var(--border);
+    animation: slideDown .2s ease;
   }
-  .card.open .card-body { display: block; }
+  .card-panel.open { display: block; }
 
-  .card-body p { margin-top: 16px; }
-  .card-body p:first-child { margin-top: 16px; }
+  .card-panel-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--night);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-panel-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 4px;
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Il corpo del pannello riusa gli stili già esistenti */
+  .card-body {
+    font-size: 15px;
+    line-height: 1.75;
+    color: #2a3f55;
+  }
+  .card-body p { margin-top: 12px; }
 
   /* Info row (WiFi, orari...) */
   .info-row {
@@ -355,12 +417,18 @@
   }
 
   /* ── RESPONSIVE ─────────────────────────────────────────────────────────── */
-  @media (max-width: 480px) {
-    .card-header { padding: 16px 18px; gap: 12px; }
-    .card-body   { padding: 0 18px 20px; }
-    .card-title  { font-size: 17px; }
+  @media (max-width: 600px) {
+    .cards-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .card-title  { font-size: 13px; }
+    .card-icon   { font-size: 24px; }
     .info-label  { min-width: 80px; font-size: 10px; }
     .content     { padding: 36px 14px 60px; }
+  }
+  @media (min-width: 601px) and (max-width: 900px) {
+    .cards-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (min-width: 901px) {
+    .cards-grid { grid-template-columns: repeat(4, 1fr); }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -407,14 +475,46 @@
 
   <div class="section-label" data-i18n="section_label">Informazioni utili</div>
 
-  <!-- CHECK-IN / CHECK-OUT -->
-  <div class="card" id="card-times">
-    <div class="card-header" onclick="toggleCard('card-times')">
+  <!-- GRIGLIA SCHEDE -->
+  <div class="cards-grid">
+    <div class="card" id="card-times" onclick="toggleCard('card-times')">
       <div class="card-icon">🕐</div>
       <div class="card-title" data-i18n="times_title">Orari</div>
-      <svg class="card-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M6 9l6 6 6-6"/>
-      </svg>
+    </div>
+    <div class="card" id="card-wifi" onclick="toggleCard('card-wifi')">
+      <div class="card-icon">📶</div>
+      <div class="card-title">Wi-Fi</div>
+    </div>
+    <div class="card" id="card-access" onclick="toggleCard('card-access')">
+      <div class="card-icon">🔑</div>
+      <div class="card-title" data-i18n="access_title">Accesso e camera</div>
+    </div>
+    <div class="card" id="card-breakfast" onclick="toggleCard('card-breakfast')">
+      <div class="card-icon">☕</div>
+      <div class="card-title" data-i18n="bfast_title">Colazione</div>
+    </div>
+    <div class="card" id="card-parking" onclick="toggleCard('card-parking')">
+      <div class="card-icon">🚗</div>
+      <div class="card-title" data-i18n="parking_title">Parcheggio</div>
+    </div>
+    <div class="card" id="card-rules" onclick="toggleCard('card-rules')">
+      <div class="card-icon">📋</div>
+      <div class="card-title" data-i18n="rules_title">Regole della casa</div>
+    </div>
+    <div class="card" id="card-area" onclick="toggleCard('card-area')">
+      <div class="card-icon">🌊</div>
+      <div class="card-title" data-i18n="area_title">Dintorni e consigli</div>
+    </div>
+    <div class="card" id="card-contacts" onclick="toggleCard('card-contacts')">
+      <div class="card-icon">📞</div>
+      <div class="card-title" data-i18n="contacts_title">Contatti</div>
+    </div>
+  </div>
+
+  <!-- PANNELLI DETTAGLIO -->
+  <div class="card-panel" id="panel-times">
+    <div class="card-panel-title">🕐 <span data-i18n="times_title">Orari</span>
+      <button class="card-panel-close" onclick="toggleCard('card-times')">✕</button>
     </div>
     <div class="card-body">
       <div class="info-row">
@@ -432,14 +532,9 @@
     </div>
   </div>
 
-  <!-- WIFI -->
-  <div class="card" id="card-wifi">
-    <div class="card-header" onclick="toggleCard('card-wifi')">
-      <div class="card-icon">📶</div>
-      <div class="card-title">Wi-Fi</div>
-      <svg class="card-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M6 9l6 6 6-6"/>
-      </svg>
+  <div class="card-panel" id="panel-wifi">
+    <div class="card-panel-title">📶 Wi-Fi
+      <button class="card-panel-close" onclick="toggleCard('card-wifi')">✕</button>
     </div>
     <div class="card-body">
       <div class="info-row">
@@ -453,56 +548,36 @@
     </div>
   </div>
 
-  <!-- ACCESSO -->
-  <div class="card" id="card-access">
-    <div class="card-header" onclick="toggleCard('card-access')">
-      <div class="card-icon">🔑</div>
-      <div class="card-title" data-i18n="access_title">Accesso e camera</div>
-      <svg class="card-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M6 9l6 6 6-6"/>
-      </svg>
+  <div class="card-panel" id="panel-access">
+    <div class="card-panel-title">🔑 <span data-i18n="access_title">Accesso e camera</span>
+      <button class="card-panel-close" onclick="toggleCard('card-access')">✕</button>
     </div>
     <div class="card-body">
       <p data-i18n="access_text">Al momento del check-in vi consegniamo le chiavi personalmente. Al check-out lasciate le chiavi nella cassetta all'ingresso oppure consegnatele direttamente.</p>
     </div>
   </div>
 
-  <!-- COLAZIONE -->
-  <div class="card" id="card-breakfast">
-    <div class="card-header" onclick="toggleCard('card-breakfast')">
-      <div class="card-icon">☕</div>
-      <div class="card-title" data-i18n="bfast_title">Colazione</div>
-      <svg class="card-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M6 9l6 6 6-6"/>
-      </svg>
+  <div class="card-panel" id="panel-breakfast">
+    <div class="card-panel-title">☕ <span data-i18n="bfast_title">Colazione</span>
+      <button class="card-panel-close" onclick="toggleCard('card-breakfast')">✕</button>
     </div>
     <div class="card-body">
       <p data-i18n="bfast_text">La colazione è inclusa nel soggiorno e viene servita in terrazza dalle 08:00 alle 10:00. In caso di partenza anticipata, avvisate la sera prima e predisponiamo un cestino da asporto.</p>
     </div>
   </div>
 
-  <!-- PARCHEGGIO -->
-  <div class="card" id="card-parking">
-    <div class="card-header" onclick="toggleCard('card-parking')">
-      <div class="card-icon">🚗</div>
-      <div class="card-title" data-i18n="parking_title">Parcheggio</div>
-      <svg class="card-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M6 9l6 6 6-6"/>
-      </svg>
+  <div class="card-panel" id="panel-parking">
+    <div class="card-panel-title">🚗 <span data-i18n="parking_title">Parcheggio</span>
+      <button class="card-panel-close" onclick="toggleCard('card-parking')">✕</button>
     </div>
     <div class="card-body">
       <p data-i18n="parking_text">Parcheggio libero disponibile lungo Viale Nazario Sauro e nelle vie adiacenti. In alta stagione consigliamo di arrivare entro le 18:00 per trovare posto facilmente.</p>
     </div>
   </div>
 
-  <!-- REGOLE -->
-  <div class="card" id="card-rules">
-    <div class="card-header" onclick="toggleCard('card-rules')">
-      <div class="card-icon">📋</div>
-      <div class="card-title" data-i18n="rules_title">Regole della casa</div>
-      <svg class="card-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M6 9l6 6 6-6"/>
-      </svg>
+  <div class="card-panel" id="panel-rules">
+    <div class="card-panel-title">📋 <span data-i18n="rules_title">Regole della casa</span>
+      <button class="card-panel-close" onclick="toggleCard('card-rules')">✕</button>
     </div>
     <div class="card-body">
       <ul class="custom-list">
@@ -515,14 +590,9 @@
     </div>
   </div>
 
-  <!-- DINTORNI -->
-  <div class="card" id="card-area">
-    <div class="card-header" onclick="toggleCard('card-area')">
-      <div class="card-icon">🌊</div>
-      <div class="card-title" data-i18n="area_title">Dintorni e consigli</div>
-      <svg class="card-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M6 9l6 6 6-6"/>
-      </svg>
+  <div class="card-panel" id="panel-area">
+    <div class="card-panel-title">🌊 <span data-i18n="area_title">Dintorni e consigli</span>
+      <button class="card-panel-close" onclick="toggleCard('card-area')">✕</button>
     </div>
     <div class="card-body">
       <p data-i18n="area_intro">Porto San Giorgio è a pochi passi dal mare e dal centro storico. Ecco i nostri consigli:</p>
@@ -536,14 +606,9 @@
     </div>
   </div>
 
-  <!-- CONTATTI -->
-  <div class="card" id="card-contacts">
-    <div class="card-header" onclick="toggleCard('card-contacts')">
-      <div class="card-icon">📞</div>
-      <div class="card-title" data-i18n="contacts_title">Contatti</div>
-      <svg class="card-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M6 9l6 6 6-6"/>
-      </svg>
+  <div class="card-panel" id="panel-contacts">
+    <div class="card-panel-title">📞 <span data-i18n="contacts_title">Contatti</span>
+      <button class="card-panel-close" onclick="toggleCard('card-contacts')">✕</button>
     </div>
     <div class="card-body">
       <div class="info-row">
@@ -731,10 +796,27 @@ function setLang(lang) {
   });
 }
 
-// ── ACCORDION ───────────────────────────────────────────────────────────────
+// ── TOGGLE SCHEDE ───────────────────────────────────────────────────────────
 function toggleCard(id) {
-  const card = document.getElementById(id);
-  card.classList.toggle('open');
+  const cardId = id;                          // es. 'card-times'
+  const panelId = id.replace('card-', 'panel-'); // es. 'panel-times'
+  const card  = document.getElementById(cardId);
+  const panel = document.getElementById(panelId);
+  if (!card || !panel) return;
+
+  const isOpen = card.classList.contains('open');
+
+  // Chiudi tutte le altre
+  document.querySelectorAll('.card.open').forEach(c => c.classList.remove('open'));
+  document.querySelectorAll('.card-panel.open').forEach(p => p.classList.remove('open'));
+
+  // Se era chiusa, aprila
+  if (!isOpen) {
+    card.classList.add('open');
+    panel.classList.add('open');
+    // Scroll morbido al pannello
+    setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+  }
 }
 
 // Init
