@@ -29,37 +29,36 @@
   }
 
   /* ── LANG SWITCHER ─────────────────────────────────────────────────────── */
-  .lang-bar {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 100;
-    display: flex;
-    justify-content: flex-end;
-    padding: 10px 20px;
-    background: rgba(247,243,238,.92);
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--border);
-  }
   .lang-btns {
     display: flex;
-    gap: 4px;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 28px;
+    position: relative;
+    z-index: 1;
   }
   .lang-btn {
-    padding: 5px 10px;
-    border: 1.5px solid var(--border);
-    border-radius: 20px;
-    background: transparent;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--muted);
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    border: 2.5px solid rgba(255,255,255,.25);
+    background: rgba(255,255,255,.12);
+    font-size: 26px;
+    line-height: 1;
     cursor: pointer;
     transition: all .2s;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
   }
-  .lang-btn.active, .lang-btn:hover {
-    background: var(--blue);
-    border-color: var(--blue);
-    color: #fff;
+  .lang-btn:hover {
+    border-color: rgba(255,255,255,.7);
+    background: rgba(255,255,255,.25);
+    transform: scale(1.1);
+  }
+  .lang-btn.active {
+    border-color: #fff;
+    background: rgba(255,255,255,.3);
+    box-shadow: 0 0 0 3px rgba(255,255,255,.2);
+    transform: scale(1.08);
   }
 
   /* ── HERO ──────────────────────────────────────────────────────────────── */
@@ -70,7 +69,7 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 80px 24px 0;
+    padding: 40px 24px 0;
     background: linear-gradient(175deg, #0D2F5A 0%, #1A6FA8 55%, #2AA1A0 100%);
     position: relative;
     overflow: hidden;
@@ -371,18 +370,15 @@
 </head>
 <body>
 
-<!-- LANG BAR -->
-<div class="lang-bar">
-  <div class="lang-btns">
-    <button class="lang-btn active" onclick="setLang('it')">IT</button>
-    <button class="lang-btn" onclick="setLang('en')">EN</button>
-    <button class="lang-btn" onclick="setLang('fr')">FR</button>
-    <button class="lang-btn" onclick="setLang('es')">ES</button>
-  </div>
-</div>
-
 <!-- HERO -->
 <section class="hero">
+  <!-- BANDIERE LINGUA -->
+  <div class="lang-btns">
+    <button class="lang-btn active" onclick="setLang('it')" title="Italiano">🇮🇹</button>
+    <button class="lang-btn" onclick="setLang('en')" title="English">🇬🇧</button>
+    <button class="lang-btn" onclick="setLang('fr')" title="Français">🇫🇷</button>
+    <button class="lang-btn" onclick="setLang('es')" title="Español">🇪🇸</button>
+  </div>
   <img src="https://raw.githubusercontent.com/ilgalletto/gestionale_ilgalletto/main/logo.jpg"
        alt="B&B Il Galletto" class="hero-logo">
   <div class="hero-eyebrow" data-i18n="eyebrow">Porto San Giorgio · Adriatico</div>
@@ -722,7 +718,8 @@ function setLang(lang) {
 
   // Aggiorna bottoni
   document.querySelectorAll('.lang-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
+    const btnLang = btn.getAttribute('onclick').match(/setLang\('(\w+)'\)/)?.[1];
+    btn.classList.toggle('active', btnLang === lang);
   });
 
   // Aggiorna testi
