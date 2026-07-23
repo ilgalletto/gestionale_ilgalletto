@@ -5255,15 +5255,13 @@ async function salvaSezioneGuest(){
   let contenuto = {it: contenuto_it, en: contenuto_it, fr: contenuto_it, es: contenuto_it};
 
   try {
-    const prompt = `Sei un traduttore professionale per un B&B italiano.
-Traduci i seguenti testi dall'italiano in inglese (en), francese (fr) e spagnolo (es).
-Rispondi SOLO con un oggetto JSON valido, senza markdown, senza backtick, senza spiegazioni.
-
-TITOLO IT: ${titolo_it}
-CONTENUTO IT: ${contenuto_it}
-
-Formato risposta:
-{"titolo":{"en":"...","fr":"...","es":"..."},"contenuto":{"en":"...","fr":"...","es":"..."}}`;
+    const prompt = 'Sei un traduttore professionale per un B&B italiano.\n' +
+      'Traduci i seguenti testi dall\'italiano in inglese (en), francese (fr) e spagnolo (es).\n' +
+      'Rispondi SOLO con un oggetto JSON valido, senza markdown, senza commenti.\n\n' +
+      'TITOLO IT: ' + titolo_it + '\n' +
+      'CONTENUTO IT: ' + contenuto_it + '\n\n' +
+      'Formato risposta (solo JSON puro):\n' +
+      '{"titolo":{"en":"...","fr":"...","es":"..."},"contenuto":{"en":"...","fr":"...","es":"..."}}';
 
     const resp = await fetch('https://santhropic-proxy.nderobertis.workers.dev', {
       method: 'POST',
@@ -5364,10 +5362,10 @@ async function salvaGuestApp(){
         body: JSON.stringify({
           model:'claude-sonnet-4-6', max_tokens:500,
           messages:[{role:'user', content:
-            `Traduci questo messaggio di benvenuto per un B&B dall'italiano in inglese (en), francese (fr) e spagnolo (es).
-Rispondi SOLO con JSON valido, senza markdown.
-IT: ${welcome_it}
-Formato: {"en":"...","fr":"...","es":"..."}`
+            'Traduci questo messaggio di benvenuto per un B&B dall\'italiano in inglese (en), francese (fr) e spagnolo (es).\n' +
+            'Rispondi SOLO con JSON valido, senza markdown, niente altro.\n' +
+            'IT: ' + welcome_it + '\n' +
+            'Formato: {"en":"...","fr":"...","es":"..."}'
           }]
         })
       });
