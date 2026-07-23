@@ -5406,7 +5406,7 @@ function calcolaNotti(ci,co){return Math.round((new Date(co)-new Date(ci))/(1000
 function formatDate(s){if(!s)return'—';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`}
 function nomeCameraById(id){const c=allCamere.find(x=>x.id===id);return c?`${c.numero}${c.nome?' - '+c.nome:''}`:'—'}
 
-let toastTimer;
+var toastTimer;
 function showToast(msg,type=''){
   const t=document.getElementById('toast');
   t.textContent=msg;t.className='show'+(type?' '+type:'');
