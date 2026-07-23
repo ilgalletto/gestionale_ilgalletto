@@ -5265,7 +5265,7 @@ CONTENUTO IT: ${contenuto_it}
 Formato risposta:
 {"titolo":{"en":"...","fr":"...","es":"..."},"contenuto":{"en":"...","fr":"...","es":"..."}}`;
 
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch('https://santhropic-proxy.nderobertis.workers.dev', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
@@ -5358,7 +5358,7 @@ async function salvaGuestApp(){
   if(welcome_it){
     try{
       showToast('⏳ Traduzione messaggio di benvenuto...','');
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      const resp = await fetch('https://santhropic-proxy.nderobertis.workers.dev', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
