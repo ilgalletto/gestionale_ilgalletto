@@ -817,14 +817,14 @@ async function loadGuestApp() {
     if (!snap.exists) { setLang('it'); return; }
     guestData = snap.data();
 
-    // Aggiorna messaggio di benvenuto
+    // Aggiorna messaggio di benvenuto nell'hero
     const lang = currentLang || 'it';
     if (guestData.welcome?.[lang]) {
       const el = document.querySelector('[data-i18n="welcome"]');
       if (el) el.textContent = guestData.welcome[lang];
     }
 
-    // Aggiorna WiFi nella sezione WiFi hardcoded
+    // Aggiorna WiFi (elementi hardcoded nel panel-wifi)
     if (guestData.wifi?.ssid) {
       const ssid = document.getElementById('wifi-ssid');
       if (ssid) ssid.textContent = guestData.wifi.ssid;
@@ -834,16 +834,21 @@ async function loadGuestApp() {
       if (pass) pass.textContent = guestData.wifi.pass;
     }
 
-    // Aggiorna telefono/email contatti
+    // Aggiorna contatti (elementi hardcoded nel panel-contacts e footer)
     if (guestData.telefono) {
-      const tel = document.getElementById('contatto-tel');
-      if (tel) { tel.href = 'tel:'+guestData.telefono; tel.textContent = guestData.telefono; }
-      const wa = document.getElementById('contatto-wa');
-      if (wa) wa.href = 'https://wa.me/'+guestData.telefono.replace(/\D/g,'');
+      document.querySelectorAll('[id="contatto-tel"], .footer-tel').forEach(el => {
+        el.href = 'tel:' + guestData.telefono;
+        el.textContent = guestData.telefono;
+      });
+      document.querySelectorAll('[id="contatto-wa"], .footer-wa').forEach(el => {
+        el.href = 'https://wa.me/' + guestData.telefono.replace(/[^0-9]/g,'');
+      });
     }
     if (guestData.email) {
-      const em = document.getElementById('contatto-email');
-      if (em) { em.href = 'mailto:'+guestData.email; em.textContent = guestData.email; }
+      document.querySelectorAll('[id="contatto-email"], .footer-email').forEach(el => {
+        el.href = 'mailto:' + guestData.email;
+        el.textContent = guestData.email;
+      });
     }
 
     // Renderizza le sezioni dinamiche
@@ -872,6 +877,18 @@ function renderDynamicSections(lang) {
       <div class="card-icon">${s.icona || '📄'}</div>
       <div class="card-title">${s.titolo?.[lang] || s.titolo?.it || ''}</div>
     </div>`).join('');
+
+  // Aggiunge schede speciali WiFi e Contatti sempre in fondo
+  const specialCards = `
+    <div class="card" id="dcard-wifi" onclick="toggleDCard('wifi')">
+      <div class="card-icon">📶</div>
+      <div class="card-title">Wi-Fi</div>
+    </div>
+    <div class="card" id="dcard-contacts" onclick="toggleDCard('contacts')">
+      <div class="card-icon">📞</div>
+      <div class="card-title" data-i18n="contacts_title">Contatti</div>
+    </div>`;
+  grid.innerHTML += specialCards;
 
   // Renderizza pannelli
   panelContainer.innerHTML = sezioni.map(s => {
@@ -913,7 +930,9 @@ function renderDynamicSections(lang) {
 
 function toggleDCard(id) {
   const card  = document.getElementById('dcard-' + id);
-  const panel = document.getElementById('dpanel-' + id);
+  // Per wifi e contacts usa i pannelli hardcoded
+  const panelId = (id === 'wifi' || id === 'contacts') ? 'panel-' + id : 'dpanel-' + id;
+  const panel = document.getElementById(panelId);
   if (!card || !panel) return;
 
   const isOpen = card.classList.contains('open');
@@ -929,11 +948,18 @@ function toggleDCard(id) {
   }
 }
 
-// Quando si cambia lingua, ri-renderizza le sezioni dinamiche
+// Quando si cambia lingua, ri-renderizza le sezioni dinamiche e aggiorna il benvenuto
 const _setLangOrig = setLang;
 setLang = function(lang) {
   _setLangOrig(lang);
-  if (guestData) renderDynamicSections(lang);
+  if (guestData) {
+    renderDynamicSections(lang);
+    // Aggiorna benvenuto nell'hero
+    if (guestData.welcome?.[lang]) {
+      const el = document.querySelector('[data-i18n="welcome"]');
+      if (el) el.textContent = guestData.welcome[lang];
+    }
+  }
 };
 
 // Init
