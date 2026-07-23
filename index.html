@@ -282,6 +282,7 @@
       <button class="nav-item proprietario-only admin-show no-visual" onclick="navTo('camere',this)"><span class="nav-icon">🛏️</span><span>Camere</span></button>
       <button class="nav-item admin-only" onclick="navTo('impostazioni',this)"><span class="nav-icon">⚙️</span><span>Impostazioni</span></button>
       <button class="nav-item proprietario-only admin-show" onclick="navTo('struttura',this)"><span class="nav-icon">🏠</span><span>Struttura</span></button>
+      <button class="nav-item proprietario-only admin-show" onclick="navTo('guest',this)"><span class="nav-icon">🌐</span><span>Guest App</span></button>
       <!-- Guida in fondo, separata -->
       <div style="flex:1"></div>
       <div style="border-top:1px solid var(--border);margin:8px 0"></div>
@@ -1375,6 +1376,143 @@
         </div>
       </div><!-- fine page-struttura -->
 
+      <!-- GUEST APP -->
+      <div class="page proprietario-only admin-show" id="page-guest">
+        <div class="toolbar">
+          <div class="page-title" style="margin:0">🌐 Guest App</div>
+          <div style="display:flex;gap:8px" class="no-print">
+            <a href="guest.html" target="_blank" class="btn btn-outline btn-sm">🔗 Apri Guest App ↗</a>
+            <button class="btn btn-sm" onclick="copiaLinkGuest()" style="background:#EEF7F0;color:#2a7a3b;border:1px solid #2a7a3b33">📋 Copia link</button>
+            <button class="btn btn-primary btn-sm" onclick="salvaGuestApp()">💾 Salva modifiche</button>
+          </div>
+        </div>
+
+        <div style="background:#EEF7F0;border-left:4px solid #2a7a3b;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#2a7a3b;margin-bottom:24px">
+          🌐 Condividi il link <strong>guest.html</strong> con gli ospiti. Tutte le modifiche fatte qui si riflettono automaticamente nella pagina pubblica.
+        </div>
+
+        <!-- SEZIONI ESISTENTI -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div style="font-weight:700;font-size:15px;color:var(--accent)">📋 Sezioni della Guest App</div>
+          <button class="btn btn-primary btn-sm no-print" onclick="apriModalSezioneGuest()">+ Nuova sezione</button>
+        </div>
+
+        <div id="guest-sezioni-lista" style="margin-bottom:32px"></div>
+
+        <!-- IMPOSTAZIONI GENERALI -->
+        <div style="font-weight:700;font-size:15px;color:var(--accent);margin-bottom:16px">⚙️ Impostazioni generali</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;max-width:600px;box-shadow:var(--shadow)">
+          <div class="form-group">
+            <label class="form-label">Messaggio di benvenuto (IT)</label>
+            <textarea class="form-control" id="guest-welcome-it" rows="2" placeholder="Benvenuti. Siamo felici di avervi con noi..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Messaggio di benvenuto (EN)</label>
+            <textarea class="form-control" id="guest-welcome-en" rows="2" placeholder="Welcome. We're so glad you're staying with us..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Messaggio di benvenuto (FR)</label>
+            <textarea class="form-control" id="guest-welcome-fr" rows="2" placeholder="Bienvenue. Nous sommes ravis de vous accueillir..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Messaggio di benvenuto (ES)</label>
+            <textarea class="form-control" id="guest-welcome-es" rows="2" placeholder="Bienvenidos. Estamos encantados de recibirlos..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nome rete WiFi</label>
+            <input class="form-control" id="guest-wifi-ssid" placeholder="IlGalletto_Guest">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password WiFi</label>
+            <input class="form-control" id="guest-wifi-pass" placeholder="password">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Telefono di contatto</label>
+            <input class="form-control" id="guest-telefono" placeholder="+39 342 106 3991">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email di contatto</label>
+            <input class="form-control" id="guest-email" placeholder="bbgalletto@gmail.com">
+          </div>
+        </div>
+
+      </div><!-- fine page-guest -->
+
+      <!-- MODAL SEZIONE GUEST -->
+      <div class="modal-overlay" id="modal-sezione-guest">
+        <div class="modal modal-wide" style="max-width:680px">
+          <div class="modal-title" id="modal-guest-title">Nuova sezione</div>
+          <input type="hidden" id="gs-id">
+
+          <div class="form-row">
+            <div class="form-group" style="flex:0 0 80px">
+              <label class="form-label">Icona</label>
+              <input class="form-control" id="gs-icona" placeholder="🔑" style="font-size:22px;text-align:center" maxlength="4">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tipo contenuto</label>
+              <select class="form-control" id="gs-tipo" onchange="aggiornaFormGuest()">
+                <option value="testo">Testo libero</option>
+                <option value="lista">Lista puntata</option>
+                <option value="info">Righe info (etichetta + valore)</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:0 0 100px">
+              <label class="form-label">Visibile</label>
+              <select class="form-control" id="gs-visibile">
+                <option value="1">✅ Sì</option>
+                <option value="0">❌ No</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- TITOLI -->
+          <div class="section-divider">Titolo sezione</div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">🇮🇹 Italiano *</label><input class="form-control" id="gs-titolo-it" placeholder="es. Orari"></div>
+            <div class="form-group"><label class="form-label">🇬🇧 English</label><input class="form-control" id="gs-titolo-en" placeholder="es. Hours"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">🇫🇷 Français</label><input class="form-control" id="gs-titolo-fr" placeholder="es. Horaires"></div>
+            <div class="form-group"><label class="form-label">🇪🇸 Español</label><input class="form-control" id="gs-titolo-es" placeholder="es. Horarios"></div>
+          </div>
+
+          <!-- CONTENUTO TESTO -->
+          <div id="gs-content-testo">
+            <div class="section-divider">Contenuto</div>
+            <div class="form-group"><label class="form-label">🇮🇹 Testo italiano *</label><textarea class="form-control" id="gs-testo-it" rows="3" placeholder="Testo informativo..."></textarea></div>
+            <div class="form-group"><label class="form-label">🇬🇧 English text</label><textarea class="form-control" id="gs-testo-en" rows="3"></textarea></div>
+            <div class="form-group"><label class="form-label">🇫🇷 Texte français</label><textarea class="form-control" id="gs-testo-fr" rows="3"></textarea></div>
+            <div class="form-group"><label class="form-label">🇪🇸 Texto español</label><textarea class="form-control" id="gs-testo-es" rows="3"></textarea></div>
+          </div>
+
+          <!-- CONTENUTO LISTA -->
+          <div id="gs-content-lista" style="display:none">
+            <div class="section-divider">Voci lista (una per riga)</div>
+            <div class="form-group"><label class="form-label">🇮🇹 Voci italiano *</label><textarea class="form-control" id="gs-lista-it" rows="4" placeholder="Voce 1&#10;Voce 2&#10;Voce 3"></textarea></div>
+            <div class="form-group"><label class="form-label">🇬🇧 English items</label><textarea class="form-control" id="gs-lista-en" rows="4"></textarea></div>
+            <div class="form-group"><label class="form-label">🇫🇷 Éléments français</label><textarea class="form-control" id="gs-lista-fr" rows="4"></textarea></div>
+            <div class="form-group"><label class="form-label">🇪🇸 Elementos español</label><textarea class="form-control" id="gs-lista-es" rows="4"></textarea></div>
+          </div>
+
+          <!-- CONTENUTO INFO ROWS -->
+          <div id="gs-content-info" style="display:none">
+            <div class="section-divider">Righe informazione</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Formato: <code>Etichetta | Valore</code> — una per riga. Es: <code>Check-in | 14:00 – 20:00</code></div>
+            <div class="form-group"><label class="form-label">🇮🇹 Righe italiano *</label><textarea class="form-control" id="gs-info-it" rows="4" placeholder="Check-in | 14:00 – 20:00&#10;Check-out | entro le 11:00"></textarea></div>
+            <div class="form-group"><label class="form-label">🇬🇧 English rows</label><textarea class="form-control" id="gs-info-en" rows="4"></textarea></div>
+            <div class="form-group"><label class="form-label">🇫🇷 Lignes français</label><textarea class="form-control" id="gs-info-fr" rows="4"></textarea></div>
+            <div class="form-group"><label class="form-label">🇪🇸 Filas español</label><textarea class="form-control" id="gs-info-es" rows="4"></textarea></div>
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal('modal-sezione-guest')">Annulla</button>
+            <button class="btn btn-danger btn-sm" id="btn-elimina-sezione" style="display:none;margin-right:auto" onclick="eliminaSezioneGuest()">🗑️ Elimina</button>
+            <button class="btn btn-primary" onclick="salvaSezioneGuest()">Salva sezione</button>
+          </div>
+        </div>
+      </div>
+
       <!-- IMPOSTAZIONI -->
       <div class="page admin-only" id="page-impostazioni">
         <div class="page-title">Impostazioni</div>
@@ -1783,8 +1921,8 @@ function showApp(){
 
   // Permessi per ruolo: quali voci sidebar sono visibili
   const permessi = {
-    admin:        ['dashboard','calendario','prenotazioni','clienti','stampa','questura','contabilita','camere','impostazioni'],
-    proprietario: ['dashboard','calendario','prenotazioni','clienti','stampa','questura','contabilita','camere'],
+    admin:        ['dashboard','calendario','prenotazioni','clienti','stampa','questura','contabilita','camere','impostazioni','guest'],
+    proprietario: ['dashboard','calendario','prenotazioni','clienti','stampa','questura','contabilita','camere','guest'],
     contabile:    ['dashboard','calendario','prenotazioni','contabilita'],
     visual:       ['dashboard','calendario','prenotazioni'],
   };
@@ -1878,6 +2016,7 @@ function navTo(page,btn){
   if(page==='impostazioni'){renderCanali();renderTipologie();}
   if(page==='statistiche'){initStatistiche();}
   if(page==='struttura'){initStruttura();}
+  if(page==='guest'){initGuestApp();}
 }
 
 // ===== DASHBOARD =====
@@ -4952,6 +5091,328 @@ function eliminaStoricoQuestura(i) {
   storicoQuestura.splice(i, 1);
   localStorage.setItem('questura_storico', JSON.stringify(storicoQuestura));
   renderStoricoQuestura();
+}
+
+// ===== GUEST APP =====
+let allSezioniGuest = [];
+let editingGuestId = null;
+
+const SEZIONI_DEFAULT = [
+  {
+    id:'s1', icona:'🕐', ordine:0, visibile:true, tipo:'info',
+    titolo:{it:'Orari',en:'Hours',fr:'Horaires',es:'Horarios'},
+    contenuto:{
+      it:'Check-in | 14:00 – 20:00
+Check-out | entro le 11:00
+Colazione | 08:00 – 10:00 · in terrazza',
+      en:'Check-in | 14:00 – 20:00
+Check-out | by 11:00
+Breakfast | 08:00 – 10:00 · on the terrace',
+      fr:'Check-in | 14:00 – 20:00
+Check-out | avant 11h00
+Petit-déjeuner | 08h00 – 10h00 · en terrasse',
+      es:'Check-in | 14:00 – 20:00
+Check-out | antes de las 11:00
+Desayuno | 08:00 – 10:00 · en la terraza',
+    }
+  },
+  {
+    id:'s2', icona:'🔑', ordine:1, visibile:true, tipo:'testo',
+    titolo:{it:'Accesso e camera',en:'Access & room',fr:'Accès et chambre',es:'Acceso y habitación'},
+    contenuto:{
+      it:'Al momento del check-in vi consegniamo le chiavi personalmente. Al check-out lasciate le chiavi nella cassetta all'ingresso oppure consegnatele direttamente.',
+      en:'We will personally hand you the keys at check-in. At check-out, please leave the keys in the box at the entrance or hand them to us directly.',
+      fr:'Nous vous remettrons personnellement les clés à l'arrivée. Au départ, laissez les clés dans la boîte à l'entrée.',
+      es:'Les entregaremos las llaves personalmente en el check-in. Al hacer el check-out, dejen las llaves en el buzón.',
+    }
+  },
+  {
+    id:'s3', icona:'☕', ordine:2, visibile:true, tipo:'testo',
+    titolo:{it:'Colazione',en:'Breakfast',fr:'Petit-déjeuner',es:'Desayuno'},
+    contenuto:{
+      it:'La colazione è inclusa nel soggiorno e viene servita in terrazza dalle 08:00 alle 10:00. In caso di partenza anticipata, avvisate la sera prima.',
+      en:'Breakfast is included and served on the terrace from 08:00 to 10:00. If you have an early departure, let us know the night before.',
+      fr:'Le petit-déjeuner est inclus et servi en terrasse de 08h00 à 10h00. En cas de départ anticipé, prévenez-nous la veille.',
+      es:'El desayuno está incluido y se sirve en la terraza de 08:00 a 10:00. En caso de salida anticipada, avísennos la noche anterior.',
+    }
+  },
+  {
+    id:'s4', icona:'🚗', ordine:3, visibile:true, tipo:'testo',
+    titolo:{it:'Parcheggio',en:'Parking',fr:'Stationnement',es:'Aparcamiento'},
+    contenuto:{
+      it:'Parcheggio libero disponibile lungo Viale Nazario Sauro e nelle vie adiacenti.',
+      en:'Free street parking is available along Viale Nazario Sauro and nearby streets.',
+      fr:'Parking gratuit disponible le long du Viale Nazario Sauro et dans les rues adjacentes.',
+      es:'Aparcamiento gratuito disponible en el Viale Nazario Sauro y las calles adyacentes.',
+    }
+  },
+  {
+    id:'s5', icona:'📋', ordine:4, visibile:true, tipo:'lista',
+    titolo:{it:'Regole della casa',en:'House rules',fr:'Règles de la maison',es:'Normas de la casa'},
+    contenuto:{
+      it:'Silenzio dalle 23:00 alle 08:00
+Vietato fumare all'interno della struttura
+Animali domestici non ammessi
+Non lasciare asciugamani bagnati sul letto
+Spegnere aria condizionata e luci quando si esce',
+      en:'Quiet hours from 23:00 to 08:00
+No smoking inside the property
+Pets are not allowed
+Please do not leave wet towels on the bed
+Turn off air conditioning and lights when leaving',
+      fr:'Silence de 23h00 à 08h00
+Il est interdit de fumer à l'intérieur
+Les animaux de compagnie ne sont pas admis
+Ne laissez pas de serviettes mouillées sur le lit
+Éteignez la climatisation et les lumières en quittant',
+      es:'Silencio de 23:00 a 08:00
+Prohibido fumar dentro de la propiedad
+No se admiten animales de compañía
+No dejen toallas mojadas sobre la cama
+Apaguen el aire acondicionado y las luces al salir',
+    }
+  },
+  {
+    id:'s6', icona:'🌊', ordine:5, visibile:true, tipo:'lista',
+    titolo:{it:'Dintorni e consigli',en:'Area & tips',fr:'Environs et conseils',es:'Alrededores y consejos'},
+    contenuto:{
+      it:'🏖️ Spiaggia libera — a 200 metri dalla struttura
+🐟 Ristorante Il Porto — pesce fresco, sul lungomare
+🏛️ Centro storico di Fermo — 20 minuti in auto
+🍦 Gelateria Artigiana Giuseppina — in via Roma
+🚲 Pista ciclabile — percorre tutto il lungomare',
+      en:'🏖️ Free beach — 200 metres from the property
+🐟 Restaurant Il Porto — fresh seafood on the promenade
+🏛️ Historic centre of Fermo — 20 minutes by car
+🍦 Gelateria Artigiana Giuseppina — on via Roma
+🚲 Cycling path — runs along the entire seafront',
+      fr:'🏖️ Plage libre — à 200 mètres de la structure
+🐟 Restaurant Il Porto — poisson frais sur le front de mer
+🏛️ Centre historique de Fermo — 20 minutes en voiture
+🍦 Gelateria Artigiana Giuseppina — via Roma
+🚲 Piste cyclable — longe tout le bord de mer',
+      es:'🏖️ Playa pública — a 200 metros de la propiedad
+🐟 Restaurante Il Porto — pescado fresco en el paseo marítimo
+🏛️ Centro histórico de Fermo — 20 minutos en coche
+🍦 Gelateria Artigiana Giuseppina — en la calle Roma
+🚲 Carril bici — recorre todo el paseo marítimo',
+    }
+  },
+];
+
+async function initGuestApp(){
+  try{
+    const snap = await db.collection('impostazioni').doc('guest_app').get();
+    if(snap.exists){
+      const d = snap.data();
+      allSezioniGuest = d.sezioni || SEZIONI_DEFAULT;
+      document.getElementById('guest-welcome-it').value = d.welcome?.it || '';
+      document.getElementById('guest-welcome-en').value = d.welcome?.en || '';
+      document.getElementById('guest-welcome-fr').value = d.welcome?.fr || '';
+      document.getElementById('guest-welcome-es').value = d.welcome?.es || '';
+      document.getElementById('guest-wifi-ssid').value  = d.wifi?.ssid || '';
+      document.getElementById('guest-wifi-pass').value  = d.wifi?.pass || '';
+      document.getElementById('guest-telefono').value   = d.telefono || '';
+      document.getElementById('guest-email').value      = d.email || '';
+    } else {
+      allSezioniGuest = [...SEZIONI_DEFAULT];
+    }
+  } catch(e){ allSezioniGuest = [...SEZIONI_DEFAULT]; }
+  renderSezioniGuest();
+}
+
+function renderSezioniGuest(){
+  const el = document.getElementById('guest-sezioni-lista');
+  if(!el) return;
+  if(!allSezioniGuest.length){
+    el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-muted)">Nessuna sezione. Clicca "+ Nuova sezione".</div>';
+    return;
+  }
+  const sorted = [...allSezioniGuest].sort((a,b)=>a.ordine-b.ordine);
+  el.innerHTML = sorted.map((s,i)=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;
+      background:var(--surface);border:1px solid var(--border);border-radius:10px;
+      margin-bottom:8px;box-shadow:var(--shadow)">
+      <span style="font-size:22px;min-width:32px;text-align:center">${s.icona||'📄'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:14px;color:var(--text)">${s.titolo?.it||'—'}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">
+          ${s.tipo==='info'?'Righe info':s.tipo==='lista'?'Lista puntata':'Testo libero'}
+          &nbsp;·&nbsp;
+          <span style="color:${s.visibile?'#2a7a3b':'#C0392B'}">${s.visibile?'✅ Visibile':'❌ Nascosta'}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0" class="no-print">
+        ${i>0?`<button class="btn btn-sm btn-outline" style="padding:4px 8px" onclick="spostaSezioneGuest('${s.id}',-1)">▲</button>`:'<div style="width:36px"></div>'}
+        ${i<sorted.length-1?`<button class="btn btn-sm btn-outline" style="padding:4px 8px" onclick="spostaSezioneGuest('${s.id}',1)">▼</button>`:'<div style="width:36px"></div>'}
+        <button class="btn btn-sm btn-outline" onclick="editSezioneGuest('${s.id}')">✏️ Modifica</button>
+      </div>
+    </div>`).join('');
+}
+
+function apriModalSezioneGuest(id=null){
+  editingGuestId = id;
+  document.getElementById('modal-guest-title').textContent = id ? 'Modifica sezione' : 'Nuova sezione';
+  document.getElementById('btn-elimina-sezione').style.display = id ? '' : 'none';
+
+  // Reset
+  ['gs-icona','gs-titolo-it','gs-titolo-en','gs-titolo-fr','gs-titolo-es',
+   'gs-testo-it','gs-testo-en','gs-testo-fr','gs-testo-es',
+   'gs-lista-it','gs-lista-en','gs-lista-fr','gs-lista-es',
+   'gs-info-it','gs-info-en','gs-info-fr','gs-info-es'].forEach(i=>{
+    const el=document.getElementById(i); if(el) el.value='';
+  });
+  document.getElementById('gs-tipo').value = 'testo';
+  document.getElementById('gs-visibile').value = '1';
+  document.getElementById('gs-id').value = id||'';
+
+  if(id){
+    const s = allSezioniGuest.find(x=>x.id===id);
+    if(s){
+      document.getElementById('gs-icona').value      = s.icona||'';
+      document.getElementById('gs-tipo').value       = s.tipo||'testo';
+      document.getElementById('gs-visibile').value   = s.visibile?'1':'0';
+      document.getElementById('gs-titolo-it').value  = s.titolo?.it||'';
+      document.getElementById('gs-titolo-en').value  = s.titolo?.en||'';
+      document.getElementById('gs-titolo-fr').value  = s.titolo?.fr||'';
+      document.getElementById('gs-titolo-es').value  = s.titolo?.es||'';
+      // Contenuto in base al tipo
+      const c = s.contenuto||{};
+      if(s.tipo==='testo'){
+        document.getElementById('gs-testo-it').value = c.it||'';
+        document.getElementById('gs-testo-en').value = c.en||'';
+        document.getElementById('gs-testo-fr').value = c.fr||'';
+        document.getElementById('gs-testo-es').value = c.es||'';
+      } else if(s.tipo==='lista'){
+        document.getElementById('gs-lista-it').value = c.it||'';
+        document.getElementById('gs-lista-en').value = c.en||'';
+        document.getElementById('gs-lista-fr').value = c.fr||'';
+        document.getElementById('gs-lista-es').value = c.es||'';
+      } else if(s.tipo==='info'){
+        document.getElementById('gs-info-it').value = c.it||'';
+        document.getElementById('gs-info-en').value = c.en||'';
+        document.getElementById('gs-info-fr').value = c.fr||'';
+        document.getElementById('gs-info-es').value = c.es||'';
+      }
+    }
+  }
+  aggiornaFormGuest();
+  document.getElementById('modal-sezione-guest').classList.add('open');
+}
+
+function editSezioneGuest(id){ apriModalSezioneGuest(id); }
+
+function aggiornaFormGuest(){
+  const tipo = document.getElementById('gs-tipo').value;
+  document.getElementById('gs-content-testo').style.display = tipo==='testo'?'':'none';
+  document.getElementById('gs-content-lista').style.display = tipo==='lista'?'':'none';
+  document.getElementById('gs-content-info').style.display  = tipo==='info'?'':'none';
+}
+
+async function salvaSezioneGuest(){
+  const titolo_it = document.getElementById('gs-titolo-it').value.trim();
+  if(!titolo_it){ showToast('Inserisci almeno il titolo in italiano','error'); return; }
+  const tipo = document.getElementById('gs-tipo').value;
+  const id = editingGuestId || 'gs'+Date.now();
+
+  // Leggi contenuto in base al tipo
+  let contenuto = {};
+  if(tipo==='testo'){
+    contenuto = {
+      it: document.getElementById('gs-testo-it').value.trim(),
+      en: document.getElementById('gs-testo-en').value.trim(),
+      fr: document.getElementById('gs-testo-fr').value.trim(),
+      es: document.getElementById('gs-testo-es').value.trim(),
+    };
+  } else if(tipo==='lista'){
+    contenuto = {
+      it: document.getElementById('gs-lista-it').value.trim(),
+      en: document.getElementById('gs-lista-en').value.trim(),
+      fr: document.getElementById('gs-lista-fr').value.trim(),
+      es: document.getElementById('gs-lista-es').value.trim(),
+    };
+  } else if(tipo==='info'){
+    contenuto = {
+      it: document.getElementById('gs-info-it').value.trim(),
+      en: document.getElementById('gs-info-en').value.trim(),
+      fr: document.getElementById('gs-info-fr').value.trim(),
+      es: document.getElementById('gs-info-es').value.trim(),
+    };
+  }
+
+  const sezione = {
+    id,
+    icona: document.getElementById('gs-icona').value.trim()||'📄',
+    tipo,
+    visibile: document.getElementById('gs-visibile').value==='1',
+    titolo: {
+      it: titolo_it,
+      en: document.getElementById('gs-titolo-en').value.trim()||titolo_it,
+      fr: document.getElementById('gs-titolo-fr').value.trim()||titolo_it,
+      es: document.getElementById('gs-titolo-es').value.trim()||titolo_it,
+    },
+    contenuto,
+    ordine: editingGuestId
+      ? (allSezioniGuest.find(s=>s.id===editingGuestId)?.ordine ?? allSezioniGuest.length)
+      : allSezioniGuest.length,
+  };
+
+  const idx = allSezioniGuest.findIndex(s=>s.id===id);
+  if(idx>=0) allSezioniGuest[idx]=sezione;
+  else allSezioniGuest.push(sezione);
+
+  closeModal('modal-sezione-guest');
+  renderSezioniGuest();
+  showToast('Sezione salvata — ricorda di salvare le modifiche ✓','success');
+}
+
+async function eliminaSezioneGuest(){
+  if(!editingGuestId) return;
+  if(!confirm('Eliminare questa sezione?')) return;
+  allSezioniGuest = allSezioniGuest.filter(s=>s.id!==editingGuestId);
+  closeModal('modal-sezione-guest');
+  renderSezioniGuest();
+  showToast('Sezione eliminata','success');
+}
+
+async function spostaSezioneGuest(id, dir){
+  const sorted = [...allSezioniGuest].sort((a,b)=>a.ordine-b.ordine);
+  const idx = sorted.findIndex(s=>s.id===id);
+  const newIdx = idx+dir;
+  if(newIdx<0||newIdx>=sorted.length) return;
+  const tmp = sorted[idx].ordine;
+  sorted[idx].ordine = sorted[newIdx].ordine;
+  sorted[newIdx].ordine = tmp;
+  allSezioniGuest = sorted;
+  renderSezioniGuest();
+}
+
+async function salvaGuestApp(){
+  const data = {
+    sezioni: allSezioniGuest,
+    welcome: {
+      it: document.getElementById('guest-welcome-it').value.trim(),
+      en: document.getElementById('guest-welcome-en').value.trim(),
+      fr: document.getElementById('guest-welcome-fr').value.trim(),
+      es: document.getElementById('guest-welcome-es').value.trim(),
+    },
+    wifi: {
+      ssid: document.getElementById('guest-wifi-ssid').value.trim(),
+      pass: document.getElementById('guest-wifi-pass').value.trim(),
+    },
+    telefono: document.getElementById('guest-telefono').value.trim(),
+    email: document.getElementById('guest-email').value.trim(),
+    aggiornata: firebase.firestore.FieldValue.serverTimestamp(),
+  };
+  try{
+    await db.collection('impostazioni').doc('guest_app').set(data);
+    showToast('Guest App salvata ✓ — le modifiche sono ora live','success');
+  } catch(e){ showToast('Errore: '+e.message,'error'); }
+}
+
+function copiaLinkGuest(){
+  const link = window.location.href.replace('index.html','').replace(/\/$/, '')+'/guest.html';
+  navigator.clipboard.writeText(link).then(()=>showToast('Link copiato ✓','success'));
 }
 
 // ===== UTILITY =====
