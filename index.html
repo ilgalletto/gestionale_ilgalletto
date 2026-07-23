@@ -5116,7 +5116,14 @@ async function initGuestApp(){
     const snap = await db.collection('impostazioni').doc('guest_app').get();
     if(snap.exists){
       const d = snap.data();
-      allSezioniGuest = d.sezioni || SEZIONI_DEFAULT;
+      // Se le sezioni non esistono o sono vuote, usa e salva le default
+      if(!d.sezioni || !d.sezioni.length){
+        allSezioniGuest = [...SEZIONI_DEFAULT];
+        // Salva le default su Firestore così la prossima volta ci sono
+        await db.collection('impostazioni').doc('guest_app').update({sezioni: allSezioniGuest});
+      } else {
+        allSezioniGuest = d.sezioni;
+      }
       document.getElementById('guest-welcome-it').value = d.welcome?.it || '';
       document.getElementById('guest-welcome-en').value = d.welcome?.en || '';
       document.getElementById('guest-welcome-fr').value = d.welcome?.fr || '';
@@ -5126,9 +5133,19 @@ async function initGuestApp(){
       document.getElementById('guest-telefono').value   = d.telefono || '';
       document.getElementById('guest-email').value      = d.email || '';
     } else {
+      // Documento non esiste: crea tutto da zero con le default
       allSezioniGuest = [...SEZIONI_DEFAULT];
+      await db.collection('impostazioni').doc('guest_app').set({
+        sezioni: allSezioniGuest,
+        welcome: {it:'',en:'',fr:'',es:''},
+        wifi: {ssid:'',pass:''},
+        telefono:'', email:'',
+      });
     }
-  } catch(e){ allSezioniGuest = [...SEZIONI_DEFAULT]; }
+  } catch(e){
+    console.error('initGuestApp error:', e);
+    allSezioniGuest = [...SEZIONI_DEFAULT];
+  }
   renderSezioniGuest();
 }
 
