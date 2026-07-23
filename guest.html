@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>B&B Il Galletto — Benvenuti</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
   :root {
     --night: #0D2F5A;
@@ -475,43 +477,18 @@
 
   <div class="section-label" data-i18n="section_label">Informazioni utili</div>
 
-  <!-- GRIGLIA SCHEDE -->
-  <div class="cards-grid">
-    <div class="card" id="card-times" onclick="toggleCard('card-times')">
-      <div class="card-icon">🕐</div>
-      <div class="card-title" data-i18n="times_title">Orari</div>
+  <!-- GRIGLIA SCHEDE DINAMICA -->
+  <div class="cards-grid" id="dynamic-cards-grid">
+    <!-- Le schede vengono caricate dinamicamente da Firestore -->
+    <div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;padding:20px 0">
+      ⏳ Caricamento in corso...
     </div>
-    <div class="card" id="card-wifi" onclick="toggleCard('card-wifi')">
-      <div class="card-icon">📶</div>
-      <div class="card-title">Wi-Fi</div>
-    </div>
-    <div class="card" id="card-access" onclick="toggleCard('card-access')">
-      <div class="card-icon">🔑</div>
-      <div class="card-title" data-i18n="access_title">Accesso e camera</div>
-    </div>
-    <div class="card" id="card-breakfast" onclick="toggleCard('card-breakfast')">
-      <div class="card-icon">☕</div>
-      <div class="card-title" data-i18n="bfast_title">Colazione</div>
-    </div>
-    <div class="card" id="card-parking" onclick="toggleCard('card-parking')">
-      <div class="card-icon">🚗</div>
-      <div class="card-title" data-i18n="parking_title">Parcheggio</div>
-    </div>
-    <div class="card" id="card-rules" onclick="toggleCard('card-rules')">
-      <div class="card-icon">📋</div>
-      <div class="card-title" data-i18n="rules_title">Regole della casa</div>
-    </div>
-    <div class="card" id="card-area" onclick="toggleCard('card-area')">
-      <div class="card-icon">🌊</div>
-      <div class="card-title" data-i18n="area_title">Dintorni e consigli</div>
-    </div>
-    <div class="card" id="card-contacts" onclick="toggleCard('card-contacts')">
-      <div class="card-icon">📞</div>
-      <div class="card-title" data-i18n="contacts_title">Contatti</div>
-    </div>
-  </div>
+  </div><!-- fine dynamic-cards-grid -->
 
-  <!-- PANNELLI DETTAGLIO -->
+  <!-- PANNELLI DINAMICI (da Firestore) -->
+  <div id="dynamic-panels"></div>
+
+  <!-- PANNELLI DETTAGLIO HARDCODED (WiFi, Contatti con link) -->
   <div class="card-panel" id="panel-times">
     <div class="card-panel-title">🕐 <span data-i18n="times_title">Orari</span>
       <button class="card-panel-close" onclick="toggleCard('card-times')">✕</button>
@@ -613,15 +590,15 @@
     <div class="card-body">
       <div class="info-row">
         <div class="info-label" data-i18n="phone_label">Telefono</div>
-        <div class="info-value"><a href="tel:+393421063991" style="color:var(--blue);text-decoration:none">+39 342 106 3991</a></div>
+        <div class="info-value"><a id="contatto-tel" href="tel:+393421063991" style="color:var(--blue);text-decoration:none">+39 342 106 3991</a></div>
       </div>
       <div class="info-row">
         <div class="info-label">WhatsApp</div>
-        <div class="info-value"><a href="https://wa.me/393421063991" style="color:var(--blue);text-decoration:none" target="_blank">Scrivici su WhatsApp</a></div>
+        <div class="info-value"><a id="contatto-wa" href="https://wa.me/393421063991" style="color:var(--blue);text-decoration:none" target="_blank">Scrivici su WhatsApp</a></div>
       </div>
       <div class="info-row">
         <div class="info-label">Email</div>
-        <div class="info-value"><a href="mailto:bbgalletto@gmail.com" style="color:var(--blue);text-decoration:none">bbgalletto@gmail.com</a></div>
+        <div class="info-value"><a id="contatto-email" href="mailto:bbgalletto@gmail.com" style="color:var(--blue);text-decoration:none">bbgalletto@gmail.com</a></div>
       </div>
     </div>
   </div>
@@ -819,8 +796,152 @@ function toggleCard(id) {
   }
 }
 
+// ── FIREBASE + CARICAMENTO DINAMICO ───────────────────────────────────────
+const firebaseConfig = {
+  apiKey:"AIzaSyAi8gcS_HL9i1HYNiQJF2SazsiDnsD9jCI",
+  authDomain:"b-b-il-galletto.firebaseapp.com",
+  projectId:"b-b-il-galletto",
+  storageBucket:"b-b-il-galletto.firebasestorage.app",
+  messagingSenderId:"912561249765",
+  appId:"1:912561249765:web:cc1219861660ff8371630c"
+};
+if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let guestData = null;
+let currentLangDynamic = 'it';
+
+async function loadGuestApp() {
+  try {
+    const snap = await db.collection('impostazioni').doc('guest_app').get();
+    if (!snap.exists) { setLang('it'); return; }
+    guestData = snap.data();
+
+    // Aggiorna messaggio di benvenuto
+    const lang = currentLang || 'it';
+    if (guestData.welcome?.[lang]) {
+      const el = document.querySelector('[data-i18n="welcome"]');
+      if (el) el.textContent = guestData.welcome[lang];
+    }
+
+    // Aggiorna WiFi nella sezione WiFi hardcoded
+    if (guestData.wifi?.ssid) {
+      const ssid = document.getElementById('wifi-ssid');
+      if (ssid) ssid.textContent = guestData.wifi.ssid;
+    }
+    if (guestData.wifi?.pass) {
+      const pass = document.getElementById('wifi-pass');
+      if (pass) pass.textContent = guestData.wifi.pass;
+    }
+
+    // Aggiorna telefono/email contatti
+    if (guestData.telefono) {
+      const tel = document.getElementById('contatto-tel');
+      if (tel) { tel.href = 'tel:'+guestData.telefono; tel.textContent = guestData.telefono; }
+      const wa = document.getElementById('contatto-wa');
+      if (wa) wa.href = 'https://wa.me/'+guestData.telefono.replace(/\D/g,'');
+    }
+    if (guestData.email) {
+      const em = document.getElementById('contatto-email');
+      if (em) { em.href = 'mailto:'+guestData.email; em.textContent = guestData.email; }
+    }
+
+    // Renderizza le sezioni dinamiche
+    renderDynamicSections(lang);
+  } catch(e) {
+    console.error('Errore caricamento guest app:', e);
+  }
+  setLang(currentLang || 'it');
+}
+
+function renderDynamicSections(lang) {
+  if (!guestData?.sezioni) return;
+
+  const grid = document.getElementById('dynamic-cards-grid');
+  const panelContainer = document.getElementById('dynamic-panels');
+  if (!grid || !panelContainer) return;
+
+  // Filtra solo visibili e ordina
+  const sezioni = guestData.sezioni
+    .filter(s => s.visibile !== false)
+    .sort((a, b) => a.ordine - b.ordine);
+
+  // Renderizza schede
+  grid.innerHTML = sezioni.map(s => `
+    <div class="card" id="dcard-${s.id}" onclick="toggleDCard('${s.id}')">
+      <div class="card-icon">${s.icona || '📄'}</div>
+      <div class="card-title">${s.titolo?.[lang] || s.titolo?.it || ''}</div>
+    </div>`).join('');
+
+  // Renderizza pannelli
+  panelContainer.innerHTML = sezioni.map(s => {
+    const tit = s.titolo?.[lang] || s.titolo?.it || '';
+    const cnt = s.contenuto?.[lang] || s.contenuto?.it || '';
+    let bodyHtml = '';
+
+    if (s.tipo === 'info') {
+      // Righe Etichetta | Valore
+      const righe = cnt.split('
+').filter(r => r.trim());
+      bodyHtml = righe.map(r => {
+        const [label, ...rest] = r.split('|');
+        const val = rest.join('|').trim();
+        return `<div class="info-row">
+          <div class="info-label">${label.trim()}</div>
+          <div class="info-value">${val}</div>
+        </div>`;
+      }).join('');
+    } else if (s.tipo === 'lista') {
+      const voci = cnt.split('
+').filter(v => v.trim());
+      bodyHtml = '<ul class="custom-list">' +
+        voci.map(v => `<li>${v.trim()}</li>`).join('') +
+        '</ul>';
+    } else {
+      // testo libero
+      bodyHtml = cnt.split('
+').filter(p => p.trim())
+        .map(p => `<p>${p.trim()}</p>`).join('');
+    }
+
+    return `<div class="card-panel" id="dpanel-${s.id}">
+      <div class="card-panel-title">
+        ${s.icona || ''} ${tit}
+        <button class="card-panel-close" onclick="toggleDCard('${s.id}')">✕</button>
+      </div>
+      <div class="card-body">${bodyHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleDCard(id) {
+  const card  = document.getElementById('dcard-' + id);
+  const panel = document.getElementById('dpanel-' + id);
+  if (!card || !panel) return;
+
+  const isOpen = card.classList.contains('open');
+
+  // Chiudi tutto
+  document.querySelectorAll('.card.open').forEach(c => c.classList.remove('open'));
+  document.querySelectorAll('.card-panel.open').forEach(p => p.classList.remove('open'));
+
+  if (!isOpen) {
+    card.classList.add('open');
+    panel.classList.add('open');
+    setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+  }
+}
+
+// Quando si cambia lingua, ri-renderizza le sezioni dinamiche
+const _setLangOrig = setLang;
+setLang = function(lang) {
+  _setLangOrig(lang);
+  if (guestData) renderDynamicSections(lang);
+};
+
 // Init
 setLang('it');
+loadGuestApp();
 </script>
 </body>
 </html>
