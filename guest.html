@@ -881,8 +881,7 @@ function renderDynamicSections(lang) {
 
     if (s.tipo === 'info') {
       // Righe Etichetta | Valore
-      const righe = cnt.split('
-').filter(r => r.trim());
+      const righe = cnt.split('\n').filter(r => r.trim());
       bodyHtml = righe.map(r => {
         const [label, ...rest] = r.split('|');
         const val = rest.join('|').trim();
@@ -892,15 +891,13 @@ function renderDynamicSections(lang) {
         </div>`;
       }).join('');
     } else if (s.tipo === 'lista') {
-      const voci = cnt.split('
-').filter(v => v.trim());
+      const voci = cnt.split('\n').filter(v => v.trim());
       bodyHtml = '<ul class="custom-list">' +
         voci.map(v => `<li>${v.trim()}</li>`).join('') +
         '</ul>';
     } else {
       // testo libero
-      bodyHtml = cnt.split('
-').filter(p => p.trim())
+      bodyHtml = cnt.split('\n').filter(p => p.trim())
         .map(p => `<p>${p.trim()}</p>`).join('');
     }
 
