@@ -1403,21 +1403,13 @@
         <div style="font-weight:700;font-size:15px;color:var(--accent);margin-bottom:16px">⚙️ Impostazioni generali</div>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;max-width:600px;box-shadow:var(--shadow)">
           <div class="form-group">
-            <label class="form-label">Messaggio di benvenuto (IT)</label>
-            <textarea class="form-control" id="guest-welcome-it" rows="2" placeholder="Benvenuti. Siamo felici di avervi con noi..."></textarea>
+            <label class="form-label">Messaggio di benvenuto 🇮🇹</label>
+            <textarea class="form-control" id="guest-welcome-it" rows="3" placeholder="Benvenuti. Siamo felici di avervi con noi..."></textarea>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">🤖 La traduzione in EN, FR, ES avverrà automaticamente al salvataggio</div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Messaggio di benvenuto (EN)</label>
-            <textarea class="form-control" id="guest-welcome-en" rows="2" placeholder="Welcome. We're so glad you're staying with us..."></textarea>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Messaggio di benvenuto (FR)</label>
-            <textarea class="form-control" id="guest-welcome-fr" rows="2" placeholder="Bienvenue. Nous sommes ravis de vous accueillir..."></textarea>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Messaggio di benvenuto (ES)</label>
-            <textarea class="form-control" id="guest-welcome-es" rows="2" placeholder="Bienvenidos. Estamos encantados de recibirlos..."></textarea>
-          </div>
+          <input type="hidden" id="guest-welcome-en">
+          <input type="hidden" id="guest-welcome-fr">
+          <input type="hidden" id="guest-welcome-es">
           <div class="form-group">
             <label class="form-label">Nome rete WiFi</label>
             <input class="form-control" id="guest-wifi-ssid" placeholder="IlGalletto_Guest">
@@ -1466,49 +1458,70 @@
             </div>
           </div>
 
-          <!-- TITOLI -->
+          <!-- TITOLO - SOLO ITALIANO -->
           <div class="section-divider">Titolo sezione</div>
-          <div class="form-row">
-            <div class="form-group"><label class="form-label">🇮🇹 Italiano *</label><input class="form-control" id="gs-titolo-it" placeholder="es. Orari"></div>
-            <div class="form-group"><label class="form-label">🇬🇧 English</label><input class="form-control" id="gs-titolo-en" placeholder="es. Hours"></div>
+          <div class="form-group">
+            <label class="form-label">🇮🇹 Titolo in italiano *</label>
+            <input class="form-control" id="gs-titolo-it" placeholder="es. Orari, Parcheggio, Regole...">
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">🤖 EN, FR, ES verranno tradotti automaticamente da Claude al salvataggio</div>
           </div>
-          <div class="form-row">
-            <div class="form-group"><label class="form-label">🇫🇷 Français</label><input class="form-control" id="gs-titolo-fr" placeholder="es. Horaires"></div>
-            <div class="form-group"><label class="form-label">🇪🇸 Español</label><input class="form-control" id="gs-titolo-es" placeholder="es. Horarios"></div>
-          </div>
+          <!-- campi tradotti nascosti - compilati da Claude -->
+          <input type="hidden" id="gs-titolo-en">
+          <input type="hidden" id="gs-titolo-fr">
+          <input type="hidden" id="gs-titolo-es">
 
-          <!-- CONTENUTO TESTO -->
+          <!-- CONTENUTO TESTO - SOLO ITALIANO -->
           <div id="gs-content-testo">
             <div class="section-divider">Contenuto</div>
-            <div class="form-group"><label class="form-label">🇮🇹 Testo italiano *</label><textarea class="form-control" id="gs-testo-it" rows="3" placeholder="Testo informativo..."></textarea></div>
-            <div class="form-group"><label class="form-label">🇬🇧 English text</label><textarea class="form-control" id="gs-testo-en" rows="3"></textarea></div>
-            <div class="form-group"><label class="form-label">🇫🇷 Texte français</label><textarea class="form-control" id="gs-testo-fr" rows="3"></textarea></div>
-            <div class="form-group"><label class="form-label">🇪🇸 Texto español</label><textarea class="form-control" id="gs-testo-es" rows="3"></textarea></div>
+            <div class="form-group">
+              <label class="form-label">🇮🇹 Testo in italiano *</label>
+              <textarea class="form-control" id="gs-testo-it" rows="4" placeholder="Scrivi qui le informazioni per gli ospiti..."></textarea>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px">🤖 La traduzione in EN, FR, ES avverrà automaticamente al salvataggio</div>
+            </div>
           </div>
+          <input type="hidden" id="gs-testo-en">
+          <input type="hidden" id="gs-testo-fr">
+          <input type="hidden" id="gs-testo-es">
 
-          <!-- CONTENUTO LISTA -->
+          <!-- CONTENUTO LISTA - SOLO ITALIANO -->
           <div id="gs-content-lista" style="display:none">
             <div class="section-divider">Voci lista (una per riga)</div>
-            <div class="form-group"><label class="form-label">🇮🇹 Voci italiano *</label><textarea class="form-control" id="gs-lista-it" rows="4" placeholder="Voce 1&#10;Voce 2&#10;Voce 3"></textarea></div>
-            <div class="form-group"><label class="form-label">🇬🇧 English items</label><textarea class="form-control" id="gs-lista-en" rows="4"></textarea></div>
-            <div class="form-group"><label class="form-label">🇫🇷 Éléments français</label><textarea class="form-control" id="gs-lista-fr" rows="4"></textarea></div>
-            <div class="form-group"><label class="form-label">🇪🇸 Elementos español</label><textarea class="form-control" id="gs-lista-es" rows="4"></textarea></div>
+            <div class="form-group">
+              <label class="form-label">🇮🇹 Voci in italiano * (una per riga)</label>
+              <textarea class="form-control" id="gs-lista-it" rows="5" placeholder="Silenzio dalle 23:00 alle 08:00&#10;Vietato fumare&#10;Animali non ammessi"></textarea>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px">🤖 Ogni voce sarà tradotta automaticamente in EN, FR, ES al salvataggio</div>
+            </div>
           </div>
+          <input type="hidden" id="gs-lista-en">
+          <input type="hidden" id="gs-lista-fr">
+          <input type="hidden" id="gs-lista-es">
 
-          <!-- CONTENUTO INFO ROWS -->
+          <!-- CONTENUTO INFO ROWS - SOLO ITALIANO -->
           <div id="gs-content-info" style="display:none">
             <div class="section-divider">Righe informazione</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Formato: <code>Etichetta | Valore</code> — una per riga. Es: <code>Check-in | 14:00 – 20:00</code></div>
-            <div class="form-group"><label class="form-label">🇮🇹 Righe italiano *</label><textarea class="form-control" id="gs-info-it" rows="4" placeholder="Check-in | 14:00 – 20:00&#10;Check-out | entro le 11:00"></textarea></div>
-            <div class="form-group"><label class="form-label">🇬🇧 English rows</label><textarea class="form-control" id="gs-info-en" rows="4"></textarea></div>
-            <div class="form-group"><label class="form-label">🇫🇷 Lignes français</label><textarea class="form-control" id="gs-info-fr" rows="4"></textarea></div>
-            <div class="form-group"><label class="form-label">🇪🇸 Filas español</label><textarea class="form-control" id="gs-info-es" rows="4"></textarea></div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">
+              Formato: <code>Etichetta | Valore</code> — una per riga.<br>
+              Es: <code>Check-in | 14:00 – 20:00</code>
+            </div>
+            <div class="form-group">
+              <label class="form-label">🇮🇹 Righe in italiano *</label>
+              <textarea class="form-control" id="gs-info-it" rows="4" placeholder="Check-in | 14:00 – 20:00&#10;Check-out | entro le 11:00&#10;Colazione | 08:00 – 10:00"></textarea>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px">🤖 Le etichette e i valori saranno tradotti automaticamente al salvataggio</div>
+            </div>
+          </div>
+          <input type="hidden" id="gs-info-en">
+          <input type="hidden" id="gs-info-fr">
+          <input type="hidden" id="gs-info-es">
+
+          <!-- Indicatore traduzione in corso -->
+          <div id="gs-translating" style="display:none;padding:12px;background:#EEF7F0;border-radius:8px;text-align:center;font-size:13px;color:#2a7a3b;margin-top:8px">
+            🤖 Traduzione in corso... attendere
           </div>
 
           <div class="modal-actions">
             <button class="btn btn-outline" onclick="closeModal('modal-sezione-guest')">Annulla</button>
             <button class="btn btn-danger btn-sm" id="btn-elimina-sezione" style="display:none;margin-right:auto" onclick="eliminaSezioneGuest()">🗑️ Elimina</button>
-            <button class="btn btn-primary" onclick="salvaSezioneGuest()">Salva sezione</button>
+            <button class="btn btn-primary" id="btn-salva-sezione" onclick="salvaSezioneGuest()">💾 Salva e traduci</button>
           </div>
         </div>
       </div>
@@ -5174,7 +5187,7 @@ function apriModalSezioneGuest(id=null){
       document.getElementById('gs-titolo-en').value  = s.titolo?.en||'';
       document.getElementById('gs-titolo-fr').value  = s.titolo?.fr||'';
       document.getElementById('gs-titolo-es').value  = s.titolo?.es||'';
-      // Contenuto in base al tipo
+      // Carica solo IT nel form — EN/FR/ES nei campi hidden
       const c = s.contenuto||{};
       if(s.tipo==='testo'){
         document.getElementById('gs-testo-it').value = c.it||'';
@@ -5191,6 +5204,15 @@ function apriModalSezioneGuest(id=null){
         document.getElementById('gs-info-en').value = c.en||'';
         document.getElementById('gs-info-fr').value = c.fr||'';
         document.getElementById('gs-info-es').value = c.es||'';
+      }
+      // Mostra info traduzioni esistenti
+      const hasTransl = c.en && c.en !== c.it;
+      const translInfo = document.getElementById('gs-translating');
+      if(translInfo && hasTransl){
+        translInfo.style.display='block';
+        translInfo.style.background='#EEF7F0';
+        translInfo.style.color='#2a7a3b';
+        translInfo.textContent='✅ Traduzioni esistenti: EN, FR, ES — modifica il testo IT e salva per aggiornare';
       }
     }
   }
@@ -5213,42 +5235,79 @@ async function salvaSezioneGuest(){
   const tipo = document.getElementById('gs-tipo').value;
   const id = editingGuestId || 'gs'+Date.now();
 
-  // Leggi contenuto in base al tipo
-  let contenuto = {};
-  if(tipo==='testo'){
-    contenuto = {
-      it: document.getElementById('gs-testo-it').value.trim(),
-      en: document.getElementById('gs-testo-en').value.trim(),
-      fr: document.getElementById('gs-testo-fr').value.trim(),
-      es: document.getElementById('gs-testo-es').value.trim(),
+  // Leggi contenuto IT in base al tipo
+  let contenuto_it = '';
+  if(tipo==='testo')       contenuto_it = document.getElementById('gs-testo-it').value.trim();
+  else if(tipo==='lista')  contenuto_it = document.getElementById('gs-lista-it').value.trim();
+  else if(tipo==='info')   contenuto_it = document.getElementById('gs-info-it').value.trim();
+
+  if(!contenuto_it){ showToast('Inserisci il contenuto in italiano','error'); return; }
+
+  // Mostra indicatore traduzione
+  const btnSalva = document.getElementById('btn-salva-sezione');
+  const indic = document.getElementById('gs-translating');
+  btnSalva.disabled = true;
+  btnSalva.textContent = '⏳ Traduzione in corso...';
+  indic.style.display = 'block';
+
+  // Chiama Claude API per tradurre titolo e contenuto
+  let titolo = {it: titolo_it, en: titolo_it, fr: titolo_it, es: titolo_it};
+  let contenuto = {it: contenuto_it, en: contenuto_it, fr: contenuto_it, es: contenuto_it};
+
+  try {
+    const prompt = `Sei un traduttore professionale per un B&B italiano.
+Traduci i seguenti testi dall'italiano in inglese (en), francese (fr) e spagnolo (es).
+Rispondi SOLO con un oggetto JSON valido, senza markdown, senza backtick, senza spiegazioni.
+
+TITOLO IT: ${titolo_it}
+CONTENUTO IT: ${contenuto_it}
+
+Formato risposta:
+{"titolo":{"en":"...","fr":"...","es":"..."},"contenuto":{"en":"...","fr":"...","es":"..."}}`;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{role:'user', content: prompt}]
+      })
+    });
+
+    const data = await resp.json();
+    const raw = data.content?.[0]?.text || '';
+    const clean = raw.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+
+    titolo = {
+      it: titolo_it,
+      en: parsed.titolo?.en || titolo_it,
+      fr: parsed.titolo?.fr || titolo_it,
+      es: parsed.titolo?.es || titolo_it,
     };
-  } else if(tipo==='lista'){
     contenuto = {
-      it: document.getElementById('gs-lista-it').value.trim(),
-      en: document.getElementById('gs-lista-en').value.trim(),
-      fr: document.getElementById('gs-lista-fr').value.trim(),
-      es: document.getElementById('gs-lista-es').value.trim(),
+      it: contenuto_it,
+      en: parsed.contenuto?.en || contenuto_it,
+      fr: parsed.contenuto?.fr || contenuto_it,
+      es: parsed.contenuto?.es || contenuto_it,
     };
-  } else if(tipo==='info'){
-    contenuto = {
-      it: document.getElementById('gs-info-it').value.trim(),
-      en: document.getElementById('gs-info-en').value.trim(),
-      fr: document.getElementById('gs-info-fr').value.trim(),
-      es: document.getElementById('gs-info-es').value.trim(),
-    };
+  } catch(e) {
+    console.warn('Traduzione fallita, uso solo italiano:', e);
+    showToast('⚠️ Traduzione automatica non disponibile — salvato solo in italiano','error');
   }
+
+  // Ripristina pulsante
+  btnSalva.disabled = false;
+  btnSalva.textContent = '💾 Salva e traduci';
+  indic.style.display = 'none';
 
   const sezione = {
     id,
     icona: document.getElementById('gs-icona').value.trim()||'📄',
     tipo,
     visibile: document.getElementById('gs-visibile').value==='1',
-    titolo: {
-      it: titolo_it,
-      en: document.getElementById('gs-titolo-en').value.trim()||titolo_it,
-      fr: document.getElementById('gs-titolo-fr').value.trim()||titolo_it,
-      es: document.getElementById('gs-titolo-es').value.trim()||titolo_it,
-    },
+    titolo,
     contenuto,
     ordine: editingGuestId
       ? (allSezioniGuest.find(s=>s.id===editingGuestId)?.ordine ?? allSezioniGuest.length)
@@ -5261,7 +5320,7 @@ async function salvaSezioneGuest(){
 
   closeModal('modal-sezione-guest');
   renderSezioniGuest();
-  showToast('Sezione salvata — ricorda di salvare le modifiche ✓','success');
+  showToast('Sezione salvata con traduzioni ✓ — clicca Salva modifiche per pubblicare','success');
 }
 
 async function eliminaSezioneGuest(){
@@ -5286,14 +5345,42 @@ async function spostaSezioneGuest(id, dir){
 }
 
 async function salvaGuestApp(){
+  const welcome_it = document.getElementById('guest-welcome-it').value.trim();
+
+  // Traduce il messaggio di benvenuto se presente
+  let welcome = {
+    it: welcome_it,
+    en: document.getElementById('guest-welcome-en').value.trim() || welcome_it,
+    fr: document.getElementById('guest-welcome-fr').value.trim() || welcome_it,
+    es: document.getElementById('guest-welcome-es').value.trim() || welcome_it,
+  };
+
+  if(welcome_it){
+    try{
+      showToast('⏳ Traduzione messaggio di benvenuto...','');
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          model:'claude-sonnet-4-6', max_tokens:500,
+          messages:[{role:'user', content:
+            `Traduci questo messaggio di benvenuto per un B&B dall'italiano in inglese (en), francese (fr) e spagnolo (es).
+Rispondi SOLO con JSON valido, senza markdown.
+IT: ${welcome_it}
+Formato: {"en":"...","fr":"...","es":"..."}`
+          }]
+        })
+      });
+      const data = await resp.json();
+      const raw = data.content?.[0]?.text||'';
+      const parsed = JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g,'').trim());
+      welcome = {it: welcome_it, en: parsed.en||welcome_it, fr: parsed.fr||welcome_it, es: parsed.es||welcome_it};
+    } catch(e){ console.warn('Traduzione benvenuto fallita:', e); }
+  }
+
   const data = {
     sezioni: allSezioniGuest,
-    welcome: {
-      it: document.getElementById('guest-welcome-it').value.trim(),
-      en: document.getElementById('guest-welcome-en').value.trim(),
-      fr: document.getElementById('guest-welcome-fr').value.trim(),
-      es: document.getElementById('guest-welcome-es').value.trim(),
-    },
+    welcome,
     wifi: {
       ssid: document.getElementById('guest-wifi-ssid').value.trim(),
       pass: document.getElementById('guest-wifi-pass').value.trim(),
