@@ -3052,11 +3052,11 @@ async function eliminaCamera(id){
 }
 
 // ===== CALENDARIO VERTICALE =====
-const MESI=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+var MESI=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 function calAnniDelta(d){calAnno+=d;aggiornaCalendario()}
 
 // Colori calendario per canale
-const COLORI_CANALE = {
+var COLORI_CANALE = {
   'Booking.com':  {bg:'#003580', bordo:'#002255', testo:'#fff'},
   'Airbnb':       {bg:'#FF5A5F', bordo:'#e03f44', testo:'#fff'},
   'Telefono':     {bg:'#2AA1A0', bordo:'#1f7a79', testo:'#fff'},
@@ -3068,7 +3068,7 @@ const COLORI_CANALE = {
   'Passaparola':  {bg:'#E91E63', bordo:'#c2185b', testo:'#fff'},
   'Altro':        {bg:'#6A8DA8', bordo:'#4e6f87', testo:'#fff'},
 };
-const COL_DEFAULT = {bg:'#1A6FA8', bordo:'#145580', testo:'#fff'};
+var COL_DEFAULT = {bg:'#1A6FA8', bordo:'#145580', testo:'#fff'};
 
 function coloreCanaleCalendario(canale){
   if(!canale) return COL_DEFAULT;
@@ -3323,7 +3323,7 @@ async function approvaUtente(uid){await db.collection('utenti').doc(uid).update(
 async function rimuoviUtente(uid){if(!confirm('Rimuovere?'))return;await db.collection('utenti').doc(uid).delete();showToast('Rimosso','success')}
 
 // ===== STRUTTURA =====
-const CAMPI_STRUTTURA = [
+var CAMPI_STRUTTURA = [
   'nome','tipo','indirizzo','comune','provincia','cap',
   'lat','lon','telefono','email','sito',
   'cin','piva','referente','codice-questura',
@@ -3372,7 +3372,7 @@ async function salvaStruttura(){
 }
 
 // ===== CANALI DI PRENOTAZIONE =====
-const CANALI_DEFAULT = [
+var CANALI_DEFAULT = [
   {id:'c1',nome:'Telefono',emoji:'📞'},
   {id:'c2',nome:'Booking.com',emoji:'🏨'},
   {id:'c3',nome:'Airbnb',emoji:'🏠'},
@@ -3480,7 +3480,7 @@ function aggiornaSelectCanali(){
 }
 
 // ===== TIPOLOGIE CAMERA =====
-const TIPOLOGIE_DEFAULT = [
+var TIPOLOGIE_DEFAULT = [
   {id:'t1',nome:'Singola'},
   {id:'t2',nome:'Doppia'},
   {id:'t3',nome:'Matrimoniale'},
@@ -3728,10 +3728,10 @@ function copiaLinkPortale(){
 }
 
 // ===== STATISTICHE =====
-const MESI_S = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
-const MESI_FULL = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
+var MESI_S = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+var MESI_FULL = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
   'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
-const BG_STAT = '#EEF6FB';
+var BG_STAT = '#EEF6FB';
 
 function initStatistiche(){
   const sel = document.getElementById('stat-anno');
@@ -4084,12 +4084,12 @@ async function eliminaVoceRegistro(tipo, id, mese, anno){
 }
 
 
-const MESI_CONT = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
+var MESI_CONT = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
   'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 
 // ── Piano dei conti default ────────────────────────────────────────────────
 // Struttura: {id, tipo, livello:'gruppo'|'conto'|'sottoconto', parentId, nome, icona}
-const PDC_DEFAULT_FISSI = [
+var PDC_DEFAULT_FISSI = [
   {id:'gF1',livello:'gruppo',parentId:null,nome:'Immobile',icona:'🏠'},
     {id:'cF1a',livello:'conto',parentId:'gF1',nome:'Affitto / Mutuo',icona:'🔑'},
       {id:'sF1a1',livello:'sottoconto',parentId:'cF1a',nome:'Canone mensile',icona:''},
@@ -4105,7 +4105,7 @@ const PDC_DEFAULT_FISSI = [
     {id:'cF4a',livello:'conto',parentId:'gF4',nome:'Commercialista',icona:'📊'},
     {id:'cF4b',livello:'conto',parentId:'gF4',nome:'Software / Abbonamenti',icona:'💻'},
 ];
-const PDC_DEFAULT_VARIABILI = [
+var PDC_DEFAULT_VARIABILI = [
   {id:'gV1',livello:'gruppo',parentId:null,nome:'Pulizie & Biancheria',icona:'🧹'},
     {id:'cV1a',livello:'conto',parentId:'gV1',nome:'Pulizie camere',icona:'🛏️'},
     {id:'cV1b',livello:'conto',parentId:'gV1',nome:'Lavanderia',icona:'👕'},
@@ -5110,7 +5110,7 @@ function eliminaStoricoQuestura(i) {
 let allSezioniGuest = [];
 let editingGuestId = null;
 
-const SEZIONI_DEFAULT = JSON.parse('[{"id":"s1","icona":"\u23f0","ordine":0,"visibile":true,"tipo":"info","titolo":{"it":"Orari","en":"Hours","fr":"Horaires","es":"Horarios"},"contenuto":{"it":"Check-in | 14:00 \u2013 20:00\nCheck-out | entro le 11:00\nColazione | 08:00 \u2013 10:00 \u00b7 in terrazza","en":"Check-in | 14:00 \u2013 20:00\nCheck-out | by 11:00\nBreakfast | 08:00 \u2013 10:00 \u00b7 on the terrace","fr":"Check-in | 14:00 \u2013 20:00\nCheck-out | avant 11h00\nPetit-d\u00e9jeuner | 08h00 \u2013 10h00 \u00b7 en terrasse","es":"Check-in | 14:00 \u2013 20:00\nCheck-out | antes de las 11:00\nDesayuno | 08:00 \u2013 10:00 \u00b7 en la terraza"}},{"id":"s2","icona":"\ud83d\udd11","ordine":1,"visibile":true,"tipo":"testo","titolo":{"it":"Accesso e camera","en":"Access & room","fr":"Acc\u00e8s et chambre","es":"Acceso y habitaci\u00f3n"},"contenuto":{"it":"Al momento del check-in vi consegniamo le chiavi personalmente. Al check-out lasciate le chiavi nella cassetta all\u0027ingresso oppure consegnatele direttamente.","en":"We will personally hand you the keys at check-in. At check-out, please leave the keys in the box at the entrance or hand them to us directly.","fr":"Nous vous remettrons personnellement les cl\u00e9s \u00e0 l\u0027arriv\u00e9e. Au d\u00e9part, laissez les cl\u00e9s dans la bo\u00eete \u00e0 l\u0027entr\u00e9e.","es":"Les entregaremos las llaves personalmente en el check-in. Al hacer el check-out, dejen las llaves en el buz\u00f3n."}},{"id":"s3","icona":"\u2615","ordine":2,"visibile":true,"tipo":"testo","titolo":{"it":"Colazione","en":"Breakfast","fr":"Petit-d\u00e9jeuner","es":"Desayuno"},"contenuto":{"it":"La colazione \u00e8 inclusa nel soggiorno e viene servita in terrazza dalle 08:00 alle 10:00. In caso di partenza anticipata, avvisate la sera prima.","en":"Breakfast is included and served on the terrace from 08:00 to 10:00. If you have an early departure, let us know the night before.","fr":"Le petit-d\u00e9jeuner est inclus et servi en terrasse de 08h00 \u00e0 10h00. En cas de d\u00e9part anticip\u00e9, pr\u00e9venez-nous la veille.","es":"El desayuno est\u00e1 incluido y se sirve en la terraza de 08:00 a 10:00. En caso de salida anticipada, av\u00edsennos la noche anterior."}},{"id":"s4","icona":"\ud83d\ude97","ordine":3,"visibile":true,"tipo":"testo","titolo":{"it":"Parcheggio","en":"Parking","fr":"Stationnement","es":"Aparcamiento"},"contenuto":{"it":"Parcheggio libero disponibile lungo Viale Nazario Sauro e nelle vie adiacenti.","en":"Free street parking is available along Viale Nazario Sauro and nearby streets.","fr":"Parking gratuit disponible le long du Viale Nazario Sauro et dans les rues adjacentes.","es":"Aparcamiento gratuito disponible en el Viale Nazario Sauro y las calles adyacentes."}},{"id":"s5","icona":"\ud83d\udccb","ordine":4,"visibile":true,"tipo":"lista","titolo":{"it":"Regole della casa","en":"House rules","fr":"R\u00e8gles de la maison","es":"Normas de la casa"},"contenuto":{"it":"Silenzio dalle 23:00 alle 08:00\nVietato fumare all\u0027interno della struttura\nAnimali domestici non ammessi\nNon lasciare asciugamani bagnati sul letto\nSpegnere aria condizionata e luci quando si esce","en":"Quiet hours from 23:00 to 08:00\nNo smoking inside the property\nPets are not allowed\nPlease do not leave wet towels on the bed\nTurn off air conditioning and lights when leaving","fr":"Silence de 23h00 \u00e0 08h00\nIl est interdit de fumer \u00e0 l\u0027int\u00e9rieur\nLes animaux de compagnie ne sont pas admis\nNe laissez pas de serviettes mouill\u00e9es sur le lit\n\u00c9teignez la climatisation et les lumi\u00e8res en quittant","es":"Silencio de 23:00 a 08:00\nProhibido fumar dentro de la propiedad\nNo se admiten animales de compa\u00f1\u00eda\nNo dejen toallas mojadas sobre la cama\nApaguen el aire acondicionado y las luces al salir"}},{"id":"s6","icona":"\ud83c\udf0a","ordine":5,"visibile":true,"tipo":"lista","titolo":{"it":"Dintorni e consigli","en":"Area & tips","fr":"Environs et conseils","es":"Alrededores y consejos"},"contenuto":{"it":"\ud83c\udfd6\ufe0f Spiaggia libera \u2014 a 200 metri dalla struttura\n\ud83d\udc1f Ristorante Il Porto \u2014 pesce fresco, sul lungomare\n\ud83c\udfd9\ufe0f Centro storico di Fermo \u2014 20 minuti in auto\n\ud83c\udf66 Gelateria Artigiana Giuseppina \u2014 in via Roma\n\ud83d\udeb2 Pista ciclabile \u2014 percorre tutto il lungomare","en":"\ud83c\udfd6\ufe0f Free beach \u2014 200 metres from the property\n\ud83d\udc1f Restaurant Il Porto \u2014 fresh seafood on the promenade\n\ud83c\udfd9\ufe0f Historic centre of Fermo \u2014 20 minutes by car\n\ud83c\udf66 Gelateria Artigiana Giuseppina \u2014 on via Roma\n\ud83d\udeb2 Cycling path \u2014 runs along the entire seafront","fr":"\ud83c\udfd6\ufe0f Plage libre \u2014 \u00e0 200 m\u00e8tres de la structure\n\ud83d\udc1f Restaurant Il Porto \u2014 poisson frais sur le front de mer\n\ud83c\udfd9\ufe0f Centre historique de Fermo \u2014 20 minutes en voiture\n\ud83c\udf66 Gelateria Artigiana Giuseppina \u2014 via Roma\n\ud83d\udeb2 Piste cyclable \u2014 longe tout le bord de mer","es":"\ud83c\udfd6\ufe0f Playa p\u00fablica \u2014 a 200 metros de la propiedad\n\ud83d\udc1f Restaurante Il Porto \u2014 pescado fresco en el paseo mar\u00edtimo\n\ud83c\udfd9\ufe0f Centro hist\u00f3rico de Fermo \u2014 20 minutos en coche\n\ud83c\udf66 Gelateria Artigiana Giuseppina \u2014 en la calle Roma\n\ud83d\udeb2 Carril bici \u2014 recorre todo el paseo mar\u00edtimo"}}]');
+var SEZIONI_DEFAULT = JSON.parse('[{"id":"s1","icona":"\u23f0","ordine":0,"visibile":true,"tipo":"info","titolo":{"it":"Orari","en":"Hours","fr":"Horaires","es":"Horarios"},"contenuto":{"it":"Check-in | 14:00 \u2013 20:00\nCheck-out | entro le 11:00\nColazione | 08:00 \u2013 10:00 \u00b7 in terrazza","en":"Check-in | 14:00 \u2013 20:00\nCheck-out | by 11:00\nBreakfast | 08:00 \u2013 10:00 \u00b7 on the terrace","fr":"Check-in | 14:00 \u2013 20:00\nCheck-out | avant 11h00\nPetit-d\u00e9jeuner | 08h00 \u2013 10h00 \u00b7 en terrasse","es":"Check-in | 14:00 \u2013 20:00\nCheck-out | antes de las 11:00\nDesayuno | 08:00 \u2013 10:00 \u00b7 en la terraza"}},{"id":"s2","icona":"\ud83d\udd11","ordine":1,"visibile":true,"tipo":"testo","titolo":{"it":"Accesso e camera","en":"Access & room","fr":"Acc\u00e8s et chambre","es":"Acceso y habitaci\u00f3n"},"contenuto":{"it":"Al momento del check-in vi consegniamo le chiavi personalmente. Al check-out lasciate le chiavi nella cassetta all\u0027ingresso oppure consegnatele direttamente.","en":"We will personally hand you the keys at check-in. At check-out, please leave the keys in the box at the entrance or hand them to us directly.","fr":"Nous vous remettrons personnellement les cl\u00e9s \u00e0 l\u0027arriv\u00e9e. Au d\u00e9part, laissez les cl\u00e9s dans la bo\u00eete \u00e0 l\u0027entr\u00e9e.","es":"Les entregaremos las llaves personalmente en el check-in. Al hacer el check-out, dejen las llaves en el buz\u00f3n."}},{"id":"s3","icona":"\u2615","ordine":2,"visibile":true,"tipo":"testo","titolo":{"it":"Colazione","en":"Breakfast","fr":"Petit-d\u00e9jeuner","es":"Desayuno"},"contenuto":{"it":"La colazione \u00e8 inclusa nel soggiorno e viene servita in terrazza dalle 08:00 alle 10:00. In caso di partenza anticipata, avvisate la sera prima.","en":"Breakfast is included and served on the terrace from 08:00 to 10:00. If you have an early departure, let us know the night before.","fr":"Le petit-d\u00e9jeuner est inclus et servi en terrasse de 08h00 \u00e0 10h00. En cas de d\u00e9part anticip\u00e9, pr\u00e9venez-nous la veille.","es":"El desayuno est\u00e1 incluido y se sirve en la terraza de 08:00 a 10:00. En caso de salida anticipada, av\u00edsennos la noche anterior."}},{"id":"s4","icona":"\ud83d\ude97","ordine":3,"visibile":true,"tipo":"testo","titolo":{"it":"Parcheggio","en":"Parking","fr":"Stationnement","es":"Aparcamiento"},"contenuto":{"it":"Parcheggio libero disponibile lungo Viale Nazario Sauro e nelle vie adiacenti.","en":"Free street parking is available along Viale Nazario Sauro and nearby streets.","fr":"Parking gratuit disponible le long du Viale Nazario Sauro et dans les rues adjacentes.","es":"Aparcamiento gratuito disponible en el Viale Nazario Sauro y las calles adyacentes."}},{"id":"s5","icona":"\ud83d\udccb","ordine":4,"visibile":true,"tipo":"lista","titolo":{"it":"Regole della casa","en":"House rules","fr":"R\u00e8gles de la maison","es":"Normas de la casa"},"contenuto":{"it":"Silenzio dalle 23:00 alle 08:00\nVietato fumare all\u0027interno della struttura\nAnimali domestici non ammessi\nNon lasciare asciugamani bagnati sul letto\nSpegnere aria condizionata e luci quando si esce","en":"Quiet hours from 23:00 to 08:00\nNo smoking inside the property\nPets are not allowed\nPlease do not leave wet towels on the bed\nTurn off air conditioning and lights when leaving","fr":"Silence de 23h00 \u00e0 08h00\nIl est interdit de fumer \u00e0 l\u0027int\u00e9rieur\nLes animaux de compagnie ne sont pas admis\nNe laissez pas de serviettes mouill\u00e9es sur le lit\n\u00c9teignez la climatisation et les lumi\u00e8res en quittant","es":"Silencio de 23:00 a 08:00\nProhibido fumar dentro de la propiedad\nNo se admiten animales de compa\u00f1\u00eda\nNo dejen toallas mojadas sobre la cama\nApaguen el aire acondicionado y las luces al salir"}},{"id":"s6","icona":"\ud83c\udf0a","ordine":5,"visibile":true,"tipo":"lista","titolo":{"it":"Dintorni e consigli","en":"Area & tips","fr":"Environs et conseils","es":"Alrededores y consejos"},"contenuto":{"it":"\ud83c\udfd6\ufe0f Spiaggia libera \u2014 a 200 metri dalla struttura\n\ud83d\udc1f Ristorante Il Porto \u2014 pesce fresco, sul lungomare\n\ud83c\udfd9\ufe0f Centro storico di Fermo \u2014 20 minuti in auto\n\ud83c\udf66 Gelateria Artigiana Giuseppina \u2014 in via Roma\n\ud83d\udeb2 Pista ciclabile \u2014 percorre tutto il lungomare","en":"\ud83c\udfd6\ufe0f Free beach \u2014 200 metres from the property\n\ud83d\udc1f Restaurant Il Porto \u2014 fresh seafood on the promenade\n\ud83c\udfd9\ufe0f Historic centre of Fermo \u2014 20 minutes by car\n\ud83c\udf66 Gelateria Artigiana Giuseppina \u2014 on via Roma\n\ud83d\udeb2 Cycling path \u2014 runs along the entire seafront","fr":"\ud83c\udfd6\ufe0f Plage libre \u2014 \u00e0 200 m\u00e8tres de la structure\n\ud83d\udc1f Restaurant Il Porto \u2014 poisson frais sur le front de mer\n\ud83c\udfd9\ufe0f Centre historique de Fermo \u2014 20 minutes en voiture\n\ud83c\udf66 Gelateria Artigiana Giuseppina \u2014 via Roma\n\ud83d\udeb2 Piste cyclable \u2014 longe tout le bord de mer","es":"\ud83c\udfd6\ufe0f Playa p\u00fablica \u2014 a 200 metros de la propiedad\n\ud83d\udc1f Restaurante Il Porto \u2014 pescado fresco en el paseo mar\u00edtimo\n\ud83c\udfd9\ufe0f Centro hist\u00f3rico de Fermo \u2014 20 minutos en coche\n\ud83c\udf66 Gelateria Artigiana Giuseppina \u2014 en la calle Roma\n\ud83d\udeb2 Carril bici \u2014 recorre todo el paseo mar\u00edtimo"}}]');
 async function initGuestApp(){
   try{
     const snap = await db.collection('impostazioni').doc('guest_app').get();
