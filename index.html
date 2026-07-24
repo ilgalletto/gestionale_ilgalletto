@@ -5303,6 +5303,37 @@ function aggiornaFormGuest(){
   document.getElementById('gs-content-info').style.display  = tipo==='info'?'':'none';
 }
 
+
+// ── TRADUZIONE AUTOMATICA (MyMemory API - gratuita) ─────────────────────
+async function traduciMyMemory(testo, langTarget) {
+  if (!testo || !testo.trim()) return testo;
+  try {
+    const url = 'https://api.mymemory.translated.net/get?q=' +
+      encodeURIComponent(testo) +
+      '&langpair=it|' + langTarget +
+      '&de=bbgalletto@gmail.com';
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (data.responseStatus === 200) {
+      return data.responseData.translatedText || testo;
+    }
+    return testo;
+  } catch(e) {
+    console.warn('MyMemory error:', e);
+    return testo;
+  }
+}
+
+async function traduciTutto(testo_it) {
+  // Traduce in parallelo in EN, FR, ES
+  const [en, fr, es] = await Promise.all([
+    traduciMyMemory(testo_it, 'en'),
+    traduciMyMemory(testo_it, 'fr'),
+    traduciMyMemory(testo_it, 'es'),
+  ]);
+  return { it: testo_it, en, fr, es };
+}
+
 async function salvaSezioneGuest(){
   const titolo_it = document.getElementById('gs-titolo-it').value.trim();
   if(!titolo_it){ showToast('Inserisci almeno il titolo in italiano','error'); return; }
@@ -5329,44 +5360,14 @@ async function salvaSezioneGuest(){
   let contenuto = {it: contenuto_it, en: contenuto_it, fr: contenuto_it, es: contenuto_it};
 
   try {
-    const prompt = 'Sei un traduttore professionale per un B&B italiano.\n' +
-      'Traduci i seguenti testi dall\'italiano in inglese (en), francese (fr) e spagnolo (es).\n' +
-      'Rispondi SOLO con un oggetto JSON valido, senza markdown, senza commenti.\n\n' +
-      'TITOLO IT: ' + titolo_it + '\n' +
-      'CONTENUTO IT: ' + contenuto_it + '\n\n' +
-      'Formato risposta (solo JSON puro):\n' +
-      '{"titolo":{"en":"...","fr":"...","es":"..."},"contenuto":{"en":"...","fr":"...","es":"..."}}';
-
-    const resp = await fetch('https://santhropic-proxy.nderobertis.workers.dev', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        messages: [{role:'user', content: prompt}]
-      })
-    });
-
-    const data = await resp.json();
-    const raw = data.content?.[0]?.text || '';
-    const clean = raw.replace(/```json|```/g,'').trim();
-    const parsed = JSON.parse(clean);
-
-    titolo = {
-      it: titolo_it,
-      en: parsed.titolo?.en || titolo_it,
-      fr: parsed.titolo?.fr || titolo_it,
-      es: parsed.titolo?.es || titolo_it,
-    };
-    contenuto = {
-      it: contenuto_it,
-      en: parsed.contenuto?.en || contenuto_it,
-      fr: parsed.contenuto?.fr || contenuto_it,
-      es: parsed.contenuto?.es || contenuto_it,
-    };
+    // Traduce titolo e contenuto in parallelo con MyMemory
+    [titolo, contenuto] = await Promise.all([
+      traduciTutto(titolo_it),
+      traduciTutto(contenuto_it),
+    ]);
   } catch(e) {
     console.warn('Traduzione fallita, uso solo italiano:', e);
-    showToast('⚠️ Traduzione automatica non disponibile — salvato solo in italiano','error');
+    showToast('⚠️ Traduzione non disponibile — salvato solo in italiano','error');
   }
 
   // Ripristina pulsante
@@ -5429,24 +5430,8 @@ async function salvaGuestApp(){
 
   if(welcome_it){
     try{
-      showToast('⏳ Traduzione messaggio di benvenuto...','');
-      const resp = await fetch('https://santhropic-proxy.nderobertis.workers.dev', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          model:'claude-sonnet-4-6', max_tokens:500,
-          messages:[{role:'user', content:
-            'Traduci questo messaggio di benvenuto per un B&B dall\'italiano in inglese (en), francese (fr) e spagnolo (es).\n' +
-            'Rispondi SOLO con JSON valido, senza markdown, niente altro.\n' +
-            'IT: ' + welcome_it + '\n' +
-            'Formato: {"en":"...","fr":"...","es":"..."}'
-          }]
-        })
-      });
-      const data = await resp.json();
-      const raw = data.content?.[0]?.text||'';
-      const parsed = JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g,'').trim());
-      welcome = {it: welcome_it, en: parsed.en||welcome_it, fr: parsed.fr||welcome_it, es: parsed.es||welcome_it};
+      showToast('⏳ Traduzione in corso...','');
+      welcome = await traduciTutto(welcome_it);
     } catch(e){ console.warn('Traduzione benvenuto fallita:', e); }
   }
 
