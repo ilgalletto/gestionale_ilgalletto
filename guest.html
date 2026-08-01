@@ -998,7 +998,7 @@ function renderDynamicSections(lang) {
                 ${l.indirizzo ? `<div>📍 <a href="${mapsUrl}" target="_blank">${l.indirizzo}</a></div>` : ''}
                 ${l.tel ? `<div>📞 <a href="tel:${l.tel}">${l.tel}</a></div>` : ''}
               </div>
-              ${l.note ? `<div class="locale-note">${l.note}</div>` : ''}
+              ${(l['note_'+lang]||l.note) ? `<div class="locale-note">${l['note_'+lang]||l.note}</div>` : ''}
             </div>
           </div>`;
         }).join('') + '</div>';

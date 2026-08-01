@@ -5667,9 +5667,22 @@ async function salvaSezioneGuest(){
 
   try {
     if(tipo === 'locali'){
-      // Per i locali il titolo viene tradotto, il contenuto (locali) non necessita traduzione
+      // Per i locali: traduce il titolo e le note di ogni locale
       titolo = await traduciTutto(titolo_it);
       contenuto = {it:'',en:'',fr:'',es:''};
+
+      // Traduce le note di ogni locale in parallelo
+      if(localiData && localiData.length){
+        localiData = await Promise.all(localiData.map(async (l) => {
+          if(!l.note || !l.note.trim()) return l;
+          try {
+            const noteTrads = await traduciTutto(l.note);
+            return {...l, note_it: l.note, note_en: noteTrads.en, note_fr: noteTrads.fr, note_es: noteTrads.es};
+          } catch(e) {
+            return l;
+          }
+        }));
+      }
     } else {
       // Traduce titolo e contenuto in parallelo con MyMemory
       [titolo, contenuto] = await Promise.all([
