@@ -5560,7 +5560,10 @@ function aggiungiLocale(){
   document.getElementById('locale-foto-preview').style.display = 'none';
 
   renderLocaliTable(locali);
-  showToast('Locale aggiunto ✓','success');
+  // Ripristina testo pulsante
+  const btn = document.querySelector('#gs-content-locali .btn-primary');
+  if(btn) btn.textContent = '+ Aggiungi locale';
+  showToast('Locale salvato ✓','success');
 }
 
 function renderLocaliTable(locali){
@@ -5581,8 +5584,9 @@ function renderLocaliTable(locali){
       <td style="font-size:12px">${l.indirizzo}</td>
       <td style="font-size:12px">${l.tel||'—'}</td>
       <td style="font-size:12px;color:var(--text-muted)">${l.note||'—'}</td>
-      <td class="no-print">
-        <button class="btn btn-sm btn-danger locali-btn" onclick="rimuoviLocale(${i})">🗑️</button>
+      <td class="no-print" style="white-space:nowrap">
+        <button class="btn btn-sm btn-outline" style="padding:2px 7px;font-size:11px;margin-right:4px" onclick="modificaLocale(${i})">✏️</button>
+        <button class="btn btn-sm btn-danger" style="padding:2px 7px;font-size:11px" onclick="rimuoviLocale(${i})">🗑️</button>
       </td>
     </tr>`).join('');
 }
@@ -5590,10 +5594,39 @@ function renderLocaliTable(locali){
 function rimuoviLocale(idx){
   let locali = [];
   try { locali = JSON.parse(document.getElementById('gs-locali-json').value || '[]'); } catch(e){}
+  if(!confirm('Rimuovere questo locale?')) return;
   locali.splice(idx, 1);
   document.getElementById('gs-locali-json').value = JSON.stringify(locali);
   renderLocaliTable(locali);
 }
+
+function modificaLocale(idx){
+  let locali = [];
+  try { locali = JSON.parse(document.getElementById('gs-locali-json').value || '[]'); } catch(e){}
+  const l = locali[idx];
+  if(!l) return;
+
+  // Popola il form con i dati del locale
+  document.getElementById('locale-nome').value      = l.nome||'';
+  document.getElementById('locale-tel').value       = l.tel||'';
+  document.getElementById('locale-indirizzo').value = l.indirizzo||'';
+  document.getElementById('locale-foto').value      = l.foto||'';
+  document.getElementById('locale-note').value      = l.note||'';
+  aggiornaPreviewFoto();
+
+  // Rimuove dalla lista (verrà ri-aggiunto al click su Aggiungi)
+  locali.splice(idx, 1);
+  document.getElementById('gs-locali-json').value = JSON.stringify(locali);
+  renderLocaliTable(locali);
+
+  // Cambia il testo del pulsante e scrolla al form
+  const btn = document.querySelector('#gs-content-locali .btn-primary');
+  if(btn) btn.textContent = '✓ Aggiorna locale';
+  document.getElementById('locale-nome').focus();
+  document.getElementById('locale-nome').scrollIntoView({behavior:'smooth', block:'center'});
+  showToast('Modifica il locale e clicca "Aggiorna locale"','');
+}
+
 
 function caricaLocaliNelForm(locali){
   document.getElementById('gs-locali-json').value = JSON.stringify(locali||[]);
