@@ -179,6 +179,14 @@
   .ospite-required{border-left:3px solid var(--accent)}
   .ospite-optional{border-left:3px solid var(--border)}
   
+  /* ── TABELLA LOCALI (Ristoranti ecc.) ──────────────────────────────────── */
+  .locali-table { width:100%; border-collapse:collapse; margin-top:8px; font-size:13px; }
+  .locali-table th { background:var(--accent); color:#fff; padding:8px 10px; text-align:left; font-weight:600; font-size:12px; }
+  .locali-table td { padding:8px 10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .locali-table tr:hover td { background:var(--surface2); }
+  .locali-table img { width:48px; height:48px; object-fit:cover; border-radius:6px; }
+  .locali-table .btn-locale { padding:3px 8px; font-size:11px; }
+
   /* ── ICON PICKER ────────────────────────────────────────────────────────── */
   .icon-picker-grid {
     display: grid;
@@ -1508,6 +1516,7 @@
                 <option value="testo">Testo libero</option>
                 <option value="lista">Lista puntata</option>
                 <option value="info">Righe info (etichetta + valore)</option>
+                <option value="locali">Tabella locali (nome, foto, indirizzo, tel)</option>
               </select>
             </div>
             <div class="form-group" style="flex:0 0 100px">
@@ -1573,6 +1582,61 @@
           <input type="hidden" id="gs-info-en">
           <input type="hidden" id="gs-info-fr">
           <input type="hidden" id="gs-info-es">
+
+          <!-- CONTENUTO LOCALI -->
+          <div id="gs-content-locali" style="display:none">
+            <div class="section-divider">Elenco locali</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">
+              Aggiungi i locali uno alla volta. La foto è un URL immagine (es. da Google Maps o dal sito del locale).
+              L'indirizzo sarà automaticamente collegato a Google Maps.
+            </div>
+            <!-- Form aggiunta locale -->
+            <div style="background:var(--surface2);border-radius:8px;padding:14px;margin-bottom:12px">
+              <div class="form-row">
+                <div class="form-group" style="flex:2">
+                  <label class="form-label">Nome locale *</label>
+                  <input class="form-control" id="locale-nome" placeholder="Es. Ristorante Il Porto">
+                </div>
+                <div class="form-group" style="flex:1">
+                  <label class="form-label">Telefono</label>
+                  <input class="form-control" id="locale-tel" placeholder="+39 0734 ...">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Indirizzo (per link Maps) *</label>
+                <input class="form-control" id="locale-indirizzo" placeholder="Es. Via Roma 12, Porto San Giorgio FM">
+              </div>
+              <div class="form-row">
+                <div class="form-group" style="flex:2">
+                  <label class="form-label">URL foto</label>
+                  <input class="form-control" id="locale-foto" placeholder="https://..." oninput="aggiornaPreviewFoto()">
+                </div>
+                <div class="form-group" style="flex:0 0 64px;display:flex;align-items:flex-end">
+                  <img id="locale-foto-preview" src="" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--border);display:none">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Note (orari, cucina, ecc.)</label>
+                <input class="form-control" id="locale-note" placeholder="Es. Aperto a pranzo e cena · Cucina di pesce">
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="aggiungiLocale()">+ Aggiungi locale</button>
+            </div>
+            <!-- Tabella locali aggiunti -->
+            <div id="locali-lista-wrap" style="display:none">
+              <table class="locali-table">
+                <thead><tr>
+                  <th style="width:56px">Foto</th>
+                  <th>Nome</th>
+                  <th>Indirizzo</th>
+                  <th>Tel</th>
+                  <th>Note</th>
+                  <th class="no-print"></th>
+                </tr></thead>
+                <tbody id="locali-tbody"></tbody>
+              </table>
+            </div>
+            <input type="hidden" id="gs-locali-json" value="[]">
+          </div>
 
           <!-- Indicatore traduzione in corso -->
           <div id="gs-translating" style="display:none;padding:12px;background:#EEF7F0;border-radius:8px;text-align:center;font-size:13px;color:#2a7a3b;margin-top:8px">
@@ -5347,6 +5411,13 @@ function apriModalSezioneGuest(id=null){
   document.querySelectorAll('.icon-picker-item').forEach(el => el.classList.remove('selected'));
   const prev = document.getElementById('gs-icona-preview');
   if(prev) prev.innerHTML = '';
+  // Reset locali
+  const localiJson = document.getElementById('gs-locali-json');
+  if(localiJson) localiJson.value = '[]';
+  const localiWrap = document.getElementById('locali-lista-wrap');
+  if(localiWrap) localiWrap.style.display = 'none';
+  const localTbody = document.getElementById('locali-tbody');
+  if(localTbody) localTbody.innerHTML = '';
   ['gs-icona','gs-titolo-it','gs-titolo-en','gs-titolo-fr','gs-titolo-es',
    'gs-testo-it','gs-testo-en','gs-testo-fr','gs-testo-es',
    'gs-lista-it','gs-lista-en','gs-lista-fr','gs-lista-es',
@@ -5369,6 +5440,11 @@ function apriModalSezioneGuest(id=null){
       document.getElementById('gs-titolo-en').value  = s.titolo?.en||'';
       document.getElementById('gs-titolo-fr').value  = s.titolo?.fr||'';
       document.getElementById('gs-titolo-es').value  = s.titolo?.es||'';
+      // Per il tipo locali, carica i locali nel form
+      if(s.tipo==='locali'){
+        caricaLocaliNelForm(s.locali||[]);
+      }
+
       // Carica solo IT nel form — EN/FR/ES nei campi hidden
       const c = s.contenuto||{};
       if(s.tipo==='testo'){
@@ -5406,9 +5482,10 @@ function editSezioneGuest(id){ apriModalSezioneGuest(id); }
 
 function aggiornaFormGuest(){
   const tipo = document.getElementById('gs-tipo').value;
-  document.getElementById('gs-content-testo').style.display = tipo==='testo'?'':'none';
-  document.getElementById('gs-content-lista').style.display = tipo==='lista'?'':'none';
-  document.getElementById('gs-content-info').style.display  = tipo==='info'?'':'none';
+  document.getElementById('gs-content-testo').style.display  = tipo==='testo'?'':'none';
+  document.getElementById('gs-content-lista').style.display  = tipo==='lista'?'':'none';
+  document.getElementById('gs-content-info').style.display   = tipo==='info'?'':'none';
+  document.getElementById('gs-content-locali').style.display = tipo==='locali'?'':'none';
 }
 
 
@@ -5442,6 +5519,87 @@ async function traduciTutto(testo_it) {
   return { it: testo_it, en, fr, es };
 }
 
+// ── GESTIONE LOCALI ────────────────────────────────────────────────────────
+
+function aggiornaPreviewFoto(){
+  const url = document.getElementById('locale-foto').value.trim();
+  const preview = document.getElementById('locale-foto-preview');
+  if(url){
+    preview.src = url;
+    preview.style.display = 'block';
+    preview.onerror = () => { preview.style.display = 'none'; };
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+function aggiungiLocale(){
+  const nome = document.getElementById('locale-nome').value.trim();
+  const indirizzo = document.getElementById('locale-indirizzo').value.trim();
+  if(!nome || !indirizzo){ showToast('Nome e indirizzo obbligatori','error'); return; }
+
+  const locale = {
+    id: 'loc_' + Date.now(),
+    nome,
+    indirizzo,
+    tel:   document.getElementById('locale-tel').value.trim(),
+    foto:  document.getElementById('locale-foto').value.trim(),
+    note:  document.getElementById('locale-note').value.trim(),
+  };
+
+  // Leggi locali esistenti
+  let locali = [];
+  try { locali = JSON.parse(document.getElementById('gs-locali-json').value || '[]'); } catch(e){}
+  locali.push(locale);
+  document.getElementById('gs-locali-json').value = JSON.stringify(locali);
+
+  // Reset form
+  ['locale-nome','locale-tel','locale-indirizzo','locale-foto','locale-note'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('locale-foto-preview').style.display = 'none';
+
+  renderLocaliTable(locali);
+  showToast('Locale aggiunto ✓','success');
+}
+
+function renderLocaliTable(locali){
+  const wrap = document.getElementById('locali-lista-wrap');
+  const tbody = document.getElementById('locali-tbody');
+  if(!wrap || !tbody) return;
+
+  if(!locali.length){ wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+
+  tbody.innerHTML = locali.map((l,i) => `
+    <tr>
+      <td>${l.foto
+        ? `<img src="${l.foto}" alt="${l.nome}" onerror="this.style.display='none'">`
+        : '<div style="width:48px;height:48px;background:var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px">🍽️</div>'
+      }</td>
+      <td><strong>${l.nome}</strong></td>
+      <td style="font-size:12px">${l.indirizzo}</td>
+      <td style="font-size:12px">${l.tel||'—'}</td>
+      <td style="font-size:12px;color:var(--text-muted)">${l.note||'—'}</td>
+      <td class="no-print">
+        <button class="btn btn-sm btn-danger locali-btn" onclick="rimuoviLocale(${i})">🗑️</button>
+      </td>
+    </tr>`).join('');
+}
+
+function rimuoviLocale(idx){
+  let locali = [];
+  try { locali = JSON.parse(document.getElementById('gs-locali-json').value || '[]'); } catch(e){}
+  locali.splice(idx, 1);
+  document.getElementById('gs-locali-json').value = JSON.stringify(locali);
+  renderLocaliTable(locali);
+}
+
+function caricaLocaliNelForm(locali){
+  document.getElementById('gs-locali-json').value = JSON.stringify(locali||[]);
+  renderLocaliTable(locali||[]);
+}
+
 async function salvaSezioneGuest(){
   const titolo_it = document.getElementById('gs-titolo-it').value.trim();
   if(!titolo_it){ showToast('Inserisci almeno il titolo in italiano','error'); return; }
@@ -5450,11 +5608,18 @@ async function salvaSezioneGuest(){
 
   // Leggi contenuto IT in base al tipo
   let contenuto_it = '';
+  let localiData = null;
+
   if(tipo==='testo')       contenuto_it = document.getElementById('gs-testo-it').value.trim();
   else if(tipo==='lista')  contenuto_it = document.getElementById('gs-lista-it').value.trim();
   else if(tipo==='info')   contenuto_it = document.getElementById('gs-info-it').value.trim();
+  else if(tipo==='locali'){
+    try { localiData = JSON.parse(document.getElementById('gs-locali-json').value || '[]'); } catch(e){}
+    if(!localiData || !localiData.length){ showToast('Aggiungi almeno un locale','error'); return; }
+    contenuto_it = ''; // locali non necessitano traduzione
+  }
 
-  if(!contenuto_it){ showToast('Inserisci il contenuto in italiano','error'); return; }
+  if(tipo !== 'locali' && !contenuto_it){ showToast('Inserisci il contenuto in italiano','error'); return; }
 
   // Mostra indicatore traduzione
   const btnSalva = document.getElementById('btn-salva-sezione');
@@ -5468,11 +5633,17 @@ async function salvaSezioneGuest(){
   let contenuto = {it: contenuto_it, en: contenuto_it, fr: contenuto_it, es: contenuto_it};
 
   try {
-    // Traduce titolo e contenuto in parallelo con MyMemory
-    [titolo, contenuto] = await Promise.all([
-      traduciTutto(titolo_it),
-      traduciTutto(contenuto_it),
-    ]);
+    if(tipo === 'locali'){
+      // Per i locali il titolo viene tradotto, il contenuto (locali) non necessita traduzione
+      titolo = await traduciTutto(titolo_it);
+      contenuto = {it:'',en:'',fr:'',es:''};
+    } else {
+      // Traduce titolo e contenuto in parallelo con MyMemory
+      [titolo, contenuto] = await Promise.all([
+        traduciTutto(titolo_it),
+        traduciTutto(contenuto_it),
+      ]);
+    }
   } catch(e) {
     console.warn('Traduzione fallita, uso solo italiano:', e);
     showToast('⚠️ Traduzione non disponibile — salvato solo in italiano','error');
@@ -5490,6 +5661,7 @@ async function salvaSezioneGuest(){
     visibile: document.getElementById('gs-visibile').value==='1',
     titolo,
     contenuto,
+    ...(localiData ? {locali: localiData} : {}),
     ordine: editingGuestId
       ? (allSezioniGuest.find(s=>s.id===editingGuestId)?.ordine ?? allSezioniGuest.length)
       : allSezioniGuest.length,
