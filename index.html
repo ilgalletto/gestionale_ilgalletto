@@ -5671,17 +5671,30 @@ async function salvaSezioneGuest(){
       titolo = await traduciTutto(titolo_it);
       contenuto = {it:'',en:'',fr:'',es:''};
 
-      // Traduce le note di ogni locale in parallelo
+      // Traduce le note di ogni locale in sequenza (evita rate limit MyMemory)
       if(localiData && localiData.length){
-        localiData = await Promise.all(localiData.map(async (l) => {
-          if(!l.note || !l.note.trim()) return l;
-          try {
-            const noteTrads = await traduciTutto(l.note);
-            return {...l, note_it: l.note, note_en: noteTrads.en, note_fr: noteTrads.fr, note_es: noteTrads.es};
-          } catch(e) {
-            return l;
+        const localiTradotti = [];
+        for(const l of localiData){
+          if(!l.note || !l.note.trim()){
+            localiTradotti.push(l);
+            continue;
           }
-        }));
+          try {
+            // Piccola pausa tra locale e locale per rispettare rate limit
+            if(localiTradotti.length > 0) await new Promise(r => setTimeout(r, 400));
+            const noteTrads = await traduciTutto(l.note);
+            localiTradotti.push({
+              ...l,
+              note_it: l.note,
+              note_en: noteTrads.en || l.note,
+              note_fr: noteTrads.fr || l.note,
+              note_es: noteTrads.es || l.note,
+            });
+          } catch(e) {
+            localiTradotti.push(l);
+          }
+        }
+        localiData = localiTradotti;
       }
     } else {
       // Traduce titolo e contenuto in parallelo con MyMemory
