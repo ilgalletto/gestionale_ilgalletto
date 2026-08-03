@@ -1496,6 +1496,7 @@
                 <option value="lista">Lista puntata</option>
                 <option value="info">Righe info (etichetta + valore)</option>
                 <option value="locali">Tabella locali (nome, foto, indirizzo, tel)</option>
+                <option value="borghi">Tabella borghi (nome, foto, distanza, descrizione)</option>
               </select>
             </div>
             <div class="form-group" style="flex:0 0 110px">
@@ -1603,6 +1604,63 @@
               </table>
             </div>
             <input type="hidden" id="gs-locali-json" value="[]">
+          </div>
+
+          <!-- CONTENUTO BORGHI -->
+          <div id="gs-content-borghi" style="display:none">
+            <div class="section-divider">Elenco borghi</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">
+              Aggiungi i borghi uno alla volta. Descrizione e "Cosa visitare" verranno tradotti automaticamente.
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:14px;margin-bottom:12px">
+              <div class="form-row">
+                <div class="form-group" style="flex:2">
+                  <label class="form-label">Nome borgo *</label>
+                  <input class="form-control" id="borgo-nome" placeholder="Es. Fermo">
+                </div>
+                <div class="form-group" style="flex:1">
+                  <label class="form-label">Distanza</label>
+                  <input class="form-control" id="borgo-distanza" placeholder="Es. 15 km · 20 min">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Indirizzo (per link Maps)</label>
+                <input class="form-control" id="borgo-indirizzo" placeholder="Es. Fermo, FM, Italia">
+              </div>
+              <div class="form-row">
+                <div class="form-group" style="flex:2">
+                  <label class="form-label">URL foto</label>
+                  <input class="form-control" id="borgo-foto" placeholder="https://..." oninput="aggiornaPreviewFotoBorgo()">
+                </div>
+                <div class="form-group" style="flex:0 0 64px;display:flex;align-items:flex-end">
+                  <img id="borgo-foto-preview" src="" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--border);display:none">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Descrizione breve 🇮🇹 *</label>
+                <textarea class="form-control" id="borgo-descrizione" rows="2" placeholder="Es. Affascinante città medievale con splendido centro storico..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Cosa visitare 🇮🇹</label>
+                <input class="form-control" id="borgo-cosa" placeholder="Es. Duomo, Rocca, Teatro dell'Aquila, centro storico">
+              </div>
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">🤖 Descrizione e "Cosa visitare" verranno tradotti automaticamente al salvataggio</div>
+              <button class="btn btn-primary btn-sm" onclick="aggiungiBorgo()">+ Aggiungi borgo</button>
+            </div>
+            <div id="borghi-lista-wrap" style="display:none">
+              <table class="locali-table">
+                <thead><tr>
+                  <th style="width:56px">Foto</th>
+                  <th>Nome</th>
+                  <th>Distanza</th>
+                  <th>Descrizione</th>
+                  <th>Cosa visitare</th>
+                  <th class="no-print"></th>
+                </tr></thead>
+                <tbody id="borghi-tbody"></tbody>
+              </table>
+            </div>
+            <input type="hidden" id="gs-borghi-json" value="[]">
           </div>
 
           <!-- INDICATORE TRADUZIONE -->
@@ -5438,6 +5496,13 @@ function apriModalSezioneGuest(id=null){
   if(localiWrap) localiWrap.style.display = 'none';
   const localTbody = document.getElementById('locali-tbody');
   if(localTbody) localTbody.innerHTML = '';
+  // Reset borghi
+  const borghiJson = document.getElementById('gs-borghi-json');
+  if(borghiJson) borghiJson.value = '[]';
+  const borghiWrap = document.getElementById('borghi-lista-wrap');
+  if(borghiWrap) borghiWrap.style.display = 'none';
+  const borghiTbody = document.getElementById('borghi-tbody');
+  if(borghiTbody) borghiTbody.innerHTML = '';
   ['gs-icona','gs-titolo-it','gs-titolo-en','gs-titolo-fr','gs-titolo-es',
    'gs-testo-it','gs-testo-en','gs-testo-fr','gs-testo-es',
    'gs-lista-it','gs-lista-en','gs-lista-fr','gs-lista-es',
@@ -5463,6 +5528,10 @@ function apriModalSezioneGuest(id=null){
       // Per il tipo locali, carica i locali nel form
       if(s.tipo==='locali'){
         caricaLocaliNelForm(s.locali||[]);
+      }
+      // Per il tipo borghi, carica i borghi nel form
+      if(s.tipo==='borghi'){
+        caricaBorghiNelForm(s.borghi||[]);
       }
 
       // Carica solo IT nel form — EN/FR/ES nei campi hidden
@@ -5506,6 +5575,7 @@ function aggiornaFormGuest(){
   document.getElementById('gs-content-lista').style.display  = tipo==='lista'?'':'none';
   document.getElementById('gs-content-info').style.display   = tipo==='info'?'':'none';
   document.getElementById('gs-content-locali').style.display = tipo==='locali'?'':'none';
+  document.getElementById('gs-content-borghi').style.display  = tipo==='borghi'?'':'none';
 }
 
 
@@ -5537,6 +5607,107 @@ async function traduciTutto(testo_it) {
     traduciMyMemory(testo_it, 'es'),
   ]);
   return { it: testo_it, en, fr, es };
+}
+
+// ── GESTIONE BORGHI ────────────────────────────────────────────────────────
+
+function aggiornaPreviewFotoBorgo(){
+  const url = document.getElementById('borgo-foto').value.trim();
+  const preview = document.getElementById('borgo-foto-preview');
+  if(url){
+    preview.src = url; preview.style.display = 'block';
+    preview.onerror = () => { preview.style.display = 'none'; };
+  } else { preview.style.display = 'none'; }
+}
+
+function aggiungiBorgo(){
+  const nome = document.getElementById('borgo-nome').value.trim();
+  const descrizione = document.getElementById('borgo-descrizione').value.trim();
+  if(!nome || !descrizione){ showToast('Nome e descrizione obbligatori','error'); return; }
+
+  const borgo = {
+    id: 'borg_' + Date.now(),
+    nome,
+    distanza:   document.getElementById('borgo-distanza').value.trim(),
+    indirizzo:  document.getElementById('borgo-indirizzo').value.trim(),
+    foto:       document.getElementById('borgo-foto').value.trim(),
+    descrizione,
+    cosa:       document.getElementById('borgo-cosa').value.trim(),
+  };
+
+  let borghi = [];
+  try { borghi = JSON.parse(document.getElementById('gs-borghi-json').value || '[]'); } catch(e){}
+  borghi.push(borgo);
+  document.getElementById('gs-borghi-json').value = JSON.stringify(borghi);
+
+  ['borgo-nome','borgo-distanza','borgo-indirizzo','borgo-foto','borgo-descrizione','borgo-cosa'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('borgo-foto-preview').style.display = 'none';
+
+  renderBorghiTable(borghi);
+  const btn = document.querySelector('#gs-content-borghi .btn-primary');
+  if(btn) btn.textContent = '+ Aggiungi borgo';
+  showToast('Borgo aggiunto ✓','success');
+}
+
+function renderBorghiTable(borghi){
+  const wrap = document.getElementById('borghi-lista-wrap');
+  const tbody = document.getElementById('borghi-tbody');
+  if(!wrap || !tbody) return;
+  if(!borghi.length){ wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  tbody.innerHTML = borghi.map((b,i) => `
+    <tr>
+      <td>${b.foto
+        ? `<img src="${b.foto}" alt="${b.nome}" onerror="this.style.display='none'" style="width:48px;height:48px;object-fit:cover;border-radius:6px">`
+        : '<div style="width:48px;height:48px;background:var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px">🏛️</div>'
+      }</td>
+      <td><strong>${b.nome}</strong><br><span style="font-size:11px;color:var(--text-muted)">${b.distanza||''}</span></td>
+      <td style="font-size:12px">${b.distanza||'—'}</td>
+      <td style="font-size:12px">${(b.descrizione||'').substring(0,60)}${b.descrizione?.length>60?'…':''}</td>
+      <td style="font-size:12px;color:var(--text-muted)">${(b.cosa||'').substring(0,50)}${b.cosa?.length>50?'…':''}</td>
+      <td class="no-print" style="white-space:nowrap">
+        <button class="btn btn-sm btn-outline" style="padding:2px 7px;font-size:11px;margin-right:4px" onclick="modificaBorgo(${i})">✏️</button>
+        <button class="btn btn-sm btn-danger" style="padding:2px 7px;font-size:11px" onclick="rimuoviBorgo(${i})">🗑️</button>
+      </td>
+    </tr>`).join('');
+}
+
+function rimuoviBorgo(idx){
+  let borghi = [];
+  try { borghi = JSON.parse(document.getElementById('gs-borghi-json').value || '[]'); } catch(e){}
+  if(!confirm('Rimuovere questo borgo?')) return;
+  borghi.splice(idx, 1);
+  document.getElementById('gs-borghi-json').value = JSON.stringify(borghi);
+  renderBorghiTable(borghi);
+}
+
+function modificaBorgo(idx){
+  let borghi = [];
+  try { borghi = JSON.parse(document.getElementById('gs-borghi-json').value || '[]'); } catch(e){}
+  const b = borghi[idx];
+  if(!b) return;
+  document.getElementById('borgo-nome').value        = b.nome||'';
+  document.getElementById('borgo-distanza').value    = b.distanza||'';
+  document.getElementById('borgo-indirizzo').value   = b.indirizzo||'';
+  document.getElementById('borgo-foto').value        = b.foto||'';
+  document.getElementById('borgo-descrizione').value = b.descrizione||'';
+  document.getElementById('borgo-cosa').value        = b.cosa||'';
+  aggiornaPreviewFotoBorgo();
+  borghi.splice(idx, 1);
+  document.getElementById('gs-borghi-json').value = JSON.stringify(borghi);
+  renderBorghiTable(borghi);
+  const btn = document.querySelector('#gs-content-borghi .btn-primary');
+  if(btn) btn.textContent = '✓ Aggiorna borgo';
+  document.getElementById('borgo-nome').focus();
+  document.getElementById('borgo-nome').scrollIntoView({behavior:'smooth', block:'center'});
+  showToast('Modifica il borgo e clicca "Aggiorna borgo"','');
+}
+
+function caricaBorghiNelForm(borghi){
+  document.getElementById('gs-borghi-json').value = JSON.stringify(borghi||[]);
+  renderBorghiTable(borghi||[]);
 }
 
 // ── GESTIONE LOCALI ────────────────────────────────────────────────────────
@@ -5669,10 +5840,15 @@ async function salvaSezioneGuest(){
   else if(tipo==='locali'){
     try { localiData = JSON.parse(document.getElementById('gs-locali-json').value || '[]'); } catch(e){}
     if(!localiData || !localiData.length){ showToast('Aggiungi almeno un locale','error'); return; }
-    contenuto_it = ''; // locali non necessitano traduzione
+    contenuto_it = '';
+  }
+  else if(tipo==='borghi'){
+    try { localiData = JSON.parse(document.getElementById('gs-borghi-json').value || '[]'); } catch(e){}
+    if(!localiData || !localiData.length){ showToast('Aggiungi almeno un borgo','error'); return; }
+    contenuto_it = '';
   }
 
-  if(tipo !== 'locali' && !contenuto_it){ showToast('Inserisci il contenuto in italiano','error'); return; }
+  if(tipo !== 'locali' && tipo !== 'borghi' && !contenuto_it){ showToast('Inserisci il contenuto in italiano','error'); return; }
 
   // Mostra indicatore traduzione
   const btnSalva = document.getElementById('btn-salva-sezione');
@@ -5687,34 +5863,43 @@ async function salvaSezioneGuest(){
 
   try {
     if(tipo === 'locali'){
-      // Per i locali: traduce il titolo e le note di ogni locale
+      // Per locali e borghi: traduce il titolo e i campi testuali
       titolo = await traduciTutto(titolo_it);
       contenuto = {it:'',en:'',fr:'',es:''};
 
-      // Traduce le note di ogni locale in sequenza (evita rate limit MyMemory)
-      if(localiData && localiData.length){
+      if(tipo === 'locali' && localiData && localiData.length){
+        // Traduce le note dei locali in sequenza
         const localiTradotti = [];
         for(const l of localiData){
-          if(!l.note || !l.note.trim()){
-            localiTradotti.push(l);
-            continue;
-          }
+          if(!l.note || !l.note.trim()){ localiTradotti.push(l); continue; }
           try {
-            // Piccola pausa tra locale e locale per rispettare rate limit
             if(localiTradotti.length > 0) await new Promise(r => setTimeout(r, 400));
             const noteTrads = await traduciTutto(l.note);
-            localiTradotti.push({
-              ...l,
-              note_it: l.note,
-              note_en: noteTrads.en || l.note,
-              note_fr: noteTrads.fr || l.note,
-              note_es: noteTrads.es || l.note,
-            });
-          } catch(e) {
-            localiTradotti.push(l);
-          }
+            localiTradotti.push({...l, note_it: l.note, note_en: noteTrads.en||l.note, note_fr: noteTrads.fr||l.note, note_es: noteTrads.es||l.note});
+          } catch(e) { localiTradotti.push(l); }
         }
         localiData = localiTradotti;
+      }
+
+      if(tipo === 'borghi' && localiData && localiData.length){
+        // Traduce descrizione e cosa visitare di ogni borgo in sequenza
+        const borghiTradotti = [];
+        for(const b of localiData){
+          try {
+            if(borghiTradotti.length > 0) await new Promise(r => setTimeout(r, 500));
+            const descTrads = b.descrizione ? await traduciTutto(b.descrizione) : {it:'',en:'',fr:'',es:''};
+            const cosaTrads = b.cosa        ? await traduciTutto(b.cosa)        : {it:'',en:'',fr:'',es:''};
+            await new Promise(r => setTimeout(r, 300));
+            borghiTradotti.push({
+              ...b,
+              descrizione_it: b.descrizione||'', descrizione_en: descTrads.en||b.descrizione||'',
+              descrizione_fr: descTrads.fr||b.descrizione||'', descrizione_es: descTrads.es||b.descrizione||'',
+              cosa_it: b.cosa||'', cosa_en: cosaTrads.en||b.cosa||'',
+              cosa_fr: cosaTrads.fr||b.cosa||'', cosa_es: cosaTrads.es||b.cosa||'',
+            });
+          } catch(e) { borghiTradotti.push(b); }
+        }
+        localiData = borghiTradotti;
       }
     } else {
       // Traduce titolo e contenuto in parallelo con MyMemory
@@ -5740,7 +5925,8 @@ async function salvaSezioneGuest(){
     visibile: document.getElementById('gs-visibile').value==='1',
     titolo,
     contenuto,
-    ...(localiData ? {locali: localiData} : {}),
+    ...(tipo==='locali' && localiData ? {locali: localiData} : {}),
+    ...(tipo==='borghi' && localiData ? {borghi: localiData} : {}),
     ordine: editingGuestId
       ? (allSezioniGuest.find(s=>s.id===editingGuestId)?.ordine ?? allSezioniGuest.length)
       : allSezioniGuest.length,

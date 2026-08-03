@@ -437,6 +437,42 @@
     .hero-scroll { animation: none; }
   }
 
+  /* ── CARD BORGHI ─────────────────────────────────────────────────────────── */
+  .borghi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin-top: 12px;
+  }
+  .borgo-card {
+    background: var(--white);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: box-shadow .2s, transform .2s;
+  }
+  .borgo-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+  .borgo-card .borgo-foto {
+    width: 100%; height: 160px;
+    object-fit: cover;
+    display: block;
+  }
+  .borgo-card .borgo-foto-placeholder {
+    width: 100%; height: 160px;
+    background: linear-gradient(135deg, var(--night), var(--blue));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 48px;
+  }
+  .borgo-card .borgo-body { padding: 14px 16px; }
+  .borgo-card .borgo-nome { font-family: 'Cormorant Garamond', serif; font-size: 19px; font-weight: 600; color: var(--night); }
+  .borgo-card .borgo-distanza { font-size: 12px; color: var(--teal); font-weight: 500; margin-bottom: 8px; }
+  .borgo-card .borgo-desc { font-size: 13px; color: #2a3f55; line-height: 1.6; margin-bottom: 8px; }
+  .borgo-card .borgo-cosa { font-size: 12px; color: var(--muted); }
+  .borgo-card .borgo-cosa span { color: var(--blue); font-weight: 500; }
+  .borgo-card .borgo-maps { display: inline-block; margin-top: 10px; font-size: 12px; color: var(--blue); text-decoration: none; font-weight: 500; }
+  .borgo-card .borgo-maps:hover { text-decoration: underline; }
+
   /* ── CARD LOCALI ─────────────────────────────────────────────────────────── */
   .locali-grid {
     display: grid;
@@ -1056,6 +1092,32 @@ function renderDynamicSections(lang) {
           </div>`;
         }).join('') + '</div>';
       }
+    } else if (s.tipo === 'borghi') {
+      const borghi = s.borghi || [];
+      if (!borghi.length) {
+        bodyHtml = '<p style="color:var(--muted);font-style:italic">Nessun borgo disponibile.</p>';
+      } else {
+        bodyHtml = '<div class="borghi-grid">' + borghi.map(b => {
+          const mapsUrl = b.indirizzo
+            ? 'https://maps.google.com/?q=' + encodeURIComponent(b.indirizzo)
+            : 'https://maps.google.com/?q=' + encodeURIComponent(b.nome);
+          const desc = b['descrizione_'+lang] || b.descrizione || '';
+          const cosa = b['cosa_'+lang] || b.cosa || '';
+          const fotoHtml = b.foto
+            ? `<img class="borgo-foto" src="${b.foto}" alt="${b.nome}" onerror="this.parentNode.innerHTML='<div class=\'borgo-foto-placeholder\'>🏛️</div>'">`
+            : '<div class="borgo-foto-placeholder">🏛️</div>';
+          return `<div class="borgo-card">
+            ${fotoHtml}
+            <div class="borgo-body">
+              <div class="borgo-nome">${b.nome}</div>
+              ${b.distanza ? `<div class="borgo-distanza">📍 ${b.distanza}</div>` : ''}
+              ${desc ? `<div class="borgo-desc">${desc}</div>` : ''}
+              ${cosa ? `<div class="borgo-cosa"><span>Da vedere:</span> ${cosa}</div>` : ''}
+              <a class="borgo-maps" href="${mapsUrl}" target="_blank">🗺️ Apri in Maps</a>
+            </div>
+          </div>`;
+        }).join('') + '</div>';
+      }
     } else {
       // testo libero
       bodyHtml = cnt.split('\n').filter(p => p.trim())
@@ -1112,4 +1174,3 @@ loadGuestApp();
 </script>
 </body>
 </html>
-
