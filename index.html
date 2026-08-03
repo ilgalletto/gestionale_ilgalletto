@@ -1640,11 +1640,23 @@
                 <label class="form-label">Descrizione breve 🇮🇹 *</label>
                 <textarea class="form-control" id="borgo-descrizione" rows="2" placeholder="Es. Affascinante città medievale con splendido centro storico..."></textarea>
               </div>
-              <div class="form-group">
-                <label class="form-label">Cosa visitare 🇮🇹</label>
-                <input class="form-control" id="borgo-cosa" placeholder="Es. Duomo, Rocca, Teatro dell'Aquila, centro storico">
+              <div class="section-divider" style="margin:10px 0 8px">Cose da visitare</div>
+              <div class="form-row">
+                <div class="form-group"><input class="form-control" id="borgo-cosa1" placeholder="Es. Duomo"></div>
+                <div class="form-group"><input class="form-control" id="borgo-cosa2" placeholder="Es. Rocca medievale"></div>
               </div>
-              <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">🤖 Descrizione e "Cosa visitare" verranno tradotti automaticamente al salvataggio</div>
+              <div class="form-row">
+                <div class="form-group"><input class="form-control" id="borgo-cosa3" placeholder="Es. Teatro dell'Aquila"></div>
+                <div class="form-group"><input class="form-control" id="borgo-cosa4" placeholder="Es. Centro storico"></div>
+              </div>
+
+              <div class="section-divider" style="margin:10px 0 8px">Dove mangiare</div>
+              <div class="form-row">
+                <div class="form-group"><input class="form-control" id="borgo-mangia1" placeholder="Es. Osteria del Borgo"></div>
+                <div class="form-group"><input class="form-control" id="borgo-mangia2" placeholder="Es. Ristorante La Piazza"></div>
+              </div>
+
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">🤖 Descrizione e cose da visitare verranno tradotte automaticamente al salvataggio</div>
               <button class="btn btn-primary btn-sm" onclick="aggiungiBorgo()">+ Aggiungi borgo</button>
             </div>
             <div id="borghi-lista-wrap" style="display:none">
@@ -1654,7 +1666,8 @@
                   <th>Nome</th>
                   <th>Distanza</th>
                   <th>Descrizione</th>
-                  <th>Cosa visitare</th>
+                  <th>Da visitare</th>
+                  <th>Dove mangiare</th>
                   <th class="no-print"></th>
                 </tr></thead>
                 <tbody id="borghi-tbody"></tbody>
@@ -5632,7 +5645,12 @@ function aggiungiBorgo(){
     indirizzo:  document.getElementById('borgo-indirizzo').value.trim(),
     foto:       document.getElementById('borgo-foto').value.trim(),
     descrizione,
-    cosa:       document.getElementById('borgo-cosa').value.trim(),
+    cosa1:      document.getElementById('borgo-cosa1').value.trim(),
+    cosa2:      document.getElementById('borgo-cosa2').value.trim(),
+    cosa3:      document.getElementById('borgo-cosa3').value.trim(),
+    cosa4:      document.getElementById('borgo-cosa4').value.trim(),
+    mangia1:    document.getElementById('borgo-mangia1').value.trim(),
+    mangia2:    document.getElementById('borgo-mangia2').value.trim(),
   };
 
   let borghi = [];
@@ -5640,7 +5658,9 @@ function aggiungiBorgo(){
   borghi.push(borgo);
   document.getElementById('gs-borghi-json').value = JSON.stringify(borghi);
 
-  ['borgo-nome','borgo-distanza','borgo-indirizzo','borgo-foto','borgo-descrizione','borgo-cosa'].forEach(id => {
+  ['borgo-nome','borgo-distanza','borgo-indirizzo','borgo-foto','borgo-descrizione',
+   'borgo-cosa1','borgo-cosa2','borgo-cosa3','borgo-cosa4',
+   'borgo-mangia1','borgo-mangia2'].forEach(id => {
     document.getElementById(id).value = '';
   });
   document.getElementById('borgo-foto-preview').style.display = 'none';
@@ -5693,7 +5713,12 @@ function modificaBorgo(idx){
   document.getElementById('borgo-indirizzo').value   = b.indirizzo||'';
   document.getElementById('borgo-foto').value        = b.foto||'';
   document.getElementById('borgo-descrizione').value = b.descrizione||'';
-  document.getElementById('borgo-cosa').value        = b.cosa||'';
+  document.getElementById('borgo-cosa1').value       = b.cosa1||'';
+  document.getElementById('borgo-cosa2').value       = b.cosa2||'';
+  document.getElementById('borgo-cosa3').value       = b.cosa3||'';
+  document.getElementById('borgo-cosa4').value       = b.cosa4||'';
+  document.getElementById('borgo-mangia1').value     = b.mangia1||'';
+  document.getElementById('borgo-mangia2').value     = b.mangia2||'';
   aggiornaPreviewFotoBorgo();
   borghi.splice(idx, 1);
   document.getElementById('gs-borghi-json').value = JSON.stringify(borghi);
@@ -5882,20 +5907,30 @@ async function salvaSezioneGuest(){
       }
 
       if(tipo === 'borghi' && localiData && localiData.length){
-        // Traduce descrizione e cosa visitare di ogni borgo in sequenza
+        // Traduce descrizione + 4 cose da visitare di ogni borgo in sequenza
         const borghiTradotti = [];
         for(const b of localiData){
           try {
             if(borghiTradotti.length > 0) await new Promise(r => setTimeout(r, 500));
             const descTrads = b.descrizione ? await traduciTutto(b.descrizione) : {it:'',en:'',fr:'',es:''};
-            const cosaTrads = b.cosa        ? await traduciTutto(b.cosa)        : {it:'',en:'',fr:'',es:''};
             await new Promise(r => setTimeout(r, 300));
+            // Traduce ogni cosa da visitare
+            const cosaKeys = ['cosa1','cosa2','cosa3','cosa4'];
+            const coseTrad = {};
+            for(const k of cosaKeys){
+              if(b[k]){
+                await new Promise(r => setTimeout(r, 250));
+                const t = await traduciTutto(b[k]);
+                coseTrad[k+'_en'] = t.en||b[k];
+                coseTrad[k+'_fr'] = t.fr||b[k];
+                coseTrad[k+'_es'] = t.es||b[k];
+              }
+            }
             borghiTradotti.push({
               ...b,
+              ...coseTrad,
               descrizione_it: b.descrizione||'', descrizione_en: descTrads.en||b.descrizione||'',
               descrizione_fr: descTrads.fr||b.descrizione||'', descrizione_es: descTrads.es||b.descrizione||'',
-              cosa_it: b.cosa||'', cosa_en: cosaTrads.en||b.cosa||'',
-              cosa_fr: cosaTrads.fr||b.cosa||'', cosa_es: cosaTrads.es||b.cosa||'',
             });
           } catch(e) { borghiTradotti.push(b); }
         }

@@ -1112,7 +1112,14 @@ function renderDynamicSections(lang) {
               <div class="borgo-nome">${b.nome}</div>
               ${b.distanza ? `<div class="borgo-distanza">📍 ${b.distanza}</div>` : ''}
               ${desc ? `<div class="borgo-desc">${desc}</div>` : ''}
-              ${cosa ? `<div class="borgo-cosa"><span>Da vedere:</span> ${cosa}</div>` : ''}
+              ${(() => {
+                const voci = [1,2,3,4].map(i => b['cosa'+i+'_'+lang]||b['cosa'+i]||'').filter(Boolean);
+                return voci.length ? `<div class="borgo-cosa"><span>Da vedere:</span> ${voci.join(' · ')}</div>` : '';
+              })()}
+              ${(() => {
+                const rist = [1,2].map(i => b['mangia'+i]||'').filter(Boolean);
+                return rist.length ? `<div class="borgo-cosa" style="margin-top:4px"><span>Dove mangiare:</span> ${rist.join(' · ')}</div>` : '';
+              })()}
               <a class="borgo-maps" href="${mapsUrl}" target="_blank">🗺️ Apri in Maps</a>
             </div>
           </div>`;
