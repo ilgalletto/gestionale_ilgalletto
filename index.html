@@ -2580,7 +2580,7 @@ function apriStorico(kEnc){
   let html=`<div class="cliente-card-print" id="scheda-print">
     <h3>🐓 B&B Il Galletto – Scheda cliente</h3>
     <div class="cliente-info-grid">
-      <div><div class="ci-label">Nominativo</div><div class="ci-val">${c.cognome||''} ${c.nome||''}</div></div>
+      <div><div class="ci-label">Nominativo</div><div class="ci-val">${c.cognome||''} ${c.nome||''}</div></div><div class="icon-picker-item" data-icon="laundry" onclick="selectGuestIcon('laundry')" title="Lavanderia"><div style="width:32px;height:32px;background:#1A6FA8;border-radius:8px;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="30" height="32" rx="3" fill="white" opacity=".2"/><rect x="5" y="5" width="30" height="32" rx="3" stroke="white" stroke-width="2"/><line x1="5" y1="13" x2="35" y2="13" stroke="white" stroke-width="1.8"/><circle cx="10" cy="9" r="1.5" fill="white"/><circle cx="15" cy="9" r="1.5" fill="white"/><circle cx="20" cy="23" r="7" stroke="white" stroke-width="2.2"/><circle cx="20" cy="23" r="3" fill="white" opacity=".4"/><path d="M17 20c1-1.5 4-1.5 5 0" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></div><span>Lavanderia</span></div>
       <div><div class="ci-label">Telefono</div><div class="ci-val">${c.telefono||'—'}</div></div>
       <div><div class="ci-label">Email</div><div class="ci-val">${c.email||'—'}</div></div>
       <div><div class="ci-label">Canale</div><div class="ci-val">${c.canale||'—'}</div></div>
@@ -5308,6 +5308,7 @@ const GUEST_ICONS = {
   'pizza': `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M20 5l16 28H4z" fill="white" opacity=".25"/> <path d="M20 5l16 28H4z" stroke="white" stroke-width="2" stroke-linejoin="round"/> <circle cx="20" cy="18" r="2.5" fill="white"/> <circle cx="14" cy="26" r="2" fill="white"/> <circle cx="26" cy="26" r="2" fill="white"/> <line x1="4" y1="33" x2="36" y2="33" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>`,
   'gas': `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect x="6" y="8" width="20" height="28" rx="2" fill="white" opacity=".25"/> <rect x="6" y="8" width="20" height="28" rx="2" stroke="white" stroke-width="2.2"/> <path d="M26 14h4a2 2 0 012 2v6a2 2 0 01-2 2h-4" stroke="white" stroke-width="2" stroke-linecap="round"/> <rect x="10" y="12" width="12" height="8" rx="1" fill="white" opacity=".5"/> <line x1="10" y1="28" x2="22" y2="28" stroke="white" stroke-width="2" stroke-linecap="round"/> <line x1="10" y1="33" x2="22" y2="33" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>`,
   'emergency': `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="17" fill="white" opacity=".2"/><circle cx="20" cy="20" r="17" stroke="white" stroke-width="2"/><line x1="20" y1="9" x2="20" y2="31" stroke="white" stroke-width="4.5" stroke-linecap="round"/><line x1="9" y1="20" x2="31" y2="20" stroke="white" stroke-width="4.5" stroke-linecap="round"/></svg>`,
+  'laundry': `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="30" height="32" rx="3" fill="white" opacity=".2"/><rect x="5" y="5" width="30" height="32" rx="3" stroke="white" stroke-width="2"/><line x1="5" y1="13" x2="35" y2="13" stroke="white" stroke-width="1.8"/><circle cx="10" cy="9" r="1.5" fill="white"/><circle cx="15" cy="9" r="1.5" fill="white"/><circle cx="20" cy="23" r="7" stroke="white" stroke-width="2.2"/><circle cx="20" cy="23" r="3" fill="white" opacity=".4"/><path d="M17 20c1-1.5 4-1.5 5 0" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>`,
 };
 
 function selectGuestIcon(key) {
@@ -5358,6 +5359,7 @@ const GUEST_ICON_BG = {
   'pizza': '#E67E22',
   'gas': '#7F8C8D',
   'emergency': '#C0392B',
+  'laundry': '#1A6FA8',
 };
 
 function getIconSvg(key) {
